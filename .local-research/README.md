@@ -7,3 +7,5 @@ runtime code, bundled assets, default databases, sample games, commercial
 plugins, deployment output, or private project data.
 
 Local contents are disposable research inputs and are not backed up by Git.
+
+Agents in isolated worktrees may inspect this directory read-only when explicitly authorized under the shared local-research policy in `AGENTS.md`.

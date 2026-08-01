@@ -53,6 +53,44 @@ Tilewright is an open-source Rust toolkit for reading, validating, transforming,
 - Do not read from or modify another session's worktree. Cross-session coordination happens through the user, committed branches, diffs, or later integration—not shared mutable files.
 - Agents must not create, switch, move, remove, lock, unlock, or prune worktrees. OpenCode worktree lifecycle is controlled through the session helper; Codex-managed worktree lifecycle is controlled by the Codex app.
 - Handing a Codex task back to Local does not preserve write authorization while another writable agent session may be active.
+- Do not read from or modify another session's worktree, except for the narrow read-only local-research exception below.
+
+## Shared local research evidence
+
+The primary integration checkout's `.local-research/` directory is a
+user-managed, ignored evidence store. It is a narrow exception to the rule
+against reading another checkout.
+
+An agent working in an isolated worktree may read from that directory only when:
+
+- the user explicitly requests research using those materials;
+- the exact research directory and its provenance are identified;
+- the directory is ignored by Git;
+- access is limited to the requested `.local-research/` subtree; and
+- the filesystem sandbox grants read access to the directory.
+
+This exception is strictly read-only. Agents must not:
+
+- create, modify, rename, delete, move, execute, or change permissions on files
+  in the shared research directory;
+- stage ignored material with `git add -f`;
+- copy proprietary contents into tracked paths, fixtures, patches, tool output,
+  or documentation;
+- inspect other untracked files or other areas of the primary checkout; or
+- follow symlinks that resolve outside the authorized research root.
+
+Agents should begin with path, file-type, size, and metadata manifests. File
+contents may be inspected only when necessary for the bounded research question.
+Committed findings must contain derived observations and exact provenance, not
+proprietary source material.
+
+Before access, verify that the requested material is ignored and that its
+canonical path remains under the authorized `.local-research/` root. Treat
+concurrent modification as a possible source of inconsistent observations.
+
+The primary checkout remains read-only for all agent-authored changes. This
+exception grants evidence access, not write authorization or general
+cross-worktree access.
 
 ## Verification
 
