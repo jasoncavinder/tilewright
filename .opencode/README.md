@@ -12,6 +12,10 @@ This directory keeps project-local OpenCode behavior portable and reviewable.
 
 The setup intentionally does **not** duplicate globally configured Context7 or GitHub MCP servers. OpenCode merges global and project configuration, so keeping credentials and general-purpose integrations global avoids drift and accidental secret commits.
 
+Project intent and architecture live in `docs/`, indexed by `docs/README.md`.
+Agent definitions should link to those canonical documents rather than restating
+or silently extending project decisions.
+
 It also does not add plugins or custom tools yet. Add one only after a workflow repeats enough that a command or skill cannot express it cleanly. The future `tilewright-mcp` binary should remain product code, not an OpenCode-only helper hidden in this directory.
 
 ## Commands

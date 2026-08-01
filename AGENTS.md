@@ -6,6 +6,14 @@ This file contains the small set of project rules that should be present in ever
 
 Tilewright is an open-source Rust toolkit for reading, validating, transforming, and eventually authoring tile-based RPG project data. The first supported target is RPG Maker MZ, but the core API must not unnecessarily hard-code one editor or one AI host.
 
+## Required orientation
+
+- Start with `README.md` for current maturity and the public project overview.
+- Use `docs/README.md` as the canonical documentation index.
+- Read `docs/vision.md`, `docs/architecture.md`, and `docs/safety.md` before changing scope, boundaries, or write behavior.
+- Check `docs/compatibility.md` before claiming support and `docs/open-questions.md` before making a consequential design choice.
+- Record proprietary-format evidence under `docs/formats/`; do not turn intent or memory into a format claim.
+
 ## Architecture boundaries
 
 - `crates/tilewright/` is the durable, format-aware library.

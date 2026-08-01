@@ -1,0 +1,106 @@
+# Contributing to Tilewright
+
+Tilewright is early in its development, and careful evidence and narrow changes
+are more valuable than broad implementations built on assumptions. Contributions
+should make the supported behavior clearer, safer, or better tested.
+
+## Start here
+
+Before contributing, read:
+
+1. the [project vision](docs/vision.md);
+2. the [architecture](docs/architecture.md);
+3. the [safety model](docs/safety.md); and
+4. any applicable [architecture decisions](docs/decisions/README.md) and format
+   research.
+
+`AGENTS.md` contains the always-loaded operating rules for AI-assisted work.
+Detailed OpenCode workflows live under `.opencode/` so they can be loaded only
+when needed.
+
+## Choose the right kind of change
+
+- **Format research:** record evidence and uncertainty before promising format
+  behavior. Follow the [RPG Maker MZ research workflow](docs/formats/rpg-maker-mz/README.md).
+- **Core behavior:** implement parsing, validation, domain modeling,
+  serialization, and mutation in `crates/tilewright/`.
+- **Adapters:** keep the CLI and MCP crates focused on input validation,
+  translation, presentation, and protocol concerns.
+- **Public API changes:** describe the intended contract, error behavior,
+  preservation implications, and compatibility cost before implementation.
+- **Fixtures:** use only minimal, redistributable data with explicit provenance.
+- **Architecture changes:** update an existing ADR or propose a new one rather
+  than hiding a long-lived decision inside an implementation.
+
+Do not decide items listed in [open questions](docs/open-questions.md) implicitly.
+A contribution may propose a resolution, but consequential decisions require
+maintainer agreement and normally an ADR.
+
+## Format evidence
+
+RPG Maker MZ is proprietary, so familiarity or memory is not sufficient evidence
+for a format contract. Classify material format claims as:
+
+- **Documented:** supported by official documentation or another authoritative
+  contract.
+- **Observed:** directly verified in legitimate, user-owned project files or
+  generated output.
+- **Inferred:** a reasoned conclusion from evidence that is not definitive.
+- **Unknown:** unresolved.
+
+Separate a field's JSON shape from its meaning and invariants. Preserve unknown
+fields by default and do not commit proprietary application code, assets, or
+sample-game content as evidence.
+
+## Fixtures
+
+Follow [`fixtures/README.md`](fixtures/README.md). Every nontrivial fixture must
+state its purpose, origin, creation method, redistribution status, removed
+sensitive or proprietary content, and expected behavior. Prefer one small
+fixture per behavior.
+
+Parser and writer changes should include round-trip and unknown-field
+preservation tests when relevant. Never update expected output without inspecting
+and explaining the change.
+
+## Development workflow
+
+Inspect the worktree before editing:
+
+```sh
+git status --short
+git branch --show-current
+```
+
+The primary checkout is reserved for integration. Concurrent writable OpenCode
+sessions use `.opencode/bin/tilewright-session`; writable Codex desktop tasks use
+the app's per-task Worktree mode. The complete policy is in `AGENTS.md` and the
+[OpenCode setup](.opencode/README.md).
+
+Keep changes focused. Do not reformat unrelated files, upgrade dependencies
+incidentally, or mix research conclusions with unrelated refactoring. Avoid
+panics for recoverable library input or I/O errors, and document public APIs.
+
+## Verification
+
+Run targeted checks while iterating. Before marking a change ready, run:
+
+```sh
+cargo fmt --all -- --check
+cargo check --workspace --all-targets --all-features
+cargo test --workspace --all-targets --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
+```
+
+Report commands actually run and their results. Do not weaken a gate to hide a
+failure or describe an unrun check as passing.
+
+## Licensing and project boundaries
+
+Contributions are made under the repository's [MPL-2.0 license](LICENSE). Do not
+contribute material you lack the right to redistribute.
+
+This repository contains only the open-source foundation. Do not read from,
+copy from, write to, or depend on the separate commercial Tilewright Studio
+repository as part of work here.
