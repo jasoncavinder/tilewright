@@ -97,3 +97,11 @@ Useful lifecycle commands:
 The launcher uses a lock under the repository's shared Git directory so a second launcher cannot open the same session worktree concurrently. `retire` refuses to proceed while the session is active, while the worktree is dirty, or while its branch is not fully merged into the selected base. It never force-removes a worktree.
 
 Starting `opencode` manually inside a linked worktree does not establish the launcher lock and therefore fails the write preflight. Use `tilewright-session open <slug>` instead.
+
+## Codex desktop interoperability
+
+The OpenCode session launcher and its locks apply only to OpenCode sessions.
+Writable Codex desktop tasks use the app's per-chat Worktree mode instead.
+Codex Local mode and permanent/shared Codex worktrees are not automatically
+authorized for agent-authored changes. See the root `AGENTS.md` for the common
+isolation policy.

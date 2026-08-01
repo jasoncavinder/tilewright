@@ -33,14 +33,18 @@ Tilewright is an open-source Rust toolkit for reading, validating, transforming,
 - Document public APIs and include regression tests for every format behavior or bug fix.
 - When behavior or architecture changes, update the relevant README or ADR in the same change.
 
-## Concurrent top-level OpenCode sessions
+## Concurrent top-level agent sessions
 
-- The primary checkout is the integration checkout and is read-only for agent-authored changes. A top-level OpenCode session that may edit tracked files must be launched through `.opencode/bin/tilewright-session new <slug>` or `.opencode/bin/tilewright-session open <slug>`.
-- Each concurrently writable top-level session owns exactly one linked Git worktree and one `work/<slug>` branch. Never run two top-level OpenCode processes in the same worktree.
-- Before the first mutation, the coordinating agent must run `.opencode/bin/tilewright-session check --write`. If it does not report `write_isolation=ready`, do not edit; tell the user to relaunch through the session helper.
-- The coordinator and all of its subagents share the coordinator's current worktree. Subagents must not create, switch, move, remove, lock, unlock, or prune worktrees and must not switch branches.
+- The primary checkout is the integration checkout and is read-only for agent-authored changes.
+- Every concurrently writable top-level agent session owns exactly one isolated Git worktree. Coordinating agents and their subagents share that worktree; subagents do not receive separate worktrees.
+- Writable OpenCode sessions must be launched through `.opencode/bin/tilewright-session new <slug>` or `.opencode/bin/tilewright-session open <slug>`. They use a `work/<slug>` branch and the launcher's exclusive session lock.
+- Writable Codex desktop tasks must be started in the app's per-chat **Worktree** mode. A Codex-managed per-chat worktree is accepted as isolated even when it uses detached `HEAD` and has no OpenCode launcher lock. Codex **Local** mode and permanent/shared Codex worktrees remain read-only unless the user explicitly establishes exclusive ownership.
+- Before the first mutation, an OpenCode coordinator must run `.opencode/bin/tilewright-session check --write` and receive `write_isolation=ready`.
+- Before the first mutation, a Codex coordinator must confirm that the task was created in Worktree mode and that `git rev-parse --absolute-git-dir` differs from `git rev-parse --path-format=absolute --git-common-dir`. Git checks alone do not grant ownership of an OpenCode or another task's worktree.
+- Codex-managed worktrees may remain at detached `HEAD`. If a persistent branch is needed, the user must explicitly create or authorize a `codex/<slug>` branch.
 - Do not read from or modify another session's worktree. Cross-session coordination happens through the user, committed branches, diffs, or later integration—not shared mutable files.
-- Worktree creation, retirement, merging, and branch deletion are human-controlled lifecycle operations. The helper refuses active, dirty, or unmerged worktrees during retirement.
+- Agents must not create, switch, move, remove, lock, unlock, or prune worktrees. OpenCode worktree lifecycle is controlled through the session helper; Codex-managed worktree lifecycle is controlled by the Codex app.
+- Handing a Codex task back to Local does not preserve write authorization while another writable agent session may be active.
 
 ## Verification
 
