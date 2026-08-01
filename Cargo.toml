@@ -1,0 +1,11 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/tilewright",
+    "crates/tilewright-cli",
+    "crates/tilewright-mcp",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MPL-2.0"
