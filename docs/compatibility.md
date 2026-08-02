@@ -72,5 +72,10 @@ Until those decisions are recorded:
 - treat public APIs as intentionally small and subject to explicit review; and
 - record the toolchain and platform used for evidence and verification.
 
+Repository CI currently runs the contributor quality gate on current stable
+Rust and GitHub's Ubuntu runner. This detects regressions in the development
+environment; it does not establish an MSRV or a supported operating-system
+matrix.
+
 Relevant unresolved decisions are maintained in
 [`open-questions.md`](open-questions.md).

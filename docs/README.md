@@ -17,6 +17,7 @@ architecture, format evidence, and accepted decisions.
 | Evidence about proprietary formats | [`formats/`](formats/rpg-maker-mz/README.md) |
 | Fixture provenance and expected behavior | [`../fixtures/README.md`](../fixtures/README.md) |
 | Contributor process and quality gates | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| GitHub branch, merge, automation, and security policy | [`maintainers/github.md`](maintainers/github.md) |
 | AI-agent operating constraints | [`../AGENTS.md`](../AGENTS.md) |
 
 Crate READMEs explain the local purpose of each package and link back here.

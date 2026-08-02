@@ -1,0 +1,55 @@
+name: Bug report
+description: Report reproducible incorrect behavior in implemented Tilewright functionality.
+title: "fix: "
+labels:
+  - "type: bug"
+  - "status: needs triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tilewright is still a scaffold. Check `docs/compatibility.md` before reporting planned behavior as a bug. Never attach proprietary project data unless you have the right to redistribute it.
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: What happened, including the complete error or diagnostic when safe to share?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What did you expect, and which documented contract supports that expectation?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide minimal synthetic steps or a link to a redistributable fixture. Redact secrets and proprietary data.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Tilewright version or commit
+      placeholder: v0.1.0 or full commit SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, architecture, and `rustc --version` when relevant.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I checked the compatibility matrix and this behavior is currently implemented.
+          required: true
+        - label: I removed secrets and material I do not have the right to redistribute.
+          required: true

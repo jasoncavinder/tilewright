@@ -1,0 +1,54 @@
+name: PR policy
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    types:
+      - edited
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    name: PR policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE_BRANCH: ${{ github.base_ref }}
+      HEAD_BRANCH: ${{ github.head_ref }}
+      HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      REPOSITORY: ${{ github.repository }}
+
+    steps:
+      - name: Enforce branch and title policy
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$BASE_BRANCH" == "main" ]]; then
+            if [[ "$HEAD_BRANCH" != "dev" || "$HEAD_REPOSITORY" != "$REPOSITORY" ]]; then
+              echo "Pull requests into main must promote this repository's dev branch." >&2
+              exit 1
+            fi
+          fi
+
+          if [[ "$BASE_BRANCH" == "dev" ]]; then
+            if [[ ! "$HEAD_BRANCH" =~ ^(feat|fix|docs|research|refactor|test|chore)/[a-z0-9][a-z0-9._/-]*$ ]] &&
+               [[ ! "$HEAD_BRANCH" =~ ^agent/[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] &&
+               [[ ! "$HEAD_BRANCH" =~ ^dependabot/ ]]; then
+              echo "Branch '$HEAD_BRANCH' does not follow the documented naming convention." >&2
+              exit 1
+            fi
+          fi
+
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|research|refactor|test|chore|ci|build|perf|revert)(\([a-z0-9._/-]+\))?!?:\ .+ ]]; then
+            echo "PR titles must use a conventional prefix such as 'feat: ', 'fix: ', or 'docs: '." >&2
+            exit 1
+          fi

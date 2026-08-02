@@ -114,7 +114,8 @@ tracked repository.
 
 ## Security reporting
 
-A private vulnerability-reporting channel has not yet been selected. It must be
-established before users are encouraged to rely on write-capable or
-network-facing releases. Until then, this document records design requirements
-but is not a substitute for a published security policy.
+GitHub private vulnerability reporting is the selected confidential reporting
+channel. The repository's [security policy](../.github/SECURITY.md) describes
+the supported-version status, report contents, and restrictions on proprietary
+or sensitive reproduction material. Public issues must not be used to disclose
+suspected vulnerabilities.
