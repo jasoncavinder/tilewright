@@ -41,7 +41,7 @@ jobs:
 
           if [[ "$BASE_BRANCH" == "dev" ]]; then
             if [[ ! "$HEAD_BRANCH" =~ ^(feat|fix|docs|research|refactor|test|chore)/[a-z0-9][a-z0-9._/-]*$ ]] &&
-               [[ ! "$HEAD_BRANCH" =~ ^agent/[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] &&
+               [[ ! "$HEAD_BRANCH" =~ ^(agent|codex)/[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] &&
                [[ ! "$HEAD_BRANCH" =~ ^dependabot/ ]]; then
               echo "Branch '$HEAD_BRANCH' does not follow the documented naming convention." >&2
               exit 1

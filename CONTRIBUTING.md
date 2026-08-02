@@ -88,6 +88,8 @@ Keep changes focused. Do not reformat unrelated files, upgrade dependencies inci
 Create short-lived branches from `dev` using `feat/`, `fix/`, `docs/`,
 `research/`, `refactor/`, `test/`, or `chore/` followed by a concise kebab-case
 description. Agent-owned branches follow the `agent/` convention in `AGENTS.md`.
+Host-provisioned Codex Worktree mode may instead supply a `codex/` branch; that
+host-managed prefix is accepted without renaming.
 
 Open normal contributions against `dev`. Pull-request titles use a conventional
 prefix such as `feat:`, `fix:`, `docs:`, `research:`, `refactor:`, `test:`,

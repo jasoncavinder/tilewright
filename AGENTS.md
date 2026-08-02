@@ -49,6 +49,9 @@ Tilewright is an open-source Rust toolkit for reading, validating, transforming,
 - Use a collision-resistant identifier such as `<task-slug>-<UTC-timestamp>-<process-id>`. The branch is `agent/<identifier>` and the path is `.worktrees/<identifier>`.
 - Unless the user specifies another base, create the worktree from the commit checked out when the session began. Uncommitted changes in the startup checkout are not inherited; do not copy, alter, or discard them.
 - A coordinator owns only a worktree it created during the current session or a per-task worktree explicitly provisioned by the host, such as Codex Worktree mode. Never adopt, reuse, enter, modify, remove, or prune another session's worktree.
+- Host-provisioned worktrees may use a host-managed branch prefix such as
+  `codex/`; preserve that branch identity and do not rename it merely to match
+  the `agent/` convention for coordinator-created worktrees.
 - Record the owned worktree's absolute path, branch, base commit, and purpose immediately. After creation, perform all reads related to the change, edits, write-capable commands, tests, reviews, and verification inside that worktree.
 - Coordinators and their subagents share one worktree. Pass its absolute path and branch to every subagent. Subagents must not create, select, commit, remove, or otherwise manage worktrees or branches.
 - A user request to change repository files implicitly authorizes the coordinator to create its worktree and make focused local commits on its owned `agent/` branch unless the user says not to commit. It does not authorize pushing, merging, rebasing shared branches, publishing, or modifying the primary checkout.
