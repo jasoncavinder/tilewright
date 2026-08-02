@@ -92,6 +92,26 @@ games, commercial plugin data, or project files without clear redistribution
 rights. Use minimal synthetic or contributor-created fixtures and document
 provenance according to [`fixtures/README.md`](../fixtures/README.md).
 
+### Local research sandbox
+
+The ignored `.local-research/` store may contain authorized, user-owned projects
+that cannot be redistributed. Agents may inspect immutable projects under
+`sources/` and perform destructive or executable experiments only in uniquely
+owned copies under `workspaces/`, as defined by `AGENTS.md` and the tracked local
+research README.
+
+Executable project material is untrusted. A process working directory does not
+confine filesystem, network, or credential access, so execution requires a host
+sandbox that enforces those boundaries or explicit user acceptance of the
+unsandboxed risk for a named experiment. Repository policy is not a process
+sandbox.
+
+This experimentation is not a supported Tilewright write path and does not
+weaken the repository boundary. Proprietary inputs and generated outputs remain
+ignored and local. Only derived observations, non-identifying provenance, safe
+procedures, and separately validated minimal synthetic fixtures may enter the
+tracked repository.
+
 ## Security reporting
 
 A private vulnerability-reporting channel has not yet been selected. It must be

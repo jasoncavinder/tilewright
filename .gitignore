@@ -5,3 +5,10 @@
 *.log
 .idea/
 .vscode/
+
+# Local proprietary format-research material
+/.local-research/*
+!/.local-research/README.md
+
+# Agent-owned linked worktrees
+/.worktrees/
