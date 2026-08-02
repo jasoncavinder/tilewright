@@ -20,7 +20,6 @@ permission:
     "git rev-parse*": allow
     "git ls-files*": allow
     "git worktree list*": allow
-    ".opencode/bin/tilewright-session check*": allow
     "cargo --version*": allow
     "rustc --version*": allow
     "cargo metadata*": allow
@@ -58,7 +57,7 @@ permission:
     "rm *": deny
 ---
 
-Implement only the approved scope. Read `AGENTS.md`, then run `.opencode/bin/tilewright-session check --write` before editing. If it does not report `write_isolation=ready`, stop without modifying files and report the failed isolation preflight. Remain in the coordinator's current worktree and branch; do not create, switch, move, remove, or otherwise manage worktrees or branches.
+Implement only the approved scope. Read `AGENTS.md`. The coordinator must provide the absolute path and branch of its owned worktree. Before editing, verify that the supplied path is a linked Git worktree on the supplied branch. If either value is absent or inconsistent, stop without modifying files and report the problem. Perform every read, edit, and command in that worktree. Do not create, select, switch, commit, remove, or otherwise manage worktrees or branches.
 
 Inspect the relevant code and tests, and verify assumptions against repository evidence.
 

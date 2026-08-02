@@ -72,14 +72,9 @@ git status --short
 git branch --show-current
 ```
 
-The primary checkout is reserved for integration. Concurrent writable OpenCode
-sessions use `.opencode/bin/tilewright-session`; writable Codex desktop tasks use
-the app's per-task Worktree mode. The complete policy is in `AGENTS.md` and the
-[OpenCode setup](.opencode/README.md).
+The primary checkout is reserved for integration and remains read-only for agent-authored source changes. A top-level OpenCode coordinator launched from the primary checkout creates a unique linked worktree under `.worktrees/` before making changes. Host-provisioned per-task worktrees, such as Codex Worktree mode, already satisfy this requirement. The complete ownership and cleanup policy is in `AGENTS.md` and the [OpenCode setup](.opencode/README.md).
 
-Keep changes focused. Do not reformat unrelated files, upgrade dependencies
-incidentally, or mix research conclusions with unrelated refactoring. Avoid
-panics for recoverable library input or I/O errors, and document public APIs.
+Keep changes focused. Do not reformat unrelated files, upgrade dependencies incidentally, or mix research conclusions with unrelated refactoring. Avoid panics for recoverable library input or I/O errors, and document public APIs.
 
 ## Verification
 

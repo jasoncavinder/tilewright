@@ -43,16 +43,22 @@ Tilewright is an open-source Rust toolkit for reading, validating, transforming,
 
 ## Concurrent top-level agent sessions
 
-- The primary checkout is the integration checkout and is read-only for agent-authored changes.
-- Every concurrently writable top-level agent session owns exactly one isolated Git worktree. Coordinating agents and their subagents share that worktree; subagents do not receive separate worktrees.
-- Writable OpenCode sessions must be launched through `.opencode/bin/tilewright-session new <slug>` or `.opencode/bin/tilewright-session open <slug>`. They use a `work/<slug>` branch and the launcher's exclusive session lock.
-- Writable Codex desktop tasks must be started in the app's per-chat **Worktree** mode. A Codex-managed per-chat worktree is accepted as isolated even when it uses detached `HEAD` and has no OpenCode launcher lock. Codex **Local** mode and permanent/shared Codex worktrees remain read-only unless the user explicitly establishes exclusive ownership.
-- Before the first mutation, an OpenCode coordinator must run `.opencode/bin/tilewright-session check --write` and receive `write_isolation=ready`.
-- Before the first mutation, a Codex coordinator must confirm that the task was created in Worktree mode and that `git rev-parse --absolute-git-dir` differs from `git rev-parse --path-format=absolute --git-common-dir`. Git checks alone do not grant ownership of an OpenCode or another task's worktree.
-- Codex-managed worktrees may remain at detached `HEAD`. If a persistent branch is needed, the user must explicitly create or authorize a `codex/<slug>` branch.
-- Do not read from or modify another session's worktree. Cross-session coordination happens through the user, committed branches, diffs, or later integration—not shared mutable files.
-- Agents must not create, switch, move, remove, lock, unlock, or prune worktrees. OpenCode worktree lifecycle is controlled through the session helper; Codex-managed worktree lifecycle is controlled by the Codex app.
-- Handing a Codex task back to Local does not preserve write authorization while another writable agent session may be active.
+- The primary checkout is the integration checkout and is read-only for agent-authored source changes.
+- OpenCode may be launched normally from the primary checkout. No launcher, session lock, or pre-created worktree is required.
+- Before its first source-file mutation, each top-level coordinator must create one uniquely named linked Git worktree under `.worktrees/` with a matching `agent/` branch. Worktree creation itself is the permitted lifecycle exception to the primary checkout's read-only rule.
+- Use a collision-resistant identifier such as `<task-slug>-<UTC-timestamp>-<process-id>`. The branch is `agent/<identifier>` and the path is `.worktrees/<identifier>`.
+- Unless the user specifies another base, create the worktree from the commit checked out when the session began. Uncommitted changes in the startup checkout are not inherited; do not copy, alter, or discard them.
+- A coordinator owns only a worktree it created during the current session or a per-task worktree explicitly provisioned by the host, such as Codex Worktree mode. Never adopt, reuse, enter, modify, remove, or prune another session's worktree.
+- Record the owned worktree's absolute path, branch, base commit, and purpose immediately. After creation, perform all reads related to the change, edits, write-capable commands, tests, reviews, and verification inside that worktree.
+- Coordinators and their subagents share one worktree. Pass its absolute path and branch to every subagent. Subagents must not create, select, commit, remove, or otherwise manage worktrees or branches.
+- A user request to change repository files implicitly authorizes the coordinator to create its worktree and make focused local commits on its owned `agent/` branch unless the user says not to commit. It does not authorize pushing, merging, rebasing shared branches, publishing, or modifying the primary checkout.
+- Make coherent checkpoint commits during longer tasks when doing so materially protects recoverable progress.
+- A coordinator may automatically remove its owned, agent-created worktree only after the requested work is complete, required verification has been inspected, all intended changes including untracked files are committed, and `git status --porcelain=v1 --untracked-files=all` is empty.
+- Before removal, record the branch and final commit SHA. Use only normal `git worktree remove <path>` from outside the owned worktree. Never use `--force` or delete the directory manually.
+- Removing a worktree preserves its branch and commits. Leave the branch in place for review or integration. Delete it only with explicit user authorization and only after proving it is merged into the intended target with `git merge-base --is-ancestor`; use normal `git branch -d`, never `-D`.
+- If implementation, verification, committing, or cleanup is incomplete or fails, preserve the worktree and report its exact path, branch, status, completed checks, and required next action.
+- Host-provisioned worktrees, including Codex Worktree mode, are cleaned up by their host unless the user explicitly authorizes another lifecycle action.
+- Cross-session coordination happens through the user, committed branches, diffs, or later integration—not shared mutable files.
 - Do not read from or modify another session's worktree, except for the narrow read-only local-research exception below.
 
 ## Shared local research evidence
@@ -98,9 +104,11 @@ Run targeted checks while iterating. Before declaring a change ready, use the `r
 
 ## Git and release safety
 
-- Inspect `git status --short` and the current branch before edits.
-- Do not commit, push, publish crates, create releases, delete branches, force-remove worktrees, or discard working-tree changes unless the user explicitly requests that operation.
-- Never use `git reset --hard`, `git clean -f`, or force deletion as a convenience.
+- Inspect `git status --short`, the current branch, and the current commit before creating or changing a worktree.
+- A request to change repository files authorizes focused local commits on the coordinator's owned `agent/` branch unless the user explicitly says not to commit.
+- Do not push, merge, rebase shared branches, publish crates, create releases, or delete branches without explicit user authorization.
+- Worktree removal is authorized only under the completed-and-clean conditions in the worktree policy above.
+- Never use `git reset --hard`, `git clean -f`, force branch deletion, force worktree removal, or manual directory deletion as a convenience.
 
 ## Available project skills
 
