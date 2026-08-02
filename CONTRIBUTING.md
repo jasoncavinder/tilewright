@@ -9,9 +9,10 @@ should make the supported behavior clearer, safer, or better tested.
 Before contributing, read:
 
 1. the [project vision](docs/vision.md);
-2. the [architecture](docs/architecture.md);
-3. the [safety model](docs/safety.md); and
-4. any applicable [architecture decisions](docs/decisions/README.md) and format
+2. the [capability roadmap](docs/capability-roadmap.md);
+3. the [architecture](docs/architecture.md);
+4. the [safety model](docs/safety.md); and
+5. any applicable [architecture decisions](docs/decisions/README.md) and format
    research.
 
 `AGENTS.md` contains the always-loaded operating rules for AI-assisted work.
@@ -35,6 +36,11 @@ when needed.
 Do not decide items listed in [open questions](docs/open-questions.md) implicitly.
 A contribution may propose a resolution, but consequential decisions require
 maintainer agreement and normally an ADR.
+
+Use the roadmap's evidence-to-support loop for format capabilities. Keep
+discovery, loading, typed understanding, validation, round-trip fidelity,
+in-memory mutation, and persistence as separate compatibility claims; progress
+in one does not silently promote the others.
 
 ## Format evidence
 

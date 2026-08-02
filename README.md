@@ -72,8 +72,9 @@ or become a dependency of this workspace.
 
 - [Documentation index](docs/README.md) — where each kind of project knowledge
   belongs.
-- [Vision and scope](docs/vision.md) — goals, non-goals, roadmap, and success
-  criteria.
+- [Vision and scope](docs/vision.md) — goals, non-goals, and success criteria.
+- [Capability roadmap](docs/capability-roadmap.md) — evidence-to-support
+  sequence, parity dimensions, and readiness gates.
 - [Architecture](docs/architecture.md) — crate boundaries and design
   constraints.
 - [Safety model](docs/safety.md) — data preservation, write safety, and MCP

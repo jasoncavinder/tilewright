@@ -8,7 +8,8 @@ architecture, format evidence, and accepted decisions.
 | Information | Canonical location |
 | --- | --- |
 | Public introduction and current maturity | Root [`README.md`](../README.md) |
-| Goals, non-goals, roadmap, and success criteria | [`vision.md`](vision.md) |
+| Goals, non-goals, and success criteria | [`vision.md`](vision.md) |
+| Evidence-to-support development sequence and gates | [`capability-roadmap.md`](capability-roadmap.md) |
 | Crate boundaries and engineering constraints | [`architecture.md`](architecture.md) |
 | Data-preservation, write, and MCP safety requirements | [`safety.md`](safety.md) |
 | Current support and compatibility terminology | [`compatibility.md`](compatibility.md) |
