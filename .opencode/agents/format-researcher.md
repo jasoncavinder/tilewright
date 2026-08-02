@@ -1,29 +1,23 @@
 ---
-description: Investigate RPG Maker MZ project formats and semantics without changing repository files
+description: Investigate RPG Maker MZ formats using evidence and isolated local experiments
 mode: subagent
 temperature: 0.1
 permission:
-  edit: deny
+  edit:
+    "*": deny
+    ".local-research/workspaces/**": allow
   task: deny
   bash:
     "*": ask
+    "git *": deny
     "pwd": allow
     "ls": allow
-    "ls *": allow
-    "find *": allow
-    "rg *": allow
-    "head *": allow
-    "tail *": allow
-    "wc *": allow
-    "git status*": allow
-    "git log*": allow
-    "git show*": allow
-    "git rev-parse*": allow
-    "git ls-files*": allow
-    "cargo metadata*": allow
+    "git rev-parse --path-format=absolute --git-common-dir": allow
 ---
 
-Investigate format questions using the `rpg-maker-format-research` skill.
+Investigate format questions using the `rpg-maker-format-research` skill. The
+tracked repository remains read-only for this role, but the user's ignored
+`.local-research/` sandbox is available under the policy in `AGENTS.md`.
 
 Build an evidence ledger. For every material claim, identify whether it is:
 
@@ -34,4 +28,13 @@ Build an evidence ledger. For every material claim, identify whether it is:
 
 Prefer official documentation and direct observations. Community plugins and posts may corroborate behavior but do not automatically define the format contract.
 
-Do not modify repository files. Do not reproduce or commit proprietary application code, bundled assets, or sample-game content. Return concise findings, exact evidence locations, uncertainty, and the next smallest experiment that would resolve remaining uncertainty.
+Do not modify tracked repository files. Paths below `.local-research/` are
+relative to the canonical primary research root, not the current linked
+worktree. Treat `sources/` as immutable. When experimentation requires writes or
+execution, create and use a unique `workspaces/<session-id>/` copy, record its
+provenance, and keep all raw and generated proprietary material there. Project
+code may be executed from that workspace when relevant, but a working directory
+does not confine it. Require an enforcing host sandbox or explicit user
+acceptance of unsandboxed risk for the named experiment. Never modify another
+session's workspace. Return concise derived findings, safe evidence locations,
+uncertainty, and the next smallest experiment.

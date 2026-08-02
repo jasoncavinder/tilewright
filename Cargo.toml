@@ -9,3 +9,4 @@ members = [
 [workspace.package]
 edition = "2024"
 license = "MPL-2.0"
+repository = "https://github.com/jasoncavinder/tilewright"

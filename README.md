@@ -1,15 +1,115 @@
 # Tilewright
 
-Open-source tooling for understanding, validating, and transforming
-tile-based RPG project data.
+[![CI](https://github.com/jasoncavinder/tilewright/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/jasoncavinder/tilewright/actions/workflows/ci.yml)
 
-## Workspace packages
+Tilewright is an open-source Rust toolkit for understanding, validating, and
+eventually transforming project data used by tile-based role-playing game
+development tools.
 
-- `tilewright`: Format-aware domain library.
-- `tilewright-cli`: Human- and script-friendly command-line interface.
-- `tilewright-mcp`: Thin Model Context Protocol adapter.
+The first compatibility target is RPG Maker MZ 1.10.0 and newer. Tilewright is
+designed around reusable project-data concepts rather than control of that
+editor or assumptions about a particular AI host. Its long-term purpose is to
+let people, scripts, and tools work through typed, high-level operations instead
+of editing unfamiliar JSON blindly. This version range is a development target,
+not a current support claim.
 
-## Architectural rule
+> [!IMPORTANT]
+> Tilewright is at the initial architecture and tooling stage. It does not yet
+> load, validate, or modify RPG Maker projects. Do not use the current binaries
+> on valuable project data expecting those capabilities.
 
-The `tilewright` library must not depend on MCP, AI models, OpenCode,
-a graphical interface, or commercial Tilewright products.
+## What Tilewright aims to provide
+
+- Project discovery and structured inspection.
+- Typed models for supported project data.
+- Contextual validation and diagnostics across files.
+- Loss-aware parsing that preserves data Tilewright does not understand.
+- Explicit, failure-safe mutation operations with preview and validation.
+- Human-friendly and machine-readable command-line output.
+- Safe, bounded domain operations through Model Context Protocol (MCP).
+- A reusable library for third-party and commercial applications.
+
+These are project goals, not claims about current functionality. See the
+[project vision](docs/vision.md) and [compatibility status](docs/compatibility.md)
+for the distinction between planned and supported behavior.
+
+## Design principles
+
+1. **Preserve unknown data.** Undocumented, version-specific, and extension
+   fields must not be silently discarded.
+2. **Require evidence for format claims.** Findings are labeled documented,
+   observed, inferred, or unknown.
+3. **Keep the library durable.** Format and domain behavior belongs in the core
+   crate; CLI and MCP crates are adapters.
+4. **Make writes explicit and failure-safe.** Read-only inspection comes before
+   mutation, and writes must eventually support validation and atomicity.
+5. **Avoid premature generalization.** Learn RPG Maker MZ concretely without
+   hard-coding assumptions that needlessly prevent future format support.
+6. **Keep AI optional.** The core library has no dependency on models, agent
+   hosts, MCP, GUI frameworks, or commercial products.
+
+## Workspace
+
+| Package | Role | Current state |
+| --- | --- | --- |
+| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Scaffold |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Scaffold |
+| [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
+
+The dependency direction is inward:
+
+```text
+tilewright-cli ──┐
+                 ├──> tilewright
+tilewright-mcp ──┘
+```
+
+The `tilewright` library must never depend on the adapter crates. Commercial
+applications live in a separate private repository and must not be copied into
+or become a dependency of this workspace.
+
+## Documentation
+
+- [Documentation index](docs/README.md) — where each kind of project knowledge
+  belongs.
+- [Vision and scope](docs/vision.md) — goals, non-goals, roadmap, and success
+  criteria.
+- [Architecture](docs/architecture.md) — crate boundaries and design
+  constraints.
+- [Safety model](docs/safety.md) — data preservation, write safety, and MCP
+  boundaries.
+- [Compatibility](docs/compatibility.md) — current status and compatibility
+  terminology.
+- [Open questions](docs/open-questions.md) — consequential decisions that have
+  deliberately not been made.
+- [RPG Maker MZ research](docs/formats/rpg-maker-mz/README.md) — evidence policy
+  and research workflow.
+- [Contributing](CONTRIBUTING.md) — development, fixture, and verification
+  expectations.
+- [Security policy](.github/SECURITY.md) — private vulnerability reporting and
+  supported-version expectations.
+- [Code of conduct](.github/CODE_OF_CONDUCT.md) — community participation and
+  enforcement expectations.
+
+Accepted architectural decisions are recorded under
+[`docs/decisions/`](docs/decisions/README.md). Tests and source code remain the
+authority for behavior that is actually implemented.
+
+## Building the scaffold
+
+Tilewright uses a Cargo workspace with a virtual root:
+
+```sh
+cargo build --workspace
+cargo test --workspace
+cargo run -p tilewright-cli -- --help
+```
+
+The CLI does not yet parse arguments, so the final command currently prints
+only the package version. Contributors should use the full verification process
+described in [CONTRIBUTING.md](CONTRIBUTING.md#verification).
+
+## License
+
+Tilewright is licensed under the [Mozilla Public License 2.0](LICENSE). This
+README summarizes project intent, not legal advice; the license text controls.

@@ -3,7 +3,9 @@ name = "tilewright-mcp"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Model Context Protocol server powered by the Tilewright library."
+readme = "README.md"
 publish = false
 
 [dependencies]

@@ -12,6 +12,10 @@ This directory keeps project-local OpenCode behavior portable and reviewable.
 
 The setup intentionally does **not** duplicate globally configured Context7 or GitHub MCP servers. OpenCode merges global and project configuration, so keeping credentials and general-purpose integrations global avoids drift and accidental secret commits.
 
+Project intent and architecture live in `docs/`, indexed by `docs/README.md`.
+Agent definitions should link to those canonical documents rather than restating
+or silently extending project decisions.
+
 It also does not add plugins or custom tools yet. Add one only after a workflow repeats enough that a command or skill cannot express it cleanly. The future `tilewright-mcp` binary should remain product code, not an OpenCode-only helper hidden in this directory.
 
 ## Commands
@@ -23,7 +27,6 @@ It also does not add plugins or custom tools yet. Add one only after a workflow 
 - `/review [scope]` — read-only review of current changes.
 - `/verify [scope]` — run targeted, read-only verification.
 - `/quality [scope]` — run the full Rust quality gate.
-- `/session-check` — report whether the current top-level session is isolated for writes.
 
 ## Optional global model binding
 
@@ -54,54 +57,55 @@ OPENCODE_EXPERIMENTAL_LSP_TOOL=true opencode
 
 If a V2 build reports LSP as configured but unavailable, that is currently a runtime limitation rather than a Tilewright configuration error.
 
-## Concurrent top-level sessions with Git worktrees
+## Agent-managed Git worktrees
 
-Writable top-level OpenCode sessions must run in separate linked worktrees. The primary checkout is reserved for integration, inspection, and human-controlled lifecycle operations. Subagents stay inside their coordinator's worktree; they do not receive separate worktrees.
-
-Commit this OpenCode setup before creating the first session so new worktrees inherit the helper and rules. From the primary checkout:
+OpenCode may be launched normally from the primary checkout:
 
 ```sh
 cd ~/Projects/tilewright-dev/tilewright
-
-# Terminal 1: create branch work/mapinfos-parser and launch OpenCode.
-.opencode/bin/tilewright-session new mapinfos-parser
-
-# Terminal 2: create an independent branch and launch another OpenCode process.
-.opencode/bin/tilewright-session new event-model
+opencode
 ```
 
-The default worktree location is the sibling directory:
+When a task requires repository changes, the top-level coordinator creates a unique linked worktree under the ignored `.worktrees/` directory and a matching `agent/` branch. No wrapper, launcher lock, or pre-created worktree is required.
 
-```text
-~/Projects/tilewright-dev/tilewright-worktrees/<slug>/
-```
-
-Override it with `TILEWRIGHT_WORKTREE_ROOT` when needed. Session slugs use lowercase letters, digits, and hyphens; branches use `work/<slug>`.
-
-Useful lifecycle commands:
+A representative lifecycle is:
 
 ```sh
-# Show worktrees and active/stale launcher locks.
-.opencode/bin/tilewright-session list
+mkdir -p .worktrees
 
-# Verify the current OpenCode process is safe to write.
-.opencode/bin/tilewright-session check --write
+session_id="mapinfos-parser-$(date -u +%Y%m%d-%H%M%S)-$$"
+base_commit="$(git rev-parse HEAD)"
 
-# Reopen an existing worktree after its prior OpenCode process exits.
-.opencode/bin/tilewright-session open mapinfos-parser
-
-# After work/mapinfos-parser has been integrated into main, safely remove it.
-.opencode/bin/tilewright-session retire mapinfos-parser
+git worktree add \
+  -b "agent/$session_id" \
+  ".worktrees/$session_id" \
+  "$base_commit"
 ```
 
-The launcher uses a lock under the repository's shared Git directory so a second launcher cannot open the same session worktree concurrently. `retire` refuses to proceed while the session is active, while the worktree is dirty, or while its branch is not fully merged into the selected base. It never force-removes a worktree.
+After creation, the coordinator records the absolute path, branch, base commit, and task purpose. All implementation, subagent work, review, tests, and verification use that worktree. The primary checkout remains read-only for agent-authored source changes.
 
-Starting `opencode` manually inside a linked worktree does not establish the launcher lock and therefore fails the write preflight. Use `tilewright-session open <slug>` instead.
+The OpenCode process remains rooted at the directory where it was launched, so the coordinator must use the owned worktree's absolute path for file tools and the worktree as the working directory for commands. Every subagent receives that path and branch explicitly.
+
+When work is complete, verified, committed, and clean, the coordinator records the final commit SHA and removes only the worktree:
+
+```sh
+git -C ".worktrees/$session_id" \
+  status --porcelain=v1 --untracked-files=all
+
+git worktree remove ".worktrees/$session_id"
+```
+
+Normal `git worktree remove` refuses a dirty worktree. Agents must never use `--force` or manually delete a worktree directory. Removing a worktree preserves its `agent/` branch and commits for review and integration.
+
+Branches are separate from worktrees. An `agent/` branch may be deleted only with explicit user authorization after proving it is merged into the intended target:
+
+```sh
+git merge-base --is-ancestor "agent/$session_id" dev
+git branch -d "agent/$session_id"
+```
+
+If work, verification, committing, or cleanup is incomplete, the coordinator preserves the worktree and reports its path, branch, status, and next required action. See `AGENTS.md` for the complete ownership and safety policy.
 
 ## Codex desktop interoperability
 
-The OpenCode session launcher and its locks apply only to OpenCode sessions.
-Writable Codex desktop tasks use the app's per-chat Worktree mode instead.
-Codex Local mode and permanent/shared Codex worktrees are not automatically
-authorized for agent-authored changes. See the root `AGENTS.md` for the common
-isolation policy.
+A Codex desktop task created in per-chat Worktree mode already owns an isolated worktree and must not create a nested one. Its host manages that worktree's lifecycle unless the user explicitly authorizes otherwise. Codex Local mode does not establish isolated ownership by itself. See `AGENTS.md` for the common policy.

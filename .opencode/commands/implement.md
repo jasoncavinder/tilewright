@@ -1,16 +1,12 @@
 ---
 description: Implement an approved Tilewright Rust task
-agent: rust-implementer
+agent: tilewright
 ---
-
-Current writable-session preflight:
-
-!`.opencode/bin/tilewright-session check --write 2>&1 || true`
 
 Implement this approved task:
 
 $ARGUMENTS
 
-If the preflight does not report `write_isolation=ready`, stop without editing and tell the user to relaunch from the primary checkout with `.opencode/bin/tilewright-session new <slug>`.
+Follow the complete coordinator workflow in `AGENTS.md`. Create and record an owned worktree before the first source mutation, delegate approved Rust implementation to `rust-implementer` with the absolute worktree path and branch, obtain independent review when appropriate, run applicable verification, make focused local commits, and clean up the worktree only when every completion condition is satisfied.
 
-Verify important assumptions against the repository. Follow `AGENTS.md`, use relevant project skills, add focused tests, and run applicable checks. Do not commit, push, publish, or expand the scope without explaining why.
+Do not push, merge, publish, alter unrelated files, or remove an incomplete or dirty worktree.

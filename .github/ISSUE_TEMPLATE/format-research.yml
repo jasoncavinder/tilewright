@@ -1,0 +1,42 @@
+name: Format research question
+description: Propose an evidence-first RPG Maker MZ format investigation.
+title: "research: "
+labels:
+  - "area: format research"
+  - "status: needs triage"
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Exact format question
+      description: Separate the observed file shape from the meaning or invariant being investigated.
+    validations:
+      required: true
+  - type: textarea
+    id: known
+    attributes:
+      label: What is currently known
+      description: Classify each material claim as documented, observed, inferred, or unknown.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Safe evidence description
+      description: Describe provenance and locations without pasting proprietary code, assets, or project data.
+    validations:
+      required: true
+  - type: textarea
+    id: experiment
+    attributes:
+      label: Smallest distinguishing experiment
+      description: Explain the minimal controlled observation that could distinguish the remaining alternatives.
+    validations:
+      required: true
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Evidence handling
+      options:
+        - label: I will not attach or commit material that I do not have the right to redistribute.
+          required: true

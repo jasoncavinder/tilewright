@@ -1,0 +1,47 @@
+name: Feature proposal
+description: Propose a focused capability or improvement consistent with Tilewright's scope.
+title: "feat: "
+labels:
+  - "type: enhancement"
+  - "status: needs triage"
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What concrete user or contributor problem should Tilewright solve?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe observable behavior rather than an implementation chosen in advance.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - Core library
+        - Command-line interface
+        - MCP adapter
+        - Format research
+        - Documentation or contributor tooling
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Compatibility and safety considerations
+      description: Address unknown data, format evidence, write behavior, API stability, and project boundaries as applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and smallest experiment
+      description: What alternatives exist, and what is the smallest step that would validate the proposal?
+    validations:
+      required: true
