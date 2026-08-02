@@ -67,9 +67,11 @@ CI runs the contributor quality gate on current stable Rust and GitHub's Ubuntu
 runner. This is a development gate, not a minimum-supported-Rust-version or
 platform-support promise. Those compatibility decisions remain open.
 
-Pull requests also receive dependency review and policy checks. GitHub CodeQL
-default setup scans Rust, Dependabot monitors Cargo and GitHub Actions, and
-tracked action references are pinned to full commit SHAs.
+Pull requests also receive dependency review and policy checks. Clippy provides
+the Rust static-analysis gate, Dependabot monitors Cargo and GitHub Actions, and
+tracked action references are pinned to full commit SHAs. GitHub's live default
+setup API did not accept Rust when this repository was configured, so CodeQL is
+deferred until it is available here.
 
 No workflow publishes crates, creates GitHub releases, or distributes binaries.
 Release automation should be added only after the versioning, platform, and
@@ -83,7 +85,8 @@ The intended repository settings are:
   pull requests.
 - Dependabot alerts and security updates are enabled.
 - Secret scanning and push protection are enabled.
-- CodeQL default setup is enabled for Rust.
+- CodeQL default setup is deferred because this repository does not currently
+  accept Rust as a supported default-setup language.
 - Private vulnerability reporting is enabled and documented in
   [the security policy](../../.github/SECURITY.md).
 - Issues are enabled; wiki, Projects, and Discussions are disabled initially.
