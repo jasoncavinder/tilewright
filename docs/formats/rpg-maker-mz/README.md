@@ -7,6 +7,17 @@ application code, bundled assets, or sample-game content.
 No file-format behavior is currently documented here as supported. Research
 must precede implementation claims.
 
+## Focused research
+
+- [Project detection and high-level layout](project-layout.md) records the
+  minimum evidence-backed recognition contract, the documented project-data
+  inventory, and the discovery behavior that remains unjustified.
+- [Project-layout research coverage](project-layout-coverage.md) distinguishes
+  well-characterized standard families from lifecycle, version, deployment,
+  conversion, and extension cases that still need evidence.
+- [Research ledger](research-ledger.md) contains the claim-level evidence,
+  source records, conflicts, and next controlled experiments.
+
 ## Claim classifications
 
 Every material format conclusion must use one of these labels:
@@ -59,6 +70,9 @@ read-only behavior, or a refused write over invented certainty.
   copyrighted passages.
 - Identify an observation by editor/runtime version, controlled action, and a
   sanitized fixture or reproducible procedure.
+- Use immutable inputs from `.local-research/sources/` and a uniquely owned copy
+  under `.local-research/workspaces/` for destructive or executable experiments.
+  Record the copy's provenance and change one concept at a time.
 - Do not commit personal project paths, proprietary application source, vendor
   assets, default databases, sample projects, or commercial plugin content.
 - Summarize runtime behavior rather than copying proprietary code.
@@ -70,7 +84,7 @@ read-only behavior, or a refused write over invented certainty.
 
 Documents may be added as evidence accumulates for:
 
-- project layout and project detection;
+- [project layout and project detection](project-layout.md);
 - data-file inventory and version differences;
 - `System.json` and `MapInfos.json`;
 - maps, events, pages, and event commands;
