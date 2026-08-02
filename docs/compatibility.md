@@ -2,6 +2,9 @@
 
 Tilewright's maintained RPG Maker MZ target is editor version 1.10.0 and newer,
 as recorded in [ADR 0002](decisions/0002-rpg-maker-mz-version-floor.md).
+Its long-term compatibility target is version-scoped stock authoring-data
+parity, as recorded in
+[ADR 0003](decisions/0003-stock-authoring-data-parity.md).
 No project-format capability is supported yet. The version floor bounds planned
 work; it does not make 1.10.0 or any newer release automatically compatible.
 Compatibility claims must be backed by recorded evidence, fixtures, and tests
@@ -58,6 +61,8 @@ whether a candidate falls inside the maintained range.
 
 Reading, semantic interpretation, round-trip fidelity, and safe mutation are
 separate compatibility claims. Support for one does not imply the others.
+The [capability roadmap](capability-roadmap.md) defines the more detailed
+dimensions and the evidence-to-support exit gate.
 
 ## Versioning and publishing
 

@@ -80,20 +80,32 @@ is identified later.
 
 ## Development sequence
 
-The sequence is deliberately risk-ordered; research may change priorities.
+The sequence is deliberately risk-ordered; research may change priorities. The
+detailed [capability roadmap](capability-roadmap.md) defines the independent
+compatibility dimensions, evidence-to-support gates, and implementation
+milestones. [ADR 0003](decisions/0003-stock-authoring-data-parity.md) defines the
+long-term target as stock authoring-data parity for explicitly supported
+versions and capabilities.
 
 1. **Foundation and format orientation:** document boundaries, establish
    research and fixture practices, choose a supported Rust version, and add CI.
-2. **Read-only inspection:** detect projects, load basic project files, list
-   maps and events, summarize data, and validate file presence and basic shape.
-3. **Typed models and diagnostics:** add stable identifiers, incremental domain
-   types, source context, and project-wide validation reports.
-4. **Lossless round trips:** establish the raw/typed layering and unknown-field
-   strategy, then verify semantic and formatting preservation.
+2. **Read-only discovery:** detect project candidates and inventory exact paths
+   without assuming that known-looking files are valid or required.
+3. **Lossless loading foundation:** establish the raw/typed layering,
+   unknown-field strategy, source context, and explicit fidelity guarantees
+   before broad parser APIs.
+4. **Typed vertical slices and diagnostics:** add stable identifiers,
+   incremental domain types, project-wide validation, and supported round trips
+   one evidenced data area at a time.
 5. **Controlled mutation:** add previewable, validated, atomic operations for
    selected domain changes.
 6. **Adapter expansion:** expose stable library behavior through scriptable CLI
    output and bounded MCP tools with explicit write controls.
+
+These phases overlap through bounded vertical slices. Tilewright does not need
+exhaustive knowledge of every plugin or future file before implementing an
+evidenced capability, but no slice becomes supported until its contract,
+fixtures, tests, preservation behavior, and compatibility scope are explicit.
 
 ## Definition of success
 
