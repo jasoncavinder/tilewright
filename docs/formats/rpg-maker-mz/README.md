@@ -1,11 +1,19 @@
 # RPG Maker MZ format research
 
-RPG Maker MZ is Tilewright's first compatibility target. It is proprietary, so
-this directory records evidence and uncertainty without reproducing proprietary
-application code, bundled assets, or sample-game content.
+RPG Maker MZ 1.10.0 and newer is Tilewright's maintained compatibility target,
+as recorded in [ADR 0002](../../decisions/0002-rpg-maker-mz-version-floor.md).
+It is proprietary, so this directory records evidence and uncertainty without
+reproducing proprietary application code, bundled assets, or sample-game
+content.
 
 No file-format behavior is currently documented here as supported. Research
 must precede implementation claims.
+
+Maintainer-led research does not target versions older than 1.10.0. Contributions
+for older versions remain welcome when they provide their own bounded evidence,
+fixtures or generated test data, tests, and compatibility documentation. A
+newer version is not automatically supported: every material claim still names
+the version actually documented or observed.
 
 ## Focused research
 

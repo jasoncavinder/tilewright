@@ -9,6 +9,12 @@ The breadth and remaining gaps are summarized separately in the
 
 ## Scope and evidence boundary
 
+Tilewright's maintained target begins at RPG Maker MZ 1.10.0 under
+[ADR 0002](../../decisions/0002-rpg-maker-mz-version-floor.md). Older releases
+are outside maintainer-led research and are not blockers for this contract.
+Newer releases remain inside the intended range but require named evidence and
+tests before any behavior is called supported.
+
 - **Documented:** RPG Maker MZ's official help tells a user to open a project by
   selecting `Game` (or `game.rmmzproject`) inside the project folder.
 - **Documented:** Official conversion and reference material names a useful
@@ -39,7 +45,9 @@ complete, parseable, compatible, or supported project.
 | Extra files or directories | Plugin extension data is **documented** | **Permitted**, with contents **unknown** | Do not reject a candidate because unknown entries exist. |
 
 No detection signal has yet been proved version-dependent or version-invariant.
-Version dependence remains **unknown** until named editor versions are observed.
+Version dependence among the maintained 1.10.0+ range remains **unknown** until
+additional named editor versions are observed. The floor cannot be enforced from
+the marker string alone.
 
 ### Smallest safe behavior to implement next
 
@@ -426,7 +434,8 @@ reference, and one silent referenced-resource deletion establish a strong MZ
 1.10.0 local baseline. Separate owned copies should next test deeper asset/map
 hierarchy, parent deletion, and multiple-hole selection. The capital-G marker
 test still needs a case-sensitive filesystem. Other deployment targets and
-another named editor version should follow. This will resolve or extend:
+another named editor version at or above 1.10.0 should follow. This will resolve
+or extend:
 
 - reference cleanup and runtime behavior beyond the one observed dangling Show
   Picture string;

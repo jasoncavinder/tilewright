@@ -25,6 +25,15 @@ Use evidence in this order:
 
 Never paste proprietary application code or assets into the repository. Summarize behavior and record source locations instead.
 
+## Maintained version scope
+
+Maintainer-led Tilewright research targets RPG Maker MZ 1.10.0 and newer under
+`docs/decisions/0002-rpg-maker-mz-version-floor.md`. Investigate and label one
+named version at a time; do not generalize an observation automatically to later
+versions. Treat pre-1.10.0 research as contributor-led scope that needs its own
+evidence, legal fixtures or generated test data, regression tests, and explicit
+compatibility review.
+
 ## Bounded workflow
 
 1. State the exact question and the behavior that depends on it.

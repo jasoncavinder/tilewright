@@ -4,11 +4,12 @@ Tilewright is an open-source Rust toolkit for understanding, validating, and
 eventually transforming project data used by tile-based role-playing game
 development tools.
 
-The first compatibility target is RPG Maker MZ. Tilewright is designed around
-reusable project-data concepts rather than control of that editor or assumptions
-about a particular AI host. Its long-term purpose is to let people, scripts, and
-tools work through typed, high-level operations instead of editing unfamiliar
-JSON blindly.
+The first compatibility target is RPG Maker MZ 1.10.0 and newer. Tilewright is
+designed around reusable project-data concepts rather than control of that
+editor or assumptions about a particular AI host. Its long-term purpose is to
+let people, scripts, and tools work through typed, high-level operations instead
+of editing unfamiliar JSON blindly. This version range is a development target,
+not a current support claim.
 
 > [!IMPORTANT]
 > Tilewright is at the initial architecture and tooling stage. It does not yet

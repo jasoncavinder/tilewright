@@ -3,27 +3,34 @@
 This ledger indexes active and completed format investigations. Product intent
 is not evidence of proprietary format behavior.
 
+Maintainer-led research targets RPG Maker MZ 1.10.0 and newer under
+[ADR 0002](../../decisions/0002-rpg-maker-mz-version-floor.md). Evidence remains
+version-specific: the target range does not convert a 1.10.0 observation into a
+claim about every later release. Older-version contributions may add separate
+records and compatibility scope.
+
 ## Investigation index
 
 | ID | Question | Status | Primary classification | Last updated |
 | --- | --- | --- | --- | --- |
-| [`mz-project-detection-001`](#mz-project-detection-001-what-minimum-evidence-identifies-an-rpg-maker-mz-project-root) | What minimum evidence identifies an RPG Maker MZ project root? | Active | Documented and observed for MZ 1.10.0; other versions unresolved | 2026-08-01 |
+| [`mz-project-detection-001`](#mz-project-detection-001-what-minimum-evidence-identifies-an-rpg-maker-mz-project-root) | What minimum evidence identifies an RPG Maker MZ project root? | Active | Documented and observed for MZ 1.10.0; later target versions unresolved | 2026-08-01 |
 | [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-01 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
 [`project-layout coverage matrix`](project-layout-coverage.md). Both
-investigations remain active until direct observations cover named RPG Maker MZ
-versions and deployment targets.
+investigations remain active while required behaviors, later target versions,
+and deployment targets lack direct observations.
 
 ## `mz-project-detection-001`: What minimum evidence identifies an RPG Maker MZ project root?
 
 - **Status:** Active
 - **Behavior depending on this:** Read-only project-root recognition and
   discovery diagnostics.
-- **Scope:** RPG Maker MZ authoring-project roots; official online material and
-  the version 1.0.0 script-reference suite; no claim about damaged projects,
-  converted projects, deployment packages, or later editor versions.
+- **Scope:** RPG Maker MZ 1.10.0+ authoring-project roots; direct observations
+  currently cover 1.10.0, supplemented by official online material and the
+  version 1.0.0 script-reference suite. No claim about damaged projects,
+  converted projects, deployment packages, or later target versions.
 - **Last updated:** 2026-08-01
 
 ### Evidence ledger
@@ -39,7 +46,7 @@ versions and deployment targets.
 | RPG Maker MZ 1.10.0 rejects a zero-byte regular `game.rmmzproject` and does not open the otherwise unchanged Basic project. | `MZ-1.10.0-EMPTY-MARKER-2026-08-01` | Observed | High for this exact malformed form: the experiment changes only marker contents, filesystem inspection confirms zero bytes, and the editor reports that it cannot read the marker. | Nonempty malformed contents, another version string, added whitespace, encoding changes, and other editor versions remain untested. |
 | RPG Maker MZ 1.10.0 opens the otherwise unchanged Basic project when the marker is changed to same-length `RPGMZ 1.10.1`, and opening does not rewrite the marker. | `MZ-1.10.0-ALTERED-VERSION-MARKER-2026-08-01` | Observed | High for this exact alternate value: only the final byte differs from the generated form, the editor opens without error, and read-only inspection confirms the value remains unchanged afterward. | The editor may parse a version-shaped suffix, ignore some or all suffix bytes, or apply rules not distinguished by this experiment. |
 | RPG Maker MZ 1.10.0 opens an otherwise unchanged Basic project whose marker is renamed on disk to capital-G `Game.rmmzproject`, without warning or rewriting it. | `MZ-1.10.0-CAPITAL-G-MARKER-2026-08-01` | Observed | High for this environment and spelling because the one-change result and post-open filesystem inspection agree. | Lowercase lookup resolves the capital-G entry on the observed volume, so editor case handling is not isolated from case-insensitive filesystem behavior. |
-| Marker contents provide a stable cross-version version contract suitable for general detection. | Only one editor version has been observed. | Unknown | Low: the 1.10.0 value is promising but cannot establish a grammar or compatibility policy. | Controlled observations of older/later versions and altered marker contents are required. |
+| Marker contents provide a stable cross-version version contract suitable for general detection. | Only one editor version has been observed. | Unknown | Low: the 1.10.0 value is promising but cannot establish a grammar or compatibility policy. | Controlled observations of later target versions and altered marker contents are required; pre-1.10.0 coverage is outside maintainer-led scope. |
 | The default-option MZ 1.10.0 Basic Web deployment omits `game.rmmzproject` while retaining the authoring root's runtime-shaped files. | `MZ-HELP-DEPLOY-2026-08-01`, `MZ-1.10.0-BASIC-WEB-DEPLOY-2026-08-01` | Documented and Observed | High for this target and configuration: the deployment action and complete path/content comparison agree. | Other targets, deployment options, projects, and editor versions may include or transform different files. |
 | Every deployment package can be distinguished from every authoring project solely by marker absence. | Only one target/configuration has been observed. | Unknown | Low: the Web observation supports a narrow negative test but not a universal deployment rule. | A copied marker, another target, or another editor version could invalidate the generalization. |
 | A read-only detector may safely report an exact lowercase marker-bearing directory as an MZ **candidate** without claiming it is complete, parseable, compatible, or supported. | Inference from `MZ-HELP-OPEN-2026-08-01`, `MZ-1.10.0-FRESH-4-2026-08-01`, and Tilewright's compatibility vocabulary. | Inferred | High for a candidate-level result: documented behavior and direct observation agree while the status remains bounded. | False positives remain possible when a marker is copied or renamed. |
@@ -269,7 +276,8 @@ Repeat the capital-G marker experiment on a case-sensitive filesystem to
 separate editor behavior from pathname lookup behavior. Restore the exact marker
 before removing one possible companion at a time. Deploy the unchanged Basic
 project to the other available targets and repeat the untouched-project manifest
-on at least one other named MZ version before defining a cross-version grammar.
+on at least one other named MZ version at or above 1.10.0 before defining a
+cross-version grammar for the maintained range.
 Do not commit generated projects or vendor assets.
 
 ### Implementation implications
@@ -1403,8 +1411,8 @@ empty nested directory and dangling Show Picture string. The next smallest
 layout experiment should use a fresh owned copy to test one deeper asset
 subdirectory or one parent-map deletion, whichever is needed before the next
 loader boundary. Also test multiple map holes, marker casing on a case-sensitive
-filesystem, remaining deployment targets, and another named MZ version. Never
-commit vendor material.
+filesystem, remaining deployment targets, and another named MZ version at or
+above 1.10.0. Never commit vendor material.
 
 ### Implementation implications
 

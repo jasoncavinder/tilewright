@@ -23,7 +23,12 @@ declared.
 
 ## Format compatibility
 
-- Which RPG Maker MZ versions will be observed and tested first?
+The initial version range is resolved by
+[ADR 0002](decisions/0002-rpg-maker-mz-version-floor.md): maintainer-led work
+targets RPG Maker MZ 1.10.0 and newer. The following details remain open:
+
+- Which named versions at or above 1.10.0 need independent observations and
+  regression coverage for each behavior?
 - What project and runtime artifacts are authoritative for each behavior?
 - How will version differences and plugin-defined fields be represented?
 - Is parsing strict, permissive, or configurable?

@@ -6,6 +6,11 @@ implemented or supported behavior. Claim-level evidence remains in the
 [research ledger](research-ledger.md), and the proposed discovery contract is in
 [project-layout.md](project-layout.md).
 
+The maintained target begins at MZ 1.10.0 under
+[ADR 0002](../../decisions/0002-rpg-maker-mz-version-floor.md). Pre-1.10.0 gaps
+are intentionally outside maintainer-led scope; gaps in later target versions
+remain relevant before forward compatibility can be claimed.
+
 ## Overall assessment
 
 The minimum read-only discovery contract is well evidenced for fresh RPG Maker
@@ -101,8 +106,9 @@ wait for controlled observations in this order:
 5. **Deployment matrix:** repeat Web with unused-file filtering and controlled
    contributor assets, then inspect Windows and macOS default outputs; test
    encryption only with contributor-created media.
-6. **Version and conversion matrix:** observe another named MZ version and one
-   authorized user-owned MV-to-MZ conversion.
+6. **Version and conversion matrix:** observe another named MZ version at or
+   above 1.10.0 and one authorized user-owned MV-to-MZ conversion whose resulting
+   MZ project falls inside the maintained range.
 7. **Filesystem matrix:** repeat marker-casing and filename-collision tests on a
    case-sensitive filesystem.
 

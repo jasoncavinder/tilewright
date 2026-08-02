@@ -7,10 +7,12 @@ tools understandable and safely operable through reusable Rust APIs. It aims to
 replace blind raw-JSON editing with explicit discovery, inspection, validation,
 and eventually controlled transformation.
 
-RPG Maker MZ is the first compatibility target. The durable product is not an
-editor automation script or a single integration: it is a clean, format-aware
-library that can support people, command-line automation, AI systems, editor
-integrations, and applications.
+RPG Maker MZ 1.10.0 and newer is the first maintained compatibility target. The
+durable product is not an editor automation script or a single integration: it
+is a clean, format-aware library that can support people, command-line
+automation, AI systems, editor integrations, and applications. Older MZ
+versions are outside the maintainer-led scope for now, although evidence-backed
+contributions may propose expanding it.
 
 ## Who Tilewright is for
 

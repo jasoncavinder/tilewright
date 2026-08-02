@@ -1,8 +1,11 @@
 # Compatibility and support status
 
-Tilewright's first target is RPG Maker MZ, but no exact editor version or project
-format version is supported yet. Compatibility claims must be backed by recorded
-evidence, fixtures, and tests rather than inferred from the product name.
+Tilewright's maintained RPG Maker MZ target is editor version 1.10.0 and newer,
+as recorded in [ADR 0002](decisions/0002-rpg-maker-mz-version-floor.md).
+No project-format capability is supported yet. The version floor bounds planned
+work; it does not make 1.10.0 or any newer release automatically compatible.
+Compatibility claims must be backed by recorded evidence, fixtures, and tests
+rather than inferred from the product name or marker contents.
 
 ## Status vocabulary
 
@@ -27,7 +30,8 @@ not use “supported” to mean only that one file happened to parse.
 | Core `tilewright` package | Scaffold | Exposes only its package version. |
 | `tilewright` CLI executable | Scaffold | Prints its package version; it does not parse commands. |
 | `tilewright-mcp` server | Scaffold | Not yet an MCP server; it prints its package version. |
-| RPG Maker MZ project detection | Not implemented | Detection criteria and a tested version matrix remain unknown. |
+| RPG Maker MZ 1.10.0+ project detection | Not implemented | A candidate-recognition contract is researched for 1.10.0, but no detector or tested forward-version matrix exists. |
+| RPG Maker MZ versions before 1.10.0 | Unsupported | Outside the maintained target. Evidence-backed contributor proposals to expand the matrix are welcome. |
 | Project-file parsing | Not implemented | No format models or parsers exist. |
 | Project validation | Not implemented | No validation contract exists. |
 | Lossless round trips | Not implemented | Representation and fidelity requirements remain open. |
@@ -47,6 +51,10 @@ A supported behavior needs:
 4. positive, negative, and preservation tests appropriate to the behavior;
 5. documented error and unknown-data behavior; and
 6. a statement of what remains unsupported or unknown.
+
+The lower bound is not a version-detection rule. Current evidence shows that MZ
+1.10.0 accepts an altered marker string, so marker contents cannot yet prove
+whether a candidate falls inside the maintained range.
 
 Reading, semantic interpretation, round-trip fidelity, and safe mutation are
 separate compatibility claims. Support for one does not imply the others.

@@ -52,6 +52,13 @@ Separate a field's JSON shape from its meaning and invariants. Preserve unknown
 fields by default and do not commit proprietary application code, assets, or
 sample-game content as evidence.
 
+Maintainer-led RPG Maker MZ work targets version 1.10.0 and newer under
+[ADR 0002](docs/decisions/0002-rpg-maker-mz-version-floor.md). Contributions
+for older versions are welcome when they supply a bounded version contract,
+evidence, legal fixtures or generated data, regression tests, and matching
+compatibility documentation; they must not weaken the established 1.10.0+
+behavior.
+
 ## Fixtures
 
 Follow [`fixtures/README.md`](fixtures/README.md). Every nontrivial fixture must
