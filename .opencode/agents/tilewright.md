@@ -3,7 +3,10 @@ description: Coordinate Tilewright research, architecture, implementation, revie
 mode: primary
 temperature: 0.2
 permission:
-  edit: ask
+  edit:
+    "*": ask
+    ".local-research/**": deny
+    ".local-research/workspaces/**": allow
   task:
     "*": deny
     format-researcher: allow

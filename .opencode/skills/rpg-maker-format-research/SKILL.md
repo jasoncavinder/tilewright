@@ -25,6 +25,27 @@ Use evidence in this order:
 
 Never paste proprietary application code or assets into the repository. Summarize behavior and record source locations instead.
 
+## Local experiment sandbox
+
+Authorized user-owned projects under `.local-research/sources/` are immutable
+research inputs. Inspect them directly, but perform any write or execution in a
+collision-resistant, per-session copy under `.local-research/workspaces/`.
+Create the directory only if it does not exist and record an ownership manifest
+with the session ID, coordinator, creation time, canonical source, provenance,
+purpose, and copy method before experimenting.
+
+Within the assigned workspace, agents may modify or delete files and run project
+scripts, plugins, binaries, runtimes, and generated games when needed. Treat all
+executable material as untrusted. A working directory is not containment: use a
+host sandbox that confines writes, network, and credentials, or obtain explicit
+user acceptance of unsandboxed risk for the named experiment. Do not follow or
+create escaping symlinks.
+
+Raw inputs and generated outputs stay ignored. Never force-add them or reproduce
+them in tracked source, fixtures, documentation, patches, logs, screenshots, or
+commit messages. Commit only derived observations, non-identifying provenance,
+safe procedures, and independently legal synthetic fixtures.
+
 ## Bounded workflow
 
 1. State the exact question and the behavior that depends on it.
@@ -32,8 +53,12 @@ Never paste proprietary application code or assets into the repository. Summariz
 3. Build an evidence ledger with columns: claim, evidence, classification, confidence, and unresolved alternatives.
 4. Separate syntax from semantics. Knowing a JSON field's type does not prove its meaning or invariants.
 5. Identify unknown-field, ordering, identifier, encoding, and cross-file-reference risks.
-6. Propose the smallest controlled experiment needed to resolve each important unknown.
-7. Recommend a library contract only for behavior supported by the evidence.
+6. Resolve the canonical primary research root and atomically create and record
+   an owned local experiment workspace when direct observation requires mutation
+   or execution.
+7. Run the smallest controlled experiment needed to resolve each important
+   unknown, changing one concept at a time.
+8. Recommend a library contract only for behavior supported by the evidence.
 
 ## Implementation implications
 

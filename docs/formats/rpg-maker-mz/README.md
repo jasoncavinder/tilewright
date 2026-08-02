@@ -59,6 +59,9 @@ read-only behavior, or a refused write over invented certainty.
   copyrighted passages.
 - Identify an observation by editor/runtime version, controlled action, and a
   sanitized fixture or reproducible procedure.
+- Use immutable inputs from `.local-research/sources/` and a uniquely owned copy
+  under `.local-research/workspaces/` for destructive or executable experiments.
+  Record the copy's provenance and change one concept at a time.
 - Do not commit personal project paths, proprietary application source, vendor
   assets, default databases, sample projects, or commercial plugin content.
 - Summarize runtime behavior rather than copying proprietary code.

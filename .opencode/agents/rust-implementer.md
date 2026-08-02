@@ -3,7 +3,9 @@ description: Implement approved Tilewright Rust changes with focused tests and b
 mode: subagent
 temperature: 0.1
 permission:
-  edit: allow
+  edit:
+    "*": allow
+    ".local-research/**": deny
   task: deny
   bash:
     "*": ask

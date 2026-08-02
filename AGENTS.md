@@ -59,44 +59,64 @@ Tilewright is an open-source Rust toolkit for reading, validating, transforming,
 - If implementation, verification, committing, or cleanup is incomplete or fails, preserve the worktree and report its exact path, branch, status, completed checks, and required next action.
 - Host-provisioned worktrees, including Codex Worktree mode, are cleaned up by their host unless the user explicitly authorizes another lifecycle action.
 - Cross-session coordination happens through the user, committed branches, diffs, or later integration—not shared mutable files.
-- Do not read from or modify another session's worktree, except for the narrow read-only local-research exception below.
+- Do not read from or modify another session's worktree, except for the shared local-research sandbox below.
 
-## Shared local research evidence
+## Shared local research sandbox
 
 The primary integration checkout's `.local-research/` directory is a
-user-managed, ignored evidence store. It is a narrow exception to the rule
-against reading another checkout.
+user-managed, ignored evidence and experiment store. It is a narrow exception to
+the rules against cross-worktree access and mutation of the primary checkout.
+Its tracked `README.md` defines the local layout. Resolve the canonical primary
+checkout from Git's common directory; never guess the store from a linked
+worktree's relative path. A host that cannot access the canonical directory must
+stop and ask the user to grant that exact access.
 
-An agent working in an isolated worktree may read from that directory only when:
+Material placed under `.local-research/sources/` is standing authorization for
+agents to inspect it for relevant Tilewright research. Treat source projects as
+immutable user-owned inputs: do not edit, rename, delete, execute, or change
+permissions in `sources/`.
 
-- the user explicitly requests research using those materials;
-- the exact research directory and its provenance are identified;
-- the directory is ignored by Git;
-- access is limited to the requested `.local-research/` subtree; and
-- the filesystem sandbox grants read access to the directory.
+For controlled experiments, create a collision-resistant per-session directory
+under `.local-research/workspaces/`, copy only the needed source project into it,
+and fail rather than reuse an existing directory. Record an ownership manifest
+inside it with the session identifier, coordinator, creation time, canonical
+source path, provenance, purpose, and copy method. A coordinator and its
+subagents may freely create, modify, rename, delete, and change permissions
+inside their own workspace.
 
-This exception is strictly read-only. Agents must not:
+Scripts, plugins, binaries, the RPG Maker runtime, and project code are untrusted.
+A working directory is not containment. Execute them only when relevant and
+either the host sandbox demonstrably restricts writes to the assigned workspace,
+blocks unauthorized network access, and withholds credentials, or the user
+explicitly accepts the additional unsandboxed risk for that named experiment.
+Never claim that OpenCode or this policy alone provides process isolation. Never
+follow or create a symlink that resolves outside the assigned workspace.
 
-- create, modify, rename, delete, move, execute, or change permissions on files
-  in the shared research directory;
-- stage ignored material with `git add -f`;
-- copy proprietary contents into tracked paths, fixtures, patches, tool output,
-  or documentation;
-- inspect other untracked files or other areas of the primary checkout; or
-- follow symlinks that resolve outside the authorized research root.
+Agents must never:
 
-Agents should begin with path, file-type, size, and metadata manifests. File
-contents may be inspected only when necessary for the bounded research question.
-Committed findings must contain derived observations and exact provenance, not
-proprietary source material.
+- modify `.local-research/README.md`, `.local-research/sources/`, or another
+  session's workspace;
+- stage ignored research material with `git add -f` or any equivalent;
+- copy proprietary code, project data, assets, logs, screenshots, generated
+  output, or recognizable excerpts into tracked paths, fixtures, patches,
+  documentation, commit messages, or other retained repository artifacts; or
+- treat an experiment as evidence of supported behavior without recording its
+  provenance, observed result, uncertainty, and reproducible procedure.
 
-Before access, verify that the requested material is ignored and that its
-canonical path remains under the authorized `.local-research/` root. Treat
-concurrent modification as a possible source of inconsistent observations.
+Before access, verify that the canonical source and workspace paths remain under
+the primary checkout's ignored `.local-research/` root and that the workspace
+ownership manifest matches the current session. Begin with path, file-type,
+size, and metadata manifests; inspect contents only as needed. Keep raw and
+generated proprietary material inside the ignored sandbox. Committed findings
+must contain only derived observations, non-identifying provenance, and safe
+reproduction steps.
 
-The primary checkout remains read-only for all agent-authored changes. This
-exception grants evidence access, not write authorization or general
-cross-worktree access.
+An agent may remove its own experiment workspace after findings are recorded and
+the user has not asked to preserve it, but only after revalidating its canonical
+path, ownership manifest, and absence of escaping symlinks. If ownership is
+uncertain, concurrent modification is possible, or an experiment is incomplete,
+preserve the workspace and report its exact path. This exception grants no
+access to other untracked primary-checkout files or another agent's Git worktree.
 
 ## Verification
 

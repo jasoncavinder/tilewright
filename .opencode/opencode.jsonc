@@ -10,6 +10,7 @@
   "watcher": {
     "ignore": [
       ".git/**",
+      ".local-research/**",
       ".worktrees/**",
       "target/**",
       "**/target/**",
@@ -25,7 +26,11 @@
       "*.env.*": "deny",
       "*.env.example": "allow"
     },
-    "edit": "ask",
+    "edit": {
+      "*": "ask",
+      ".local-research/**": "deny",
+      ".local-research/workspaces/**": "allow"
+    },
     "glob": "allow",
     "grep": "allow",
     "list": "allow",
