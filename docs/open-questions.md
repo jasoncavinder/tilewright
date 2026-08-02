@@ -26,7 +26,10 @@ declared.
 
 The initial version range is resolved by
 [ADR 0002](decisions/0002-rpg-maker-mz-version-floor.md): maintainer-led work
-targets RPG Maker MZ 1.10.0 and newer. The following details remain open:
+targets RPG Maker MZ 1.10.0 and newer. The long-term compatibility goal is
+resolved by [ADR 0003](decisions/0003-stock-authoring-data-parity.md):
+version-scoped stock authoring-data parity with open-world preservation for
+unknown and plugin-defined content. The following details remain open:
 
 - Which named versions at or above 1.10.0 need independent observations and
   regression coverage for each behavior?

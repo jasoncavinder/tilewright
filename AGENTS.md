@@ -11,6 +11,7 @@ Tilewright is an open-source Rust toolkit for reading, validating, transforming,
 - Start with `README.md` for current maturity and the public project overview.
 - Use `docs/README.md` as the canonical documentation index.
 - Read `docs/vision.md`, `docs/architecture.md`, and `docs/safety.md` before changing scope, boundaries, or write behavior.
+- Read `docs/capability-roadmap.md` before planning or implementing a project-format capability; keep discovery, loading, understanding, validation, round trips, mutation, and persistence as separate support claims.
 - Check `docs/compatibility.md` before claiming support and `docs/open-questions.md` before making a consequential design choice.
 - Record proprietary-format evidence under `docs/formats/`; do not turn intent or memory into a format claim.
 
