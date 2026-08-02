@@ -28,8 +28,10 @@ kebab-case description:
 - `test/`
 - `chore/`
 
-Agent-owned worktree branches follow the collision-resistant `agent/` convention
-in `AGENTS.md`. Dependabot owns `dependabot/` branches.
+Coordinator-created worktree branches follow the collision-resistant `agent/`
+convention in `AGENTS.md`. Host-provisioned Codex Worktree mode may use
+`codex/`; the PR policy accepts both prefixes. Dependabot owns `dependabot/`
+branches.
 
 ## Pull requests and merges
 
@@ -44,11 +46,15 @@ requests after the initial repository bootstrap.
 - Pull-request titles use a conventional prefix such as `feat:`, `fix:`,
   `docs:`, `research:`, `refactor:`, `test:`, `chore:`, `ci:`, or `build:`.
 
-Both long-lived branches require the `Rust quality`, `Dependency review`, and
-`PR policy` checks and require review conversations to be resolved. Required
-approval count is zero while the project has only one maintainer because GitHub
-does not allow authors to approve their own pull requests. Increase it when a
-second active maintainer is available.
+Both long-lived branches require the `Rust quality`, `Dependency review`,
+`PR policy`, and `CodeQL (Rust)` checks and require review conversations to be
+resolved. Required approval count is zero while the project has only one
+maintainer because GitHub does not allow authors to approve their own pull
+requests. Increase it when a second active maintainer is available.
+
+CodeQL check enforcement uses a staged rollout to avoid locking the no-bypass
+rulesets: first establish a successful `CodeQL (Rust)` pull-request run, then add
+that exact check context to both rulesets before merging the workflow change.
 
 Pull requests into `dev` must be tested with the latest `dev`. The `main`
 ruleset does not require strict synchronization: after a merge-commit promotion,
@@ -67,11 +73,12 @@ CI runs the contributor quality gate on current stable Rust and GitHub's Ubuntu
 runner. This is a development gate, not a minimum-supported-Rust-version or
 platform-support promise. Those compatibility decisions remain open.
 
-Pull requests also receive dependency review and policy checks. Clippy provides
-the Rust static-analysis gate, Dependabot monitors Cargo and GitHub Actions, and
-tracked action references are pinned to full commit SHAs. GitHub's live default
-setup API did not accept Rust when this repository was configured, so CodeQL is
-deferred until it is available here.
+Pull requests also receive dependency review, policy, and CodeQL checks. Clippy
+provides the compiler-integrated Rust lint gate, while CodeQL advanced setup
+analyzes Rust in `none` build mode. GitHub's default-setup REST endpoint does not
+accept Rust for this repository, so the pinned advanced workflow supplies the
+supported path instead. Dependabot monitors Cargo and GitHub Actions, and all
+tracked action references are pinned to full commit SHAs.
 
 No workflow publishes crates, creates GitHub releases, or distributes binaries.
 Release automation should be added only after the versioning, platform, and
@@ -85,8 +92,8 @@ The intended repository settings are:
   pull requests.
 - Dependabot alerts and security updates are enabled.
 - Secret scanning and push protection are enabled.
-- CodeQL default setup is deferred because this repository does not currently
-  accept Rust as a supported default-setup language.
+- CodeQL advanced setup scans Rust; default setup remains disabled because its
+  REST endpoint does not accept Rust for this repository.
 - Private vulnerability reporting is enabled and documented in
   [the security policy](../../.github/SECURITY.md).
 - Issues are enabled; wiki, Projects, and Discussions are disabled initially.

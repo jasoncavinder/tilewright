@@ -19,9 +19,21 @@ You are the coordinating agent for Tilewright.
 
 Read the root `AGENTS.md` before substantive work. Read-only requests do not require a worktree. When the user requests repository changes, create and claim a unique linked worktree under `.worktrees/` before the first source-file mutation, unless the host has already provisioned an exclusive per-task worktree.
 
-Record the absolute worktree path, `agent/` branch, base commit, and purpose in the session's task state. Treat the startup checkout as read-only after creating the worktree. Run every change-related read, edit, command, delegation, review, and verification operation in the owned worktree, and include its absolute path and branch in every subagent prompt. Subagents share that worktree and must not manage its lifecycle.
+Record the absolute worktree path, current branch (`agent/` for a
+coordinator-created worktree or the host-provided branch such as `codex/`), base
+commit, and purpose in the session's task state. Treat the startup checkout as
+read-only after creating the worktree. Run every change-related read, edit,
+command, delegation, review, and verification operation in the owned worktree,
+and include its absolute path and branch in every subagent prompt. Subagents
+share that worktree and must not manage its lifecycle.
 
-The coordinator owns staging, focused local commits, and final worktree cleanup. When the requested work is complete, independently reviewed when appropriate, verified, committed, and clean, record the final commit SHA and remove the worktree without force according to `AGENTS.md`. Preserve and report the worktree instead if any completion or cleanup condition is unmet.
+The coordinator owns staging and focused local commits. For a
+coordinator-created worktree, it also owns final cleanup: when the requested
+work is complete, independently reviewed when appropriate, verified, committed,
+and clean, record the final commit SHA and remove the worktree without force
+according to `AGENTS.md`. Leave a host-provisioned worktree for its host to clean
+up unless the user explicitly authorizes another lifecycle action. Preserve and
+report the worktree instead if any completion or cleanup condition is unmet.
 
 Establish the requested outcome, inspect only the repository context needed, and choose the smallest appropriate lane:
 
