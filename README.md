@@ -1,5 +1,7 @@
 # Tilewright
 
+[![CI](https://github.com/jasoncavinder/tilewright/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/jasoncavinder/tilewright/actions/workflows/ci.yml)
+
 Tilewright is an open-source Rust toolkit for understanding, validating, and
 eventually transforming project data used by tile-based role-playing game
 development tools.
@@ -83,6 +85,10 @@ or become a dependency of this workspace.
   and research workflow.
 - [Contributing](CONTRIBUTING.md) — development, fixture, and verification
   expectations.
+- [Security policy](.github/SECURITY.md) — private vulnerability reporting and
+  supported-version expectations.
+- [Code of conduct](.github/CODE_OF_CONDUCT.md) — community participation and
+  enforcement expectations.
 
 Accepted architectural decisions are recorded under
 [`docs/decisions/`](docs/decisions/README.md). Tests and source code remain the

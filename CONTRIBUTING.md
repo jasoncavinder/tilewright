@@ -76,20 +76,40 @@ The primary checkout is reserved for integration and remains read-only for agent
 
 Keep changes focused. Do not reformat unrelated files, upgrade dependencies incidentally, or mix research conclusions with unrelated refactoring. Avoid panics for recoverable library input or I/O errors, and document public APIs.
 
+### Branches and pull requests
+
+Create short-lived branches from `dev` using `feat/`, `fix/`, `docs/`,
+`research/`, `refactor/`, `test/`, or `chore/` followed by a concise kebab-case
+description. Agent-owned branches follow the `agent/` convention in `AGENTS.md`.
+
+Open normal contributions against `dev`. Pull-request titles use a conventional
+prefix such as `feat:`, `fix:`, `docs:`, `research:`, `refactor:`, `test:`,
+`chore:`, `ci:`, or `build:` because squash-merged titles become repository
+history. Only a promotion pull request from `dev` targets `main`.
+
+Both long-lived branches require pull requests, passing checks, and resolved
+review conversations. Changes into `dev` are squash merged; promotions into
+`main` use merge commits. See the complete
+[GitHub repository governance](docs/maintainers/github.md) policy.
+
 ## Verification
 
 Run targeted checks while iterating. Before marking a change ready, run:
 
 ```sh
 cargo fmt --all -- --check
-cargo check --workspace --all-targets --all-features
-cargo test --workspace --all-targets --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
+cargo check --locked --workspace --all-targets --all-features
+cargo test --locked --workspace --all-targets --all-features
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps
 ```
 
 Report commands actually run and their results. Do not weaken a gate to hide a
 failure or describe an unrun check as passing.
+
+GitHub Actions runs the same gate on current stable Rust and an Ubuntu runner.
+That CI environment is not yet a minimum-supported-Rust-version or platform
+support promise.
 
 ## Licensing and project boundaries
 

@@ -11,12 +11,13 @@ consequential decisions should be recorded in an ADR.
 ## Toolchain and releases
 
 - What minimum supported Rust version will Tilewright use?
-- When will CI and its supported platform matrix be established?
+- What supported platform matrix should supplement the current stable-Rust
+  Ubuntu CI development gate?
 - When should packages become publishable, and in what order?
 - What stability and semantic-versioning promises apply before and after 1.0?
 - What repository, documentation, and release metadata must precede publishing?
-- What vulnerability-reporting channel should be established before users rely
-  on write operations or network-facing adapters?
+- What response and remediation commitments should accompany future supported
+  releases beyond the current private vulnerability-reporting channel?
 
 All packages currently use `publish = false`, and no minimum Rust version is
 declared.
