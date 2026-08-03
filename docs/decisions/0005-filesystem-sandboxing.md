@@ -1,4 +1,4 @@
-# ADR 0004: Filesystem sandboxing and path resolution
+# ADR 0005: Filesystem sandboxing and path resolution
 
 - **Status:** Accepted
 - **Date:** 2026-08-02
