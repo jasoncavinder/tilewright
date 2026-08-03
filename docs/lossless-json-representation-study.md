@@ -145,10 +145,11 @@ Touched documents have operation-specific envelopes:
 
 Representative first, middle, last, and sole deletions for objects and arrays
 have exact output assertions in addition to strict semantic validation.
-Insertions exercise beginning, middle, and end positions, compact and multiline
-layouts, LF/CRLF, and unusual legal indentation. A combined removal/insertion
-case confirms exact survival of neighboring unknown nested data, numeric
-lexemes, string escapes, and array contents outside the measured edit envelope.
+Insertions have exact output assertions across beginning, middle, and end
+positions, compact and multiline layouts, LF/CRLF, and unusual legal
+indentation. A combined removal/insertion case confirms exact survival of
+neighboring unknown nested data, numeric lexemes, string escapes, and array
+contents outside the measured edit envelope.
 Because comments are outside the accepted domain, comment-adjacent
 mutation behavior is not currently promised.
 

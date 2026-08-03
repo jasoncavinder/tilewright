@@ -433,18 +433,22 @@ mod tests {
         crlf.object_value()
             .unwrap()
             .append("b", validated_number("2").unwrap());
-        let output = crlf.to_string();
-        assert!(!output.replace("\r\n", "").contains('\n'));
-        strict_validate(&output).unwrap();
+        assert_strict_output(
+            &crlf,
+            "{\r\n  \"a\": 1,\r\n  \"b\": 2\r\n}",
+            json!({"a": 1, "b": 2}),
+        );
 
         let unusual = strict_parse("{\n\t\"a\"\t:\t1\n}").unwrap();
         unusual
             .object_value()
             .unwrap()
             .append("b", validated_number("2").unwrap());
-        let output = unusual.to_string();
-        assert!(output.contains("\"a\"\t:\t1"));
-        strict_validate(&output).unwrap();
+        assert_strict_output(
+            &unusual,
+            "{\n\t\"a\"\t:\t1,\n\t\"b\": 2\n}",
+            json!({"a": 1, "b": 2}),
+        );
     }
 
     #[test]

@@ -14,12 +14,14 @@ use std::path::{Path, PathBuf};
 
 /// Errors that can occur during candidate discovery.
 ///
-/// This enum is non-exhaustive so the experimental discovery API can add
-/// contextual failure modes without making downstream matches exhaustive.
+/// This enum and its record-style variants are non-exhaustive so the
+/// experimental discovery API can add contextual failure modes and fields
+/// without making downstream matches exhaustive.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum DiscoveryError {
     /// Failed to inspect the root directory's metadata.
+    #[non_exhaustive]
     InspectRoot {
         /// The root path being inspected.
         root: PathBuf,
@@ -28,16 +30,19 @@ pub enum DiscoveryError {
     },
     /// The supplied root path is a symlink. This is a best-effort check of the
     /// final supplied path component at inspection time.
+    #[non_exhaustive]
     RootIsSymlink {
         /// The root path that was rejected.
         root: PathBuf,
     },
     /// The supplied root path is not a directory.
+    #[non_exhaustive]
     RootIsNotDirectory {
         /// The root path that was rejected.
         root: PathBuf,
     },
     /// Failed to read the contents of the root directory.
+    #[non_exhaustive]
     ReadRoot {
         /// The root directory being read.
         root: PathBuf,
@@ -45,6 +50,7 @@ pub enum DiscoveryError {
         source: io::Error,
     },
     /// Failed to read a directory entry.
+    #[non_exhaustive]
     ReadEntry {
         /// The root directory being read.
         root: PathBuf,
@@ -52,6 +58,7 @@ pub enum DiscoveryError {
         source: io::Error,
     },
     /// Failed to inspect the metadata of a potential marker entry.
+    #[non_exhaustive]
     InspectMarker {
         /// The path of the marker entry being inspected.
         path: PathBuf,
@@ -115,7 +122,12 @@ pub enum MarkerEntryKind {
 }
 
 /// An observation of a potential marker entry.
+///
+/// This output record is non-exhaustive so later discovery phases can attach
+/// additional observation context without preventing callers from reading the
+/// currently exposed fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct MarkerObservation {
     /// The exact path to the observed marker entry.
     pub path: PathBuf,
@@ -127,13 +139,15 @@ pub struct MarkerObservation {
 ///
 /// This API identifies candidates based on the presence of a marker file. It does
 /// not validate the project, parse its contents, or guarantee compatibility.
-/// The enum is non-exhaustive so callers must retain a fallback for future
-/// experimental discovery outcomes.
+/// The enum and its record-style variants are non-exhaustive so callers must
+/// retain a fallback for future experimental discovery outcomes and `..` when
+/// matching fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum CandidateDiscovery {
     /// The directory contains exactly one regular file matching the expected
     /// lowercase marker name (`game.rmmzproject`).
+    #[non_exhaustive]
     Candidate {
         /// The observed marker entry.
         marker: MarkerObservation,
@@ -141,6 +155,7 @@ pub enum CandidateDiscovery {
     /// The directory contains exactly one regular file matching the marker name
     /// case-insensitively, but not exactly (e.g., `Game.rmmzproject`).
     /// This is a platform-limited case variant.
+    #[non_exhaustive]
     CaseVariantCandidate {
         /// The observed marker entry.
         marker: MarkerObservation,
@@ -149,16 +164,19 @@ pub enum CandidateDiscovery {
     NoMarker,
     /// The directory contains multiple entries matching the marker name
     /// case-insensitively.
+    #[non_exhaustive]
     AmbiguousMarkers {
         /// The observed marker entries, deterministically ordered by path.
         markers: Vec<MarkerObservation>,
     },
     /// The marker entry exists but is a symbolic link.
+    #[non_exhaustive]
     SymlinkMarker {
         /// The observed marker entry.
         marker: MarkerObservation,
     },
     /// The marker entry exists but is not a regular file or symlink (e.g., a directory).
+    #[non_exhaustive]
     NonRegularMarker {
         /// The observed marker entry.
         marker: MarkerObservation,
