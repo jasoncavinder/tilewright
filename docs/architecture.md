@@ -16,12 +16,14 @@ open until research and experiments support them.
 
 ## Workspace shape
 
-The virtual Cargo workspace contains three independently versioned packages:
+The virtual Cargo workspace contains three independently versioned durable
+product packages, plus internal tools:
 
 ```text
 crates/tilewright/       durable, format-aware library
 crates/tilewright-cli/   command-line adapter
 crates/tilewright-mcp/   Model Context Protocol adapter
+tools/jsonc-parser-study/ internal research and verification tool (non-publishable)
 ```
 
 Allowed dependency direction:
@@ -40,7 +42,8 @@ tilewright-cli   tilewright-mcp
 
 `tilewright` must not depend on either adapter. All packages currently remain
 unpublished as a deliberate safety measure while names, APIs, metadata, and
-release practices are unsettled.
+release practices are unsettled. Internal tools such as `jsonc-parser-study`
+are explicitly marked `publish = false`.
 
 ## Core library responsibilities
 
