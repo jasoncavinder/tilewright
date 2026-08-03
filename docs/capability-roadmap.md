@@ -74,9 +74,10 @@ premature durable API or change the compatibility status to Supported.
 
 Implement the smallest behavior already supported by the
 [project-layout research](formats/rpg-maker-mz/project-layout.md): inspect only
-an explicitly supplied directory, do not follow symlinks, retain exact path
-spelling, and report a marker-bearing directory as a candidate rather than a
-valid or compatible project.
+an explicitly supplied directory, classify immediate marker-entry symlinks
+without following them, retain exact path spelling, and report a marker-bearing
+directory as a candidate rather than a valid or compatible project.
+Capability-based root containment is future work.
 
 Use programmatically generated temporary directory trees for lowercase,
 case-variant, missing, non-regular, symlinked, ambiguous, deployment-shaped, and

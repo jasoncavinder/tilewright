@@ -12,7 +12,7 @@ consequential decisions should be recorded in an ADR.
 
 - What minimum supported Rust version will Tilewright use?
 - What supported platform matrix should supplement the current stable-Rust
-  Ubuntu CI development gate?
+  Ubuntu, macOS, and Windows CI development gate?
 - When should packages become publishable, and in what order?
 - What stability and semantic-versioning promises apply before and after 1.0?
 - What repository, documentation, and release metadata must precede publishing?
@@ -58,7 +58,10 @@ unknown and plugin-defined content. The following details remain open:
 
 - What is the project-loading API and what proves a path is a compatible
   project?
-- How are project roots canonicalized and filesystem access scoped?
+- How will Tilewright acquire and verify the initial project-root capability
+  without ambient root or ancestor symlink substitution or TOCTOU ambiguity?
+- When may symlinks that resolve within an authorized project capability be
+  followed, rejected, or reported?
 - What backup, locking, temporary-file, and atomic-replacement strategy is safe
   across supported platforms?
 - When must a write be refused because lossless preservation is not established?

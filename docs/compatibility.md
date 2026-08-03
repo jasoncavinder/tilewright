@@ -30,10 +30,10 @@ not use “supported” to mean only that one file happened to parse.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Core `tilewright` package | Scaffold | Exposes only its package version. |
+| Core `tilewright` package | Experimental | Exposes its package version and an experimental candidate discovery API. |
 | `tilewright` CLI executable | Scaffold | Prints its package version; it does not parse commands. |
 | `tilewright-mcp` server | Scaffold | Not yet an MCP server; it prints its package version. |
-| RPG Maker MZ 1.10.0+ project detection | Not implemented | A candidate-recognition contract is researched for 1.10.0, but no detector or tested forward-version matrix exists. |
+| RPG Maker MZ explicit-root candidate recognition | Experimental | Path-level recognition is based on the documented marker role and recorded MZ 1.10.0 observations from the tested macOS environment. CI on Ubuntu, macOS, and Windows is implementation regression coverage, not editor-compatibility evidence. Newer MZ versions and unobserved editor/filesystem combinations remain unknown. Discovery does not validate project contents, infer a version, parse JSON, or guarantee compatibility. It uses `std::fs` and does not provide race-free sandbox containment or complete root symlink rejection. |
 | RPG Maker MZ versions before 1.10.0 | Unsupported | Outside the maintained target. Evidence-backed contributor proposals to expand the matrix are welcome. |
 | Project-file parsing | Not implemented | No format models or parsers exist. |
 | Project validation | Not implemented | No validation contract exists. |
@@ -78,9 +78,9 @@ Until those decisions are recorded:
 - record the toolchain and platform used for evidence and verification.
 
 Repository CI currently runs the contributor quality gate on current stable
-Rust and GitHub's Ubuntu runner. This detects regressions in the development
-environment; it does not establish an MSRV or a supported operating-system
-matrix.
+Rust across Ubuntu, macOS, and Windows runners. This detects regressions in the
+development environment; it does not establish an MSRV or a supported
+operating-system matrix.
 
 Relevant unresolved decisions are maintained in
 [`open-questions.md`](open-questions.md).

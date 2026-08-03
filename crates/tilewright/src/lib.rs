@@ -7,3 +7,4 @@
 
 /// Current Tilewright library version.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub mod rpg_maker_mz;

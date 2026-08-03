@@ -5,8 +5,32 @@ Tilewright workspace.
 
 ## Status
 
-This crate is a scaffold. It currently exposes only the package version and does
-not load, parse, validate, or write project data.
+This crate is in early development. It currently exposes its package version and an experimental candidate discovery API. It does not yet load, parse, validate, or write project data.
+
+### Example: Candidate Discovery
+
+Candidate discovery identifies directories that appear to be RPG Maker MZ projects based on marker files. It does not validate the project contents.
+
+```rust
+use std::path::Path;
+use tilewright::rpg_maker_mz::discovery::{discover_candidate, CandidateDiscovery};
+
+let path = Path::new("path/to/project");
+match discover_candidate(path) {
+    Ok(CandidateDiscovery::Candidate { marker }) => {
+        println!("Found candidate marker at: {}", marker.path.display());
+    }
+    Ok(CandidateDiscovery::NoMarker) => {
+        println!("No marker found.");
+    }
+    Ok(other) => {
+        println!("Other discovery result: {:?}", other);
+    }
+    Err(e) => {
+        eprintln!("Discovery failed: {}", e);
+    }
+}
+```
 
 ## Responsibilities
 
