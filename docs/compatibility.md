@@ -31,7 +31,7 @@ not use “supported” to mean only that one file happened to parse.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Core `tilewright` package | Experimental | Exposes its package version and an experimental candidate discovery API. |
-| `tilewright` CLI executable | Scaffold | Prints its package version; it does not parse commands. |
+| `tilewright` CLI executable | Experimental | Provides help/version output and human- or JSON-formatted access to the core library's experimental explicit-root candidate discovery. It does not inventory, load, validate, or modify projects. |
 | `tilewright-mcp` server | Scaffold | Not yet an MCP server; it prints its package version. |
 | RPG Maker MZ explicit-root candidate recognition | Experimental | Path-level recognition is based on the documented marker role and recorded MZ 1.10.0 observations from the tested macOS environment. CI on Ubuntu, macOS, and Windows is implementation regression coverage, not editor-compatibility evidence. Newer MZ versions and unobserved editor/filesystem combinations remain unknown. Discovery does not validate project contents, infer a version, parse JSON, or guarantee compatibility. It uses `std::fs` and does not provide race-free sandbox containment or complete root symlink rejection. |
 | RPG Maker MZ versions before 1.10.0 | Unsupported | Outside the maintained target. Evidence-backed contributor proposals to expand the matrix are welcome. |
