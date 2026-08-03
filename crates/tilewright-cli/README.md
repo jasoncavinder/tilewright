@@ -11,6 +11,31 @@ read-only `discover` command over the core library's experimental RPG Maker MZ
 candidate-discovery API. It does not inventory, load, validate, or modify
 projects.
 
+## Install from a checkout
+
+Install an optimized `tilewright` executable from the repository root:
+
+```sh
+cargo install --locked --path crates/tilewright-cli
+tilewright --version
+```
+
+Cargo normally places the executable in its user binary directory, which must
+be on `PATH`. After pulling changes that affect the CLI, replace the installed
+copy explicitly:
+
+```sh
+cargo install --locked --force --path crates/tilewright-cli
+```
+
+Remove the checkout-installed package with:
+
+```sh
+cargo uninstall tilewright-cli
+```
+
+This is a local checkout workflow; the crate remains unpublished.
+
 ## Usage
 
 ```sh

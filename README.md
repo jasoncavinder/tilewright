@@ -108,6 +108,20 @@ cargo run -p tilewright-cli -- discover path/to/project
 cargo run -p tilewright-cli -- discover path/to/project --format json
 ```
 
+To install the executable from the current checkout and run it without
+`cargo run`:
+
+```sh
+cargo install --locked --path crates/tilewright-cli
+tilewright --version
+tilewright discover path/to/project
+tilewright discover path/to/project --format json
+```
+
+Re-run the install command with `--force` after pulling CLI changes. See the
+[`tilewright-cli` README](crates/tilewright-cli/README.md#install-from-a-checkout)
+for update and uninstall details.
+
 The CLI currently exposes only experimental candidate discovery; it does not
 inventory, load, validate, or modify projects. Contributors should use the full
 verification process described in
