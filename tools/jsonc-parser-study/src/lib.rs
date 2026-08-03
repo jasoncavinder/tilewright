@@ -100,6 +100,13 @@ mod tests {
         assert_eq!(serde_json::from_str::<Value>(&output).unwrap(), expected);
     }
 
+    fn assert_strict_output(root: &CstRootNode, expected_output: &str, expected: Value) {
+        let output = root.to_string();
+        strict_validate(&output).expect("mutation output must remain strict JSON");
+        assert_eq!(output, expected_output);
+        assert_eq!(serde_json::from_str::<Value>(&output).unwrap(), expected);
+    }
+
     fn nested_arrays(depth: usize) -> String {
         format!("{}0{}", "[".repeat(depth), "]".repeat(depth))
     }
@@ -333,47 +340,62 @@ mod tests {
     }
 
     #[test]
-    fn object_deletions_remain_valid_across_positions() {
+    fn object_deletion_envelope_is_exact_across_positions() {
         let cases = [
-            (r#"{"a":1,"b":2,"c":3}"#, 0, json!({"b": 2, "c": 3})),
-            (r#"{"a":1,"b":2,"c":3}"#, 1, json!({"a": 1, "c": 3})),
-            (r#"{"a":1,"b":2,"c":3}"#, 2, json!({"a": 1, "b": 2})),
-            (r#"{"a":1}"#, 0, json!({})),
+            (
+                r#"{"a":1,"b":2,"c":3}"#,
+                0,
+                r#"{"b":2,"c":3}"#,
+                json!({"b": 2, "c": 3}),
+            ),
+            (
+                r#"{"a":1,"b":2,"c":3}"#,
+                1,
+                r#"{"a":1,"c":3}"#,
+                json!({"a": 1, "c": 3}),
+            ),
+            (
+                r#"{"a":1,"b":2,"c":3}"#,
+                2,
+                r#"{"a":1,"b":2}"#,
+                json!({"a": 1, "b": 2}),
+            ),
+            (r#"{"a":1}"#, 0, r#"{}"#, json!({})),
         ];
 
-        for (input, index, expected) in cases {
+        for (input, index, expected_output, expected) in cases {
             let root = strict_parse(input).unwrap();
             root.object_value().unwrap().properties()[index]
                 .clone()
                 .remove();
-            assert_strict_semantics(&root, expected);
+            assert_strict_output(&root, expected_output, expected);
         }
     }
 
     #[test]
-    fn array_deletions_remain_valid_across_positions() {
+    fn array_deletion_envelope_is_exact_across_positions() {
         let cases = [
-            ("[1,2,3]", 0, json!([2, 3])),
-            ("[1,2,3]", 1, json!([1, 3])),
-            ("[1,2,3]", 2, json!([1, 2])),
-            ("[1]", 0, json!([])),
+            ("[1,2,3]", 0, "[2,3]", json!([2, 3])),
+            ("[1,2,3]", 1, "[1,3]", json!([1, 3])),
+            ("[1,2,3]", 2, "[1,2]", json!([1, 2])),
+            ("[1]", 0, "[]", json!([])),
         ];
 
-        for (input, index, expected) in cases {
+        for (input, index, expected_output, expected) in cases {
             let root = strict_parse(input).unwrap();
             root.array_value().unwrap().elements()[index]
                 .clone()
                 .remove();
-            assert_strict_semantics(&root, expected);
+            assert_strict_output(&root, expected_output, expected);
         }
     }
 
     #[test]
     fn insertion_envelope_covers_positions_and_layouts() {
-        for (index, name, expected_order) in [
-            (0, "a", ["a", "b", "d"]),
-            (1, "c", ["b", "c", "d"]),
-            (2, "e", ["b", "d", "e"]),
+        for (index, name, expected_output) in [
+            (0, "a", "{\n  \"a\": 1,\n  \"b\":2,\n  \"d\":4\n}"),
+            (1, "c", "{\n  \"b\":2,\n  \"c\": 1,\n  \"d\":4\n}"),
+            (2, "e", "{\n  \"b\":2,\n  \"d\":4,\n  \"e\": 1\n}"),
         ] {
             let root = strict_parse(r#"{"b":2,"d":4}"#).unwrap();
             root.object_value()
@@ -381,20 +403,19 @@ mod tests {
                 .insert(index, name, validated_number("1").unwrap());
             let output = root.to_string();
             strict_validate(&output).unwrap();
-            let positions = expected_order.map(|key| output.find(&format!("\"{key}\"")).unwrap());
-            assert!(positions[0] < positions[1] && positions[1] < positions[2]);
+            assert_eq!(output, expected_output);
         }
 
-        for (index, expected) in [
-            (0, json!([0, 1, 2])),
-            (1, json!([1, 0, 2])),
-            (2, json!([1, 2, 0])),
+        for (index, expected_output, expected) in [
+            (0, "[0, 1,2]", json!([0, 1, 2])),
+            (1, "[1, 0, 2]", json!([1, 0, 2])),
+            (2, "[1,2, 0]", json!([1, 2, 0])),
         ] {
             let root = strict_parse("[1,2]").unwrap();
             root.array_value()
                 .unwrap()
                 .insert(index, validated_number("0").unwrap());
-            assert_strict_semantics(&root, expected);
+            assert_strict_output(&root, expected_output, expected);
         }
 
         let multiline = strict_parse("{\n  \"a\": 1,\n  \"c\": 3\n}").unwrap();
@@ -424,6 +445,40 @@ mod tests {
         let output = unusual.to_string();
         assert!(output.contains("\"a\"\t:\t1"));
         strict_validate(&output).unwrap();
+    }
+
+    #[test]
+    fn mutations_preserve_adversarial_neighbors_outside_the_envelope() {
+        let input = concat!(
+            "{\n",
+            "  \"unknown\": {\"n\":1e+02,\"s\":\"\\u0061\"},\n",
+            "  \"remove\": 0,\n",
+            "  \"tail\": [-0,9007199254740993]\n",
+            "}"
+        );
+        let after_removal = concat!(
+            "{\n",
+            "  \"unknown\": {\"n\":1e+02,\"s\":\"\\u0061\"},\n",
+            "  \"tail\": [-0,9007199254740993]\n",
+            "}"
+        );
+        let root = strict_parse(input).unwrap();
+        remove_unique_property(&root.object_value().unwrap(), "remove").unwrap();
+        assert_eq!(root.to_string(), after_removal);
+        strict_validate(&root.to_string()).unwrap();
+
+        root.object_value()
+            .unwrap()
+            .insert(1, "added", validated_number("7e+00").unwrap());
+        let after_insertion = concat!(
+            "{\n",
+            "  \"unknown\": {\"n\":1e+02,\"s\":\"\\u0061\"},\n",
+            "  \"added\": 7e+00,\n",
+            "  \"tail\": [-0,9007199254740993]\n",
+            "}"
+        );
+        assert_eq!(root.to_string(), after_insertion);
+        strict_validate(&root.to_string()).unwrap();
     }
 
     #[test]

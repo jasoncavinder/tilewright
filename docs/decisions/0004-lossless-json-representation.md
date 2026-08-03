@@ -80,8 +80,9 @@ If accepted, this proposal would mean:
 
 A tracked prototype exercises the following bounded behavior:
 - **Structural edits:** Representative object and array insertions/deletions
-  remain valid. Exact assertions record selected insertion formatting and
-  layout invariants; deletion tests currently assert strict semantic validity.
+  remain valid and have exact output assertions. A combined mutation case also
+  records exact preservation of tested unknown nested data, numeric lexemes,
+  string escapes, and array contents outside the measured edit envelope.
 - **Strict syntax:** A strict AST pass with every extension disabled runs before
   CST construction. A lexical preflight rejects non-JSON whitespace and raw C0
   controls that the scanner otherwise accepts. CST construction itself preserves

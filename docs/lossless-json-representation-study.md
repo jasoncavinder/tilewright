@@ -35,7 +35,7 @@ it makes no new proprietary-format claim.
 | Criterion | Weight | Status | Current evidence | Remaining work |
 | --- | ---: | --- | --- | --- |
 | Preservation safety | 30% | Observed | `no_op_round_trip_preserves_every_declared_matrix_case`; `duplicate_targets_are_refused_without_changing_bytes` | Production integration and broader format fixtures |
-| Mutation precision | 25% | Partially observed | String, numeric-wrapper, insertion, deletion, and duplicate-refusal tests | Scalar replacement contracts and stale-snapshot refusal |
+| Mutation precision | 25% | Partially observed | String, numeric-wrapper, exact insertion/deletion envelopes, adversarial-neighbor preservation, and duplicate-refusal tests | Scalar replacement contracts and stale-snapshot refusal |
 | Typed-view integration | 15% | Unknown | None | Design typed projections over retained CST nodes |
 | Source spans and diagnostics | 10% | Observed | `direct_parser_reports_exact_diagnostic_location` | Select Tilewright's diagnostic API and Unicode-width policy |
 | Malformed-input behavior | 5% | Partially observed | Strict rejection, direct BOM, and nesting-limit tests | Define the byte-decoding boundary and broader resource limits |
@@ -144,10 +144,13 @@ Touched documents have operation-specific envelopes:
   operation-level test establishes it.
 
 Representative first, middle, last, and sole deletions for objects and arrays
-remain strict JSON. Insertions exercise beginning, middle, and end positions,
-compact and multiline layouts, LF/CRLF, and unusual legal indentation. Because
-comments are outside the accepted domain, comment-adjacent mutation behavior is
-not currently promised.
+have exact output assertions in addition to strict semantic validation.
+Insertions exercise beginning, middle, and end positions, compact and multiline
+layouts, LF/CRLF, and unusual legal indentation. A combined removal/insertion
+case confirms exact survival of neighboring unknown nested data, numeric
+lexemes, string escapes, and array contents outside the measured edit envelope.
+Because comments are outside the accepted domain, comment-adjacent
+mutation behavior is not currently promised.
 
 ## Mutation and Refusal Implications
 
@@ -211,7 +214,8 @@ methodology, and an acceptance budget are still required.
 | String constructor escapes required characters and preserves tested Unicode names and values | `string_constructor_escapes_required_characters_and_preserves_unicode` | Observed | High |
 | Raw number/string literal surfaces can produce invalid JSON | `unchecked_raw_literal_apis_can_create_invalid_json` | Observed | High |
 | Validated number wrapper refuses before mutation | `validated_number_refuses_invalid_input_before_mutation` | Observed | High |
-| Representative structural deletions remain valid | `object_deletions_remain_valid_across_positions`; `array_deletions_remain_valid_across_positions` | Observed | High |
-| Representative insertion envelopes preserve documented invariants | `insertion_envelope_covers_positions_and_layouts` | Observed | High |
+| Representative structural deletions have exact valid output envelopes | `object_deletion_envelope_is_exact_across_positions`; `array_deletion_envelope_is_exact_across_positions` | Observed | High |
+| Representative insertion envelopes preserve exact documented invariants | `insertion_envelope_covers_positions_and_layouts` | Observed | High |
+| Removal and insertion preserve tested adversarial neighbors outside the envelope | `mutations_preserve_adversarial_neighbors_outside_the_envelope` | Observed | High |
 | Duplicate targets can be refused without changing bytes | `duplicate_targets_are_refused_without_changing_bytes` | Observed | High |
 | A custom span editor would add maintenance burden | Architectural analysis | Inferred | Medium |
