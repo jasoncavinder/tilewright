@@ -127,6 +127,31 @@ and deployment targets lack direct observations.
   project files, vendor assets, runtime code, default data, or raw manifests are
   committed; only derived observations are recorded.
 
+#### `MZ-1.10.0-CST-NOOP-2026-08-03`
+
+- **Kind:** Controlled local representation experiment.
+- **Question:** Does the proposed strict-gate-plus-CST representation reproduce
+  the observed MZ 1.10.0 `data/*.json` corpus byte-for-byte without mutation?
+- **Source/provenance:** Ignored workspace copies containing only the `data`
+  directories from the same four user-owned fresh MZ 1.10.0 projects recorded
+  by `MZ-1.10.0-FRESH-4-2026-08-01`.
+- **Environment:** Tilewright `jsonc-parser-study` at the 2026-08-03 experiment
+  branch, `jsonc-parser` 0.33.1, Rust 1.97.1, arm64 macOS 26.6.
+- **Procedure:** Verified that the four selected source `data` directories had
+  no symlinks, copied only those directories into a unique ignored workspace,
+  and ran `cargo run --release -p jsonc-parser-study --example corpus_noop
+  --locked -- <owned-workspace>/corpus`. The checker emits aggregate counts
+  only and neither prints nor retains file paths or contents.
+- **Observed:** All 252 JSON files were valid UTF-8 without a BOM, passed the
+  prototype strict JSON gate, and serialized from the CST byte-identically.
+  There were zero strict rejections, changed outputs, symlinks, or read errors.
+- **Confidence:** High for no-op representation of these exact authorized MZ
+  1.10.0 files with `jsonc-parser` 0.33.1. This is not a mutation, loader,
+  cross-version, plugin-data, or editor-reopen claim.
+- **Redistribution:** No source file, filename, path manifest, excerpt, digest,
+  or per-file diagnostic is committed. Only this aggregate observation and the
+  safe reproduction procedure are retained.
+
 #### `MZ-1.10.0-BASIC-WEB-DEPLOY-2026-08-01`
 
 - **Kind:** Controlled experiment
@@ -350,6 +375,7 @@ Do not commit generated projects or vendor assets.
 | Image/audio encryption is a deployment transformation, and encrypted files cannot be used within the authoring project folder. | `MZ-HELP-DEPLOY-2026-08-01` | Documented | High for the stated boundary. | Output filenames, extensions, headers, key representation, and per-target behavior remain unknown. |
 | The default-option MZ 1.10.0 Basic Web deployment preserves every non-marker file path, omits `game.rmmzproject` and the empty `movies` directory, and changes only `package.json` content. | `MZ-1.10.0-BASIC-WEB-DEPLOY-2026-08-01` | Observed | High for this project, target, and option set because complete manifests and all common file contents were compared. | Other projects, nonempty movies, options, targets, and versions may deploy differently. |
 | All 252 `data/*.json` files across the four observed projects are valid UTF-8 JSON without BOM, carriage returns, or final newlines. | `MZ-1.10.0-FRESH-4-2026-08-01` | Observed | High for the inspected MZ 1.10.0 templates because every file was checked. | Other versions, edited projects, plugin files, and serializer tolerance may differ. |
+| The proposed strict-gate-plus-CST representation no-op serializes all 252 JSON files from the four observed fresh MZ 1.10.0 projects byte-identically. | `MZ-1.10.0-CST-NOOP-2026-08-03` | Observed | High for the copied authorized corpus and `jsonc-parser` 0.33.1 because every file passed the strict gate and exact-byte comparison. | Mutations, edited/plugin data, other versions, loading diagnostics, and editor reopen behavior remain untested. |
 | The project tree can be separated cleanly into “editor-only files” and “runtime-only files” by directory name. | Official sources show project data/assets being edited and also deployed or loaded at runtime. | Inferred false | High confidence that the binary split is unsafe at directory level: `data` and assets serve both authoring and game execution. | Individual files may still be editor-only, runtime templates, or generated, but this needs observation. |
 | Unknown root entries or unrecognized files prove the directory is not an MZ project. | `MZ-HELP-UNIQUE-DATA-2026-08-01` establishes sanctioned extension data. | Inferred false | High: rejecting additions would conflict with documented plugin extensibility. | A future strict health check may diagnose particular conflicts without changing root identity. |
 | Incidental unknown root metadata may appear after project creation without changing marker-based identity. | `MZ-1.10.0-BASIC-LATER-METADATA-2026-08-01` | Observed presence; origin Inferred | High that the file appeared after the original baseline; only medium that it is host-OS metadata because no controlled creator action was observed. | Editors, backup tools, sync tools, plugins, or other host software can add different unknown entries. |
