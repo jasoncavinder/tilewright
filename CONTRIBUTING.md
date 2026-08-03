@@ -122,9 +122,9 @@ RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-de
 Report commands actually run and their results. Do not weaken a gate to hide a
 failure or describe an unrun check as passing.
 
-GitHub Actions runs the same gate on current stable Rust and an Ubuntu runner.
-That CI environment is not yet a minimum-supported-Rust-version or platform
-support promise.
+GitHub Actions runs the same gate on current stable Rust across Ubuntu, macOS,
+and Windows runners. That CI environment detects regressions; it is not yet a
+minimum-supported-Rust-version or platform support promise.
 
 ## Licensing and project boundaries
 

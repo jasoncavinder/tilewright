@@ -1,10 +1,11 @@
 # RPG Maker MZ project detection and high-level layout
 
 This document defines the smallest project-discovery contract supported by the
-evidence collected on 2026-08-01. It is a research result, not an implemented or
-supported capability. Claim-level sources, versions, confidence, conflicts, and
-experiments are recorded in the [research ledger](research-ledger.md).
-The breadth and remaining gaps are summarized separately in the
+evidence collected on 2026-08-01. It is a research result, and the current
+implementation is **Experimental**. Claim-level sources, versions, confidence,
+conflicts, and experiments are recorded in the
+[research ledger](research-ledger.md). The breadth and remaining gaps are
+summarized separately in the
 [project-layout coverage matrix](project-layout-coverage.md).
 
 ## Scope and evidence boundary
@@ -57,7 +58,9 @@ or validator:
 1. Accept an explicit directory supplied by the caller; do not search unrelated
    ancestors, descendants, home directories, or sibling projects.
 2. Enumerate only immediate entries needed to locate the documented marker.
-   Do not follow symlinks. Preserve and report the spelling actually found.
+   Classify immediate marker-entry symlinks without following them. Preserve and
+   report the spelling actually found. Capability-based root containment is
+   future work.
 3. Recognize the exact lowercase `game.rmmzproject` spelling documented by the
    help and observed in all four generated MZ 1.10.0 projects. Enumerate entries
    so the actual spelling is retained even on a case-insensitive filesystem. A
@@ -385,7 +388,7 @@ must therefore use an open-world inventory:
 - do not execute plugin code to discover its files;
 - do not delete, move, rename, normalize, or write unknown entries;
 - keep filesystem access under the caller-selected root and report, rather than
-  follow, symlinks until a separate policy is accepted; and
+  follow, immediate marker symlinks until a separate policy is accepted; and
 - let later loaders opt into specific extension knowledge without weakening the
   default preservation rule.
 
@@ -411,8 +414,9 @@ Minimum path-level cases:
 5. A candidate containing missing standard paths, conflicting singular/plural
    database names, additional plugin JSON, and arbitrary unknown root entries;
    identity remains candidate-level and unknowns remain untouched.
-6. Scope tests proving discovery does not recurse outside the explicit root or
-   follow symlinks.
+6. Scope tests proving discovery enumerates only immediate entries and
+   classifies immediate marker-entry symlinks without following them. Root-path
+   tests must retain the documented ambient-resolution and race limitations.
 
 An editor-created fixture should wait for contributor authorization and a named
 version experiment. Prefer committing a sanitized manifest or purpose-built
@@ -445,5 +449,4 @@ or extend:
   deployment output; and
 - the strongest evidence-backed positive and negative detection tests.
 
-Until those observations exist, current compatibility remains **Not
-implemented** as stated in [`compatibility.md`](../../compatibility.md).
+Until those observations exist, current compatibility remains **Experimental** as stated in [`compatibility.md`](../../compatibility.md).

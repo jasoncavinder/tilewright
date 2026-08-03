@@ -53,8 +53,9 @@ maintainer because GitHub does not allow authors to approve their own pull
 requests. Increase it when a second active maintainer is available.
 
 CodeQL check enforcement uses a staged rollout to avoid locking the no-bypass
-rulesets: first establish a successful `CodeQL (Rust)` pull-request run, then add
-that exact check context to both rulesets before merging the workflow change.
+rulesets: first establish a successful `CodeQL (Rust)` pull-request run, then
+add that exact check context to both rulesets before merging the workflow
+change.
 
 Pull requests into `dev` must be tested with the latest `dev`. The `main`
 ruleset does not require strict synchronization: after a merge-commit promotion,
@@ -69,16 +70,17 @@ needed, document the reason, restore the rule, and verify the resulting history.
 
 ## Continuous integration
 
-CI runs the contributor quality gate on current stable Rust and GitHub's Ubuntu
-runner. This is a development gate, not a minimum-supported-Rust-version or
-platform-support promise. Those compatibility decisions remain open.
+CI runs the contributor quality gate on current stable Rust across Ubuntu, macOS,
+and Windows runners. This is a development gate, not a
+minimum-supported-Rust-version or platform-support promise. Those compatibility
+decisions remain open.
 
 Pull requests also receive dependency review, policy, and CodeQL checks. Clippy
 provides the compiler-integrated Rust lint gate, while CodeQL advanced setup
-analyzes Rust in `none` build mode. GitHub's default-setup REST endpoint does not
-accept Rust for this repository, so the pinned advanced workflow supplies the
-supported path instead. Dependabot monitors Cargo and GitHub Actions, and all
-tracked action references are pinned to full commit SHAs.
+analyzes Rust in `none` build mode. GitHub's default-setup REST endpoint does
+not accept Rust for this repository, so the pinned advanced workflow supplies
+the supported path instead. Dependabot monitors Cargo and GitHub Actions, and
+all tracked action references are pinned to full commit SHAs.
 
 No workflow publishes crates, creates GitHub releases, or distributes binaries.
 Release automation should be added only after the versioning, platform, and

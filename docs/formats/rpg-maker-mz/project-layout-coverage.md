@@ -107,8 +107,8 @@ wait for controlled observations in this order:
    contributor assets, then inspect Windows and macOS default outputs; test
    encryption only with contributor-created media.
 6. **Version and conversion matrix:** observe another named MZ version at or
-   above 1.10.0 and one authorized user-owned MV-to-MZ conversion whose resulting
-   MZ project falls inside the maintained range.
+   above 1.10.0 and one authorized user-owned MV-to-MZ conversion whose
+   resulting MZ project falls inside the maintained range.
 7. **Filesystem matrix:** repeat marker-casing and filename-collision tests on a
    case-sensitive filesystem.
 
@@ -128,5 +128,5 @@ vendor project contents should become fixtures.
   host-created, or future-version path. Tilewright must preserve unknown content
   rather than wait for an impossible exhaustive list.
 
-Compatibility remains **Not implemented** in
+Compatibility remains **Experimental** for explicit-root candidate discovery in
 [`compatibility.md`](../../compatibility.md).

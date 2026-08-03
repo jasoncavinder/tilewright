@@ -63,6 +63,11 @@ Project operations should eventually enforce:
 - deterministic diagnostics that identify affected paths without leaking
   unrelated sensitive data.
 
+[ADR 0004](decisions/0004-filesystem-sandboxing.md) selects capability-relative
+access beneath an already-authorized directory handle. It does not resolve how
+Tilewright safely acquires and verifies that initial capability; that trust
+boundary remains an [open question](open-questions.md#loading-and-writes).
+
 ## MCP safety boundary
 
 MCP exposes project operations to agents and therefore needs a narrower contract
