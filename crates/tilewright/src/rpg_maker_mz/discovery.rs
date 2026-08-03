@@ -47,9 +47,9 @@ pub enum DiscoveryError {
         /// The underlying I/O error.
         source: io::Error,
     },
-    /// Failed to inspect the metadata of a potential marker file.
+    /// Failed to inspect the metadata of a potential marker entry.
     InspectMarker {
-        /// The path of the marker file being inspected.
+        /// The path of the marker entry being inspected.
         path: PathBuf,
         /// The underlying I/O error.
         source: io::Error,
@@ -75,7 +75,7 @@ impl fmt::Display for DiscoveryError {
                 write!(f, "failed to read entry in directory '{}'", root.display())
             }
             Self::InspectMarker { path, .. } => {
-                write!(f, "failed to inspect marker file '{}'", path.display())
+                write!(f, "failed to inspect marker entry '{}'", path.display())
             }
         }
     }
@@ -134,20 +134,20 @@ pub enum CandidateDiscovery {
         /// The observed marker entry.
         marker: MarkerObservation,
     },
-    /// The directory does not contain any file matching the marker name.
+    /// The directory does not contain any entry matching the marker name.
     NoMarker,
-    /// The directory contains multiple files matching the marker name
+    /// The directory contains multiple entries matching the marker name
     /// case-insensitively.
     AmbiguousMarkers {
         /// The observed marker entries, deterministically ordered by path.
         markers: Vec<MarkerObservation>,
     },
-    /// The marker file exists but is a symbolic link.
+    /// The marker entry exists but is a symbolic link.
     SymlinkMarker {
         /// The observed marker entry.
         marker: MarkerObservation,
     },
-    /// The marker file exists but is not a regular file or symlink (e.g., a directory).
+    /// The marker entry exists but is not a regular file or symlink (e.g., a directory).
     NonRegularMarker {
         /// The observed marker entry.
         marker: MarkerObservation,
