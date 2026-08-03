@@ -3,6 +3,12 @@
 ADRs record consequential decisions that should remain understandable after the
 implementation context has changed.
 
+## Proposed decisions
+
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0004: Lossless JSON representation](0004-lossless-json-representation.md) | Proposed | Adopt a Concrete Syntax Tree (CST) architecture to retain original bytes and safely manage structural edits. |
+
 ## Accepted decisions
 
 | ADR | Status | Summary |

@@ -14,7 +14,8 @@ architecture, format evidence, and accepted decisions.
 | Data-preservation, write, and MCP safety requirements | [`safety.md`](safety.md) |
 | Current support and compatibility terminology | [`compatibility.md`](compatibility.md) |
 | Deliberately unresolved decisions | [`open-questions.md`](open-questions.md) |
-| Accepted architectural decisions | [`decisions/`](decisions/README.md) |
+| Architectural decisions (Proposed and Accepted) | [`decisions/`](decisions/README.md) |
+| Lossless JSON representation study | [`lossless-json-representation-study.md`](lossless-json-representation-study.md) |
 | Evidence about proprietary formats | [`formats/`](formats/rpg-maker-mz/README.md) |
 | Fixture provenance and expected behavior | [`../fixtures/README.md`](../fixtures/README.md) |
 | Contributor process and quality gates | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
