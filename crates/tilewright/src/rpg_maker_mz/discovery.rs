@@ -13,9 +13,15 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// Errors that can occur during candidate discovery.
+///
+/// This enum and its record-style variants are non-exhaustive so the
+/// experimental discovery API can add contextual failure modes and fields
+/// without making downstream matches exhaustive.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum DiscoveryError {
     /// Failed to inspect the root directory's metadata.
+    #[non_exhaustive]
     InspectRoot {
         /// The root path being inspected.
         root: PathBuf,
@@ -24,16 +30,19 @@ pub enum DiscoveryError {
     },
     /// The supplied root path is a symlink. This is a best-effort check of the
     /// final supplied path component at inspection time.
+    #[non_exhaustive]
     RootIsSymlink {
         /// The root path that was rejected.
         root: PathBuf,
     },
     /// The supplied root path is not a directory.
+    #[non_exhaustive]
     RootIsNotDirectory {
         /// The root path that was rejected.
         root: PathBuf,
     },
     /// Failed to read the contents of the root directory.
+    #[non_exhaustive]
     ReadRoot {
         /// The root directory being read.
         root: PathBuf,
@@ -41,6 +50,7 @@ pub enum DiscoveryError {
         source: io::Error,
     },
     /// Failed to read a directory entry.
+    #[non_exhaustive]
     ReadEntry {
         /// The root directory being read.
         root: PathBuf,
@@ -48,6 +58,7 @@ pub enum DiscoveryError {
         source: io::Error,
     },
     /// Failed to inspect the metadata of a potential marker entry.
+    #[non_exhaustive]
     InspectMarker {
         /// The path of the marker entry being inspected.
         path: PathBuf,
@@ -94,7 +105,11 @@ impl Error for DiscoveryError {
 }
 
 /// The kind of filesystem entry observed for a marker.
+///
+/// This enum is non-exhaustive so additional platform entry kinds can be
+/// represented without closing the experimental API prematurely.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum MarkerEntryKind {
     /// A regular file.
     RegularFile,
@@ -107,7 +122,12 @@ pub enum MarkerEntryKind {
 }
 
 /// An observation of a potential marker entry.
+///
+/// This output record is non-exhaustive so later discovery phases can attach
+/// additional observation context without preventing callers from reading the
+/// currently exposed fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct MarkerObservation {
     /// The exact path to the observed marker entry.
     pub path: PathBuf,
@@ -119,10 +139,15 @@ pub struct MarkerObservation {
 ///
 /// This API identifies candidates based on the presence of a marker file. It does
 /// not validate the project, parse its contents, or guarantee compatibility.
+/// The enum and its record-style variants are non-exhaustive so callers must
+/// retain a fallback for future experimental discovery outcomes and `..` when
+/// matching fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum CandidateDiscovery {
     /// The directory contains exactly one regular file matching the expected
     /// lowercase marker name (`game.rmmzproject`).
+    #[non_exhaustive]
     Candidate {
         /// The observed marker entry.
         marker: MarkerObservation,
@@ -130,6 +155,7 @@ pub enum CandidateDiscovery {
     /// The directory contains exactly one regular file matching the marker name
     /// case-insensitively, but not exactly (e.g., `Game.rmmzproject`).
     /// This is a platform-limited case variant.
+    #[non_exhaustive]
     CaseVariantCandidate {
         /// The observed marker entry.
         marker: MarkerObservation,
@@ -138,16 +164,19 @@ pub enum CandidateDiscovery {
     NoMarker,
     /// The directory contains multiple entries matching the marker name
     /// case-insensitively.
+    #[non_exhaustive]
     AmbiguousMarkers {
         /// The observed marker entries, deterministically ordered by path.
         markers: Vec<MarkerObservation>,
     },
     /// The marker entry exists but is a symbolic link.
+    #[non_exhaustive]
     SymlinkMarker {
         /// The observed marker entry.
         marker: MarkerObservation,
     },
     /// The marker entry exists but is not a regular file or symlink (e.g., a directory).
+    #[non_exhaustive]
     NonRegularMarker {
         /// The observed marker entry.
         marker: MarkerObservation,
@@ -316,6 +345,27 @@ mod tests {
     }
 
     #[test]
+    fn test_classify_mixed_kind_ambiguity() {
+        let case_variant_directory = MarkerObservation {
+            path: PathBuf::from("Game.rmmzproject"),
+            kind: MarkerEntryKind::Directory,
+        };
+        let exact_symlink = MarkerObservation {
+            path: PathBuf::from("game.rmmzproject"),
+            kind: MarkerEntryKind::Symlink,
+        };
+
+        let result = classify_matches(vec![exact_symlink.clone(), case_variant_directory.clone()]);
+
+        assert_eq!(
+            result,
+            CandidateDiscovery::AmbiguousMarkers {
+                markers: vec![case_variant_directory, exact_symlink]
+            }
+        );
+    }
+
+    #[test]
     fn test_classify_symlink() {
         let marker = MarkerObservation {
             path: PathBuf::from("game.rmmzproject"),
@@ -465,8 +515,16 @@ mod tests {
         let symlink_dir = temp.path().join("symlink_dir");
         symlink(&real_dir, &symlink_dir).unwrap();
 
-        let result = discover_candidate(&symlink_dir);
-        assert!(matches!(result, Err(DiscoveryError::RootIsSymlink { .. })));
+        let error = discover_candidate(&symlink_dir).unwrap_err();
+        assert!(matches!(
+            &error,
+            DiscoveryError::RootIsSymlink { root } if root == &symlink_dir
+        ));
+        assert_eq!(
+            error.to_string(),
+            format!("root path '{}' is a symlink", symlink_dir.display())
+        );
+        assert!(std::error::Error::source(&error).is_none());
     }
 
     #[cfg(windows)]
@@ -524,8 +582,16 @@ mod tests {
             panic!("Failed to create symlink: {e}");
         }
 
-        let result = discover_candidate(&symlink_path);
-        assert!(matches!(result, Err(DiscoveryError::RootIsSymlink { .. })));
+        let error = discover_candidate(&symlink_path).unwrap_err();
+        assert!(matches!(
+            &error,
+            DiscoveryError::RootIsSymlink { root } if root == &symlink_path
+        ));
+        assert_eq!(
+            error.to_string(),
+            format!("root path '{}' is a symlink", symlink_path.display())
+        );
+        assert!(std::error::Error::source(&error).is_none());
     }
 
     #[test]
@@ -620,8 +686,24 @@ mod tests {
     fn test_discover_missing_root() {
         let temp = TempDir::new().unwrap();
         let missing_path = temp.path().join("missing");
-        let result = discover_candidate(&missing_path);
-        assert!(matches!(result, Err(DiscoveryError::InspectRoot { .. })));
+        let error = discover_candidate(&missing_path).unwrap_err();
+        match &error {
+            DiscoveryError::InspectRoot { root, source } => {
+                assert_eq!(root, &missing_path);
+                assert_eq!(source.kind(), io::ErrorKind::NotFound);
+            }
+            other => panic!("expected InspectRoot, got {other:?}"),
+        }
+        assert_eq!(
+            error.to_string(),
+            format!("failed to inspect root path '{}'", missing_path.display())
+        );
+        assert_eq!(
+            std::error::Error::source(&error)
+                .and_then(|source| source.downcast_ref::<io::Error>())
+                .map(io::Error::kind),
+            Some(io::ErrorKind::NotFound)
+        );
     }
 
     #[test]
@@ -629,11 +711,67 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let file_path = temp.path().join("file.txt");
         File::create(&file_path).unwrap();
-        let result = discover_candidate(&file_path);
+        let error = discover_candidate(&file_path).unwrap_err();
         assert!(matches!(
-            result,
-            Err(DiscoveryError::RootIsNotDirectory { .. })
+            &error,
+            DiscoveryError::RootIsNotDirectory { root } if root == &file_path
         ));
+        assert_eq!(
+            error.to_string(),
+            format!("root path '{}' is not a directory", file_path.display())
+        );
+        assert!(std::error::Error::source(&error).is_none());
+    }
+
+    #[test]
+    fn test_discovery_read_error_contracts() {
+        let root = PathBuf::from("project");
+        let marker = root.join("game.rmmzproject");
+        let cases = [
+            (
+                DiscoveryError::ReadRoot {
+                    root: root.clone(),
+                    source: io::Error::new(io::ErrorKind::PermissionDenied, "fixture read root"),
+                },
+                format!("failed to read root directory '{}'", root.display()),
+                root.clone(),
+            ),
+            (
+                DiscoveryError::ReadEntry {
+                    root: root.clone(),
+                    source: io::Error::new(io::ErrorKind::PermissionDenied, "fixture read entry"),
+                },
+                format!("failed to read entry in directory '{}'", root.display()),
+                root.clone(),
+            ),
+            (
+                DiscoveryError::InspectMarker {
+                    path: marker.clone(),
+                    source: io::Error::new(io::ErrorKind::PermissionDenied, "fixture marker"),
+                },
+                format!("failed to inspect marker entry '{}'", marker.display()),
+                marker.clone(),
+            ),
+        ];
+
+        for (error, expected_display, expected_path) in cases {
+            match &error {
+                DiscoveryError::ReadRoot { root, .. } | DiscoveryError::ReadEntry { root, .. } => {
+                    assert_eq!(root, &expected_path)
+                }
+                DiscoveryError::InspectMarker { path, .. } => {
+                    assert_eq!(path, &expected_path);
+                }
+                other => panic!("unexpected error variant: {other:?}"),
+            }
+            assert_eq!(error.to_string(), expected_display);
+            assert_eq!(
+                std::error::Error::source(&error)
+                    .and_then(|source| source.downcast_ref::<io::Error>())
+                    .map(io::Error::kind),
+                Some(io::ErrorKind::PermissionDenied)
+            );
+        }
     }
 
     #[cfg(unix)]
@@ -657,6 +795,22 @@ mod tests {
         );
     }
 
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn test_discover_non_utf8_filename_is_not_a_marker() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+
+        let temp = TempDir::new().unwrap();
+        let invalid_name = OsString::from_vec(b"game.rmmzproject\xff".to_vec());
+        File::create(temp.path().join(invalid_name)).unwrap();
+
+        assert_eq!(
+            discover_candidate(temp.path()).unwrap(),
+            CandidateDiscovery::NoMarker
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn test_discover_root_symlink_with_dot_is_not_rejected_known_limitation() {
@@ -674,6 +828,25 @@ mod tests {
         // does not provide complete root symlink rejection or race-free containment.
         let dot_path = symlink_dir.join(".");
         let result = discover_candidate(&dot_path).unwrap();
+        assert!(matches!(result, CandidateDiscovery::Candidate { .. }));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_discover_root_symlink_with_trailing_slash_is_not_rejected_known_limitation() {
+        let temp = TempDir::new().unwrap();
+        let real_dir = temp.path().join("real_dir");
+        fs::create_dir(&real_dir).unwrap();
+        File::create(real_dir.join("game.rmmzproject")).unwrap();
+
+        let symlink_dir = temp.path().join("symlink_dir");
+        symlink(&real_dir, &symlink_dir).unwrap();
+
+        // A trailing separator requires directory resolution and causes
+        // symlink_metadata to observe the target directory rather than the link.
+        let mut trailing_slash = symlink_dir.as_os_str().to_os_string();
+        trailing_slash.push("/");
+        let result = discover_candidate(Path::new(&trailing_slash)).unwrap();
         assert!(matches!(result, CandidateDiscovery::Candidate { .. }));
     }
 }

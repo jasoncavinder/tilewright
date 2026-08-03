@@ -11,13 +11,17 @@ This crate is in early development. It currently exposes its package version and
 
 Candidate discovery identifies directories that appear to be RPG Maker MZ projects based on marker files. It does not validate the project contents.
 
+Discovery results, marker observations, marker kinds, and errors are
+non-exhaustive while this API is experimental. Downstream matches must retain a
+fallback arm and use `..` in record patterns.
+
 ```rust
 use std::path::Path;
 use tilewright::rpg_maker_mz::discovery::{discover_candidate, CandidateDiscovery};
 
 let path = Path::new("path/to/project");
 match discover_candidate(path) {
-    Ok(CandidateDiscovery::Candidate { marker }) => {
+    Ok(CandidateDiscovery::Candidate { marker, .. }) => {
         println!("Found candidate marker at: {}", marker.path.display());
     }
     Ok(CandidateDiscovery::NoMarker) => {
