@@ -14,7 +14,7 @@ records and compatibility scope.
 | ID | Question | Status | Primary classification | Last updated |
 | --- | --- | --- | --- | --- |
 | [`mz-project-detection-001`](#mz-project-detection-001-what-minimum-evidence-identifies-an-rpg-maker-mz-project-root) | What minimum evidence identifies an RPG Maker MZ project root? | Active | Documented and observed for MZ 1.10.0; later target versions unresolved | 2026-08-01 |
-| [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-01 |
+| [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-03 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
@@ -331,7 +331,17 @@ Do not commit generated projects or vendor assets.
   official sources. JSON shapes, requiredness, serialization, assets, core
   scripts, save data, and deployment internals are out of scope except where
   needed to classify their roles.
-- **Last updated:** 2026-08-01
+- **Last updated:** 2026-08-03
+
+### Implementation status
+
+The core implements an **Experimental**, capability-relative inventory from this
+evidence boundary. It reports exact project-relative native paths and entry
+kinds, does not follow symlinks or read contents, recognizes only the evidenced
+standard immediate-root and immediate `data` filename families, labels other
+immediate `data/*.json` paths as extension candidates rather than proven plugin
+content, and leaves everything else unknown. This implementation status adds no
+new proprietary-format evidence or compatibility claim.
 
 ### Evidence ledger
 
@@ -1442,9 +1452,11 @@ above 1.10.0. Never commit vendor material.
 
 ### Implementation implications
 
-- **Safe now:** Inventory known immediate directories and known `data` filename
-  families for MZ 1.10.0 after candidate recognition; report unknown entries
-  without reading, executing, moving, or deleting them.
+- **Safe now and implemented experimentally:** Inventory known immediate-root
+  names and known `data` filename families relative to a caller-authorized
+  directory capability; classify other immediate `data/*.json` paths only as
+  extension candidates; report all other entries as unknown without reading,
+  executing, following symlinks, moving, or deleting them.
 - **Not justified:** Treating the known inventory as exhaustive; loading every
   JSON file as stock data; generalizing observed casing, padding, encoding,
   ordering, identifier equality, or reference validity to other versions;
