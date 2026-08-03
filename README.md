@@ -53,7 +53,7 @@ for the distinction between planned and supported behavior.
 | Package | Role | Current state |
 | --- | --- | --- |
 | [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental |
-| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Scaffold |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 
 The dependency direction is inward:
@@ -96,7 +96,7 @@ Accepted architectural decisions are recorded under
 [`docs/decisions/`](docs/decisions/README.md). Tests and source code remain the
 authority for behavior that is actually implemented.
 
-## Building the scaffold
+## Building and trying the CLI
 
 Tilewright uses a Cargo workspace with a virtual root:
 
@@ -104,11 +104,14 @@ Tilewright uses a Cargo workspace with a virtual root:
 cargo build --workspace
 cargo test --workspace
 cargo run -p tilewright-cli -- --help
+cargo run -p tilewright-cli -- discover path/to/project
+cargo run -p tilewright-cli -- discover path/to/project --format json
 ```
 
-The CLI does not yet parse arguments, so the final command currently prints
-only the package version. Contributors should use the full verification process
-described in [CONTRIBUTING.md](CONTRIBUTING.md#verification).
+The CLI currently exposes only experimental candidate discovery; it does not
+inventory, load, validate, or modify projects. Contributors should use the full
+verification process described in
+[CONTRIBUTING.md](CONTRIBUTING.md#verification).
 
 ## License
 

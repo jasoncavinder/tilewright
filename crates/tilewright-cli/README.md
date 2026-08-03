@@ -6,8 +6,32 @@
 
 ## Status
 
-This crate is a scaffold. The executable currently prints the package version
-and does not parse commands or inspect projects.
+This crate is experimental. It provides help and version output plus a
+read-only `discover` command over the core library's experimental RPG Maker MZ
+candidate-discovery API. It does not inventory, load, validate, or modify
+projects.
+
+## Usage
+
+```sh
+# Show available commands and the package version.
+cargo run -p tilewright-cli -- --help
+cargo run -p tilewright-cli -- --version
+
+# Inspect one explicit directory for an RPG Maker MZ project marker.
+cargo run -p tilewright-cli -- discover path/to/project
+
+# Emit a versioned, machine-readable result.
+cargo run -p tilewright-cli -- discover path/to/project --format json
+```
+
+Candidate, negative, ambiguous, and non-regular marker findings exit with code
+0 because discovery completed successfully. Operational failures exit with code
+1. Argument errors use `clap`'s standard nonzero exit behavior.
+
+JSON paths include an exact `utf8` value when one exists and a lossy `display`
+value for presentation. Callers must not treat `display` as an exact encoding of
+a non-UTF-8 path.
 
 ## Responsibilities
 
