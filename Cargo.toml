@@ -4,6 +4,7 @@ members = [
     "crates/tilewright",
     "crates/tilewright-cli",
     "crates/tilewright-mcp",
+    "tools/jsonc-parser-study",
 ]
 
 [workspace.package]
