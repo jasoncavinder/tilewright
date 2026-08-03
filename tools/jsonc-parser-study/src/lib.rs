@@ -1,7 +1,67 @@
 // SPDX-License-Identifier: MPL-2.0
 
+use jsonc_parser::cst::CstRootNode;
+use jsonc_parser::{CollectOptions, ParseOptions, parse_to_ast};
+
+/// Strict parser options used by every experiment in this internal study.
+pub fn strict_options() -> ParseOptions {
+    ParseOptions {
+        allow_comments: false,
+        allow_loose_object_property_names: false,
+        allow_trailing_commas: false,
+        allow_missing_commas: false,
+        allow_single_quoted_strings: false,
+        allow_hexadecimal_numbers: false,
+        allow_unary_plus_numbers: false,
+    }
+}
+
+/// Reject lexical forms that the parser scanner otherwise treats permissively.
+pub fn validate_json_lexical_domain(input: &str) -> Result<(), String> {
+    let mut in_string = false;
+    let mut escaped = false;
+
+    for (byte_index, character) in input.char_indices() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == '"' {
+                in_string = false;
+            } else if character <= '\u{001f}' {
+                return Err(format!("unescaped control character at byte {byte_index}"));
+            }
+        } else if character == '"' {
+            in_string = true;
+        } else if character.is_whitespace() && !matches!(character, ' ' | '\t' | '\n' | '\r') {
+            return Err(format!("non-JSON whitespace at byte {byte_index}"));
+        }
+    }
+
+    Ok(())
+}
+
+/// Validate one text as exactly one strict JSON value without interpreting numbers.
+pub fn strict_validate(input: &str) -> Result<(), String> {
+    validate_json_lexical_domain(input)?;
+    let parsed = parse_to_ast(input, &CollectOptions::default(), &strict_options())
+        .map_err(|error| error.to_string())?;
+    if parsed.value.is_none() {
+        return Err("JSON text must contain one value".to_owned());
+    }
+    Ok(())
+}
+
+/// Validate and construct the candidate CST representation.
+pub fn strict_parse(input: &str) -> Result<CstRootNode, String> {
+    strict_validate(input)?;
+    CstRootNode::parse(input, &strict_options()).map_err(|error| error.to_string())
+}
+
 #[cfg(test)]
 mod tests {
+    use super::{strict_options, strict_parse, strict_validate, validate_json_lexical_domain};
     use std::fmt;
 
     use jsonc_parser::cst::{CstInputValue, CstNode, CstObject, CstRootNode};
@@ -41,58 +101,6 @@ mod tests {
         ("empty_array", "[]"),
         ("deeply_nested", r#"{"a":{"b":{"c":{"d":1}}}}"#),
     ];
-
-    fn strict_options() -> ParseOptions {
-        ParseOptions {
-            allow_comments: false,
-            allow_loose_object_property_names: false,
-            allow_trailing_commas: false,
-            allow_missing_commas: false,
-            allow_single_quoted_strings: false,
-            allow_hexadecimal_numbers: false,
-            allow_unary_plus_numbers: false,
-        }
-    }
-
-    fn validate_json_lexical_domain(input: &str) -> Result<(), String> {
-        let mut in_string = false;
-        let mut escaped = false;
-
-        for (byte_index, character) in input.char_indices() {
-            if in_string {
-                if escaped {
-                    escaped = false;
-                } else if character == '\\' {
-                    escaped = true;
-                } else if character == '"' {
-                    in_string = false;
-                } else if character <= '\u{001f}' {
-                    return Err(format!("unescaped control character at byte {byte_index}"));
-                }
-            } else if character == '"' {
-                in_string = true;
-            } else if character.is_whitespace() && !matches!(character, ' ' | '\t' | '\n' | '\r') {
-                return Err(format!("non-JSON whitespace at byte {byte_index}"));
-            }
-        }
-
-        Ok(())
-    }
-
-    fn strict_validate(input: &str) -> Result<(), String> {
-        validate_json_lexical_domain(input)?;
-        let parsed = parse_to_ast(input, &CollectOptions::default(), &strict_options())
-            .map_err(|error| error.to_string())?;
-        if parsed.value.is_none() {
-            return Err("JSON text must contain one value".to_owned());
-        }
-        Ok(())
-    }
-
-    fn strict_parse(input: &str) -> Result<CstRootNode, String> {
-        strict_validate(input)?;
-        CstRootNode::parse(input, &strict_options()).map_err(|error| error.to_string())
-    }
 
     fn assert_strict_semantics(root: &CstRootNode, expected: Value) {
         let output = root.to_string();

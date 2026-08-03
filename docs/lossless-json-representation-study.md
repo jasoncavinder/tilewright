@@ -2,11 +2,14 @@
 
 ## Executive Recommendation
 
-Tilewright should continue evaluating a **Concrete Syntax Tree (CST)**
-architecture, provisionally using `jsonc-parser` 0.33.1. The tracked prototype
-provides positive evidence for strict syntax gating, no-op lexical preservation,
-bounded structural edits, and source diagnostics. ADR 0004 remains Proposed;
-the study does not establish production support.
+The completed bounded comparison supports selecting a **Concrete Syntax Tree
+(CST)** architecture, provisionally using `jsonc-parser` 0.33.1. Typed Serde
+extension storage and an order-preserving value DOM retain unknown meaning but
+do not retain all source bytes. The CST retains the complete tested lexical
+form, supports a read-only typed projection, and performs a controlled typed
+scalar replacement within an exact measured envelope. ADR 0004 remains
+Proposed until maintainer review; this study does not establish production
+support.
 
 The proposed layering is:
 
@@ -20,41 +23,57 @@ The proposed layering is:
 
 Tilewright needs to load, understand, validate, and eventually modify RPG Maker
 MZ project data without silently losing unknown or extension content. This study
-evaluates representation mechanics with independently created synthetic JSON;
-it makes no new proprietary-format claim.
+evaluates representation mechanics with independently created synthetic JSON
+and one aggregate no-op observation over authorized local MZ 1.10.0 data. No
+proprietary input is committed or reproduced.
 
 ## Non-Goals
 
 - Implementing production parsing, typed views, persistence, or transactions.
 - Exposing public JSON-manipulation APIs.
 - Selecting Tilewright's final diagnostic representation.
-- Establishing stale-snapshot refusal or performance readiness.
+- Establishing stale-snapshot refusal, a performance budget, or production
+  readiness.
 
 ## Evaluation Criteria and Status
 
 | Criterion | Weight | Status | Current evidence | Remaining work |
 | --- | ---: | --- | --- | --- |
-| Preservation safety | 30% | Observed | `no_op_round_trip_preserves_every_declared_matrix_case`; `duplicate_targets_are_refused_without_changing_bytes` | Production integration and broader format fixtures |
-| Mutation precision | 25% | Partially observed | String, numeric-wrapper, exact insertion/deletion envelopes, adversarial-neighbor preservation, and duplicate-refusal tests | Scalar replacement contracts and stale-snapshot refusal |
-| Typed-view integration | 15% | Unknown | None | Design typed projections over retained CST nodes |
+| Preservation safety | 30% | Observed | Synthetic no-op matrix, duplicate refusal, and `MZ-1.10.0-CST-NOOP-2026-08-03` over 252 authorized local files | Production integration, edited/plugin data, and later versions |
+| Mutation precision | 25% | Observed for tested operations | String and numeric wrappers, exact scalar replacement/insertion/deletion envelopes, adversarial-neighbor preservation, and duplicate refusal | Production wrappers and operation-specific expansion |
+| Typed-view integration | 15% | Partially observed | Minimal typed string projections over ordered DOM and retained CST nodes | Design production domain projections and error types |
 | Source spans and diagnostics | 10% | Observed | `direct_parser_reports_exact_diagnostic_location` | Select Tilewright's diagnostic API and Unicode-width policy |
-| Malformed-input behavior | 5% | Partially observed | Strict rejection, direct BOM, and nesting-limit tests | Define the byte-decoding boundary and broader resource limits |
+| Malformed-input behavior | 5% | Observed for tested boundary | Strict rejection, explicit invalid-UTF-8/BOM refusal, and nesting-limit tests | Production diagnostics and broader resource limits |
 | Maintenance health and license | 5% | Documented | Pinned 0.33.1 dependency and upstream MIT metadata | Ongoing dependency policy and upgrade tests |
 | Dependency footprint | 5% | Partially observed | Workspace lockfile | Set an accepted dependency budget |
-| Performance feasibility | 5% | Unknown | None | Reproducible representative benchmarks |
+| Performance feasibility | 5% | Observed, non-gating | Reproducible synthetic release-mode timing probe on one documented host | Representative production workloads and an accepted budget |
 
 Weights describe decision importance; they are not combined into a readiness
 score while criteria remain Unknown or Partially observed.
 
 ## Candidates Considered
 
-The design space included typed Serde deserialization, order-preserving DOMs,
-CSTs, and a custom raw-string-plus-span editor. The tracked harness evaluates
-only `jsonc-parser` 0.33.1. Earlier observations about `serde_json`, `jstrict`,
-and `hifijson` are not retained as decision-grade comparative evidence, so this
-study does not claim that their serializers were reproducibly rejected.
+The executed comparison uses the same synthetic inputs for three roadmap-level
+strategies:
 
-The CST proposal is based on the candidate's demonstrated positive behavior.
+1. **Typed deserialization with extension storage:** a typed `known: String`
+   field plus flattened insertion-ordered `IndexMap<String,
+   serde_json::Value>` extensions.
+2. **Order-preserving document model with typed views:**
+   `serde_json::Value` with `preserve_order` and `arbitrary_precision`, plus a
+   typed string projection.
+3. **Lossless syntax representation:** the existing strict gate and
+   `jsonc-parser` 0.33.1 CST, plus a unique-property typed projection.
+
+The first two deliberately use the same current JSON implementation so the
+comparison isolates representation strategy rather than unrelated parser
+behavior. Typed extension storage moves the known field ahead of extensions
+when serialized and both value models decode string escapes and normalize outer
+trivia. The ordered DOM preserves input key order, and arbitrary-precision
+numbers retain the tested numeric lexemes. Both value models collapse duplicate
+object keys unless typed deserialization rejects a duplicate known field. The
+CST retains all tested bytes and lets a wrapper refuse ambiguous decoded names.
+
 A custom span editor remains possible, but requiring Tilewright to own
 punctuation, trivia, nested-edit, and stale-span behavior is an inferred
 maintenance disadvantage.
@@ -71,6 +90,28 @@ cargo test -p jsonc-parser-study --all-targets --all-features --locked
 
 Each Observed claim below names the test that reaches the claimed API. Passing
 the harness demonstrates only these bounded observations.
+
+## Executed Comparative Matrix
+
+`three_required_strategies_have_comparable_no_op_results` runs each accepted
+input through all three strategies. “Exact” means the serialized UTF-8 bytes
+equal the input; every non-exact output is also passed through the strict gate.
+
+| Synthetic case | Typed extensions | Ordered DOM | CST |
+| --- | --- | --- | --- |
+| Compact, known field first, nested numeric extension | Exact | Exact | Exact |
+| Unknown field before known field | Reordered | Exact | Exact |
+| Pretty outer whitespace and final newline | Normalized | Normalized | Exact |
+| Escaped known string | Escape decoded | Escape decoded | Exact |
+| Numeric and escaped-string lexemes in unknown nested data | String escape decoded | String escape decoded | Exact |
+| CRLF outer layout and trailing newline | Normalized | Normalized | Exact |
+
+The typed and ordered-DOM views decode the same known string value in every
+case. Separate mutation assertions show that both value models retain the
+unknown data's JSON meaning while changing lexical form. A duplicate known name
+is rejected by typed deserialization, collapsed to the last value by the DOM,
+and retained by the CST; the CST typed wrapper then refuses the ambiguous
+lookup without changing bytes.
 
 ## Executed Synthetic No-Op Matrix
 
@@ -100,6 +141,21 @@ The `NO_OP_CASES` table used by
 The test parses each case through the strict gate, constructs a CST, serializes
 without mutation, and compares the resulting UTF-8 string exactly.
 
+## Authorized Local No-Op Observation
+
+`MZ-1.10.0-CST-NOOP-2026-08-03` copied only the `data` directories from the
+four user-owned fresh MZ 1.10.0 projects already recorded by
+`MZ-1.10.0-FRESH-4-2026-08-01` into a unique ignored workspace. The aggregate
+corpus tool inspected 252 JSON files: all 252 were valid UTF-8, had no BOM,
+passed the strict gate, and serialized from the CST byte-identically. There
+were no strict rejections, changed outputs, symlinks, or read errors.
+
+This bridges the synthetic no-op result to those exact authorized files only.
+It does not establish mutation fidelity, edited or plugin-generated data,
+other MZ versions, a production loader, or editor reopen compatibility. Raw
+inputs, paths, filenames, excerpts, and per-file results remain ignored and are
+not retained.
+
 ## Strict Input Domain
 
 The currently accepted prototype domain is:
@@ -111,10 +167,13 @@ The currently accepted prototype domain is:
 - every `ParseOptions` extension disabled; and
 - at most 512 nested arrays in the observed boundary test.
 
-Invalid UTF-8 is rejected before this Rust string API and therefore remains a
-separate loading-boundary design question. Version 0.33.1 directly rejects a
-leading UTF-8 BOM; the proposal does not silently strip it or claim BOM
-preservation.
+`byte_boundary_can_refuse_invalid_utf8_and_bom_without_normalizing` demonstrates
+a byte-level wrapper that explicitly distinguishes invalid UTF-8, a leading
+UTF-8 BOM, and strict syntax rejection before CST construction. Version 0.33.1
+also directly rejects a leading UTF-8 BOM. This establishes that refusal is
+implementable without normalization; whether permanent production policy
+should reject or separately preserve BOM-prefixed input remains a maintainer
+decision.
 
 Strict validation uses `parse_to_ast` with comment collection disabled and all
 extensions disabled. A lexical preflight closes scanner gaps for non-JSON
@@ -136,6 +195,11 @@ Touched documents have operation-specific envelopes:
 
 - string construction escapes required property-name/value characters and
   preserves tested Unicode;
+- a minimal typed CST string view reads one uniquely named property without
+  changing bytes;
+- replacing that uniquely named string changes only its literal in the tested
+  compact and CRLF layouts, while an ambiguous duplicate target is refused
+  without changing bytes;
 - scalar or raw-literal replacement changes the selected literal and requires
   output revalidation;
 - insertion/deletion may change punctuation, separators, indentation, newline
@@ -169,7 +233,11 @@ Duplicate decoded property names make name-based mutation ambiguous. A
 prototype wrapper enumerates decoded names and refuses missing or ambiguous
 targets before changing the CST. Tests include literal, nested, and
 escape-equivalent duplicate names and confirm byte identity after refusal.
-Stale snapshot/hash refusal remains future wrapper work.
+The same unique-property lookup now backs a minimal typed string view and a
+safe string replacement using `CstInputValue::String`; exact compact and CRLF
+outputs preserve tested neighboring lexemes. Stale snapshot/hash refusal
+remains future wrapper work for later loading and persistence capabilities, not
+a representation-selection experiment.
 
 ## Diagnostics
 
@@ -186,17 +254,34 @@ maintenance must include rerunning these regression tests on upgrade. If the
 crate becomes unsuitable, Tilewright would need another CST implementation or a
 custom editor.
 
-No performance conclusion is retained. Representative project-size benchmarks,
-methodology, and an acceptance budget are still required.
+`cargo run --release -p jsonc-parser-study --example measure --locked` generates
+the same deterministic object-shaped inputs for all three strategies, performs
+parse plus serialization, and emits CSV. One arm64 macOS 26.6 run with Rust
+1.97.1 measured:
+
+| Input bytes | Typed extensions | Ordered DOM | Strict gate + CST |
+| ---: | ---: | ---: | ---: |
+| 808 | 18.75 µs | 16.57 µs | 68.33 µs |
+| 77,356 | 1.12 ms | 0.78 ms | 3.13 ms |
+| 390,956 | 3.81 ms | 3.07 ms | 15.41 ms |
+
+The CST path includes both the transient strict AST pass and CST construction,
+and its output remains the full input size; value-model outputs are smaller
+because they normalize lexical form. These are single-run per-iteration
+averages, not statistical medians; the simple probe does not isolate allocation
+or I/O, and no threshold is enforced. The result establishes bounded
+feasibility only. Representative production workloads, repeated statistical
+benchmarking, and an accepted budget remain future work.
 
 ## Unresolved Questions
 
-- What typed-view API should sit over the CST?
+- What production typed-view and error API should sit over the CST?
 - How should stale snapshots and semantic project diffs be represented?
 - What constitutes a stable project or resource identifier?
 - What is Tilewright's final diagnostic representation and Unicode-width policy?
 - Should BOM-prefixed input be rejected permanently or preserved by a separate
-  byte-level envelope?
+  byte-level envelope? Explicit refusal is demonstrated but not yet accepted as
+  policy.
 - What performance and dependency budgets are acceptable?
 
 ## Evidence Ledger
@@ -212,6 +297,12 @@ methodology, and an acceptance budget are still required.
 | Direct CST parsing rejects a UTF-8 BOM | `direct_parser_rejects_utf8_bom` | Observed | High |
 | Parser diagnostics expose the tested range, kind, line, and column | `direct_parser_reports_exact_diagnostic_location` | Observed | High |
 | Executed no-op matrix is byte-identical | `no_op_round_trip_preserves_every_declared_matrix_case` | Observed | High |
+| Typed extension storage and an ordered DOM preserve tested unknown meaning but normalize documented lexical forms | `three_required_strategies_have_comparable_no_op_results`; `typed_mutations_preserve_unknown_meaning_but_not_all_lexemes` | Observed | High for the synthetic comparison corpus and selected crate features |
+| The ordered DOM collapses duplicate names while typed deserialization rejects a duplicate known field; CST retains both and permits explicit refusal | `duplicate_names_distinguish_refusal_from_silent_collapse` | Observed | High for the tested duplicate form |
+| A minimal typed CST view reads a decoded string without changing source bytes | `cst_typed_view_reads_without_changing_bytes` | Observed | High for the tested unique string field |
+| Safe typed string replacement changes only the selected literal in tested compact and CRLF layouts and refuses duplicate targets unchanged | `cst_typed_scalar_replacement_has_an_exact_envelope` | Observed | High for the tested envelopes |
+| A byte wrapper can distinguish and refuse invalid UTF-8, BOM-prefixed input, and strict syntax failure before CST construction | `byte_boundary_can_refuse_invalid_utf8_and_bom_without_normalizing` | Observed | High for the tested byte sequences; production policy remains undecided |
+| All 252 authorized local MZ 1.10.0 JSON files pass the strict gate and no-op serialize from CST byte-identically | `MZ-1.10.0-CST-NOOP-2026-08-03`; `corpus_noop` | Observed | High for the exact ignored corpus and dependency version |
 | String constructor escapes required characters and preserves tested Unicode names and values | `string_constructor_escapes_required_characters_and_preserves_unicode` | Observed | High |
 | Raw number/string literal surfaces can produce invalid JSON | `unchecked_raw_literal_apis_can_create_invalid_json` | Observed | High |
 | Validated number wrapper refuses before mutation | `validated_number_refuses_invalid_input_before_mutation` | Observed | High |
@@ -219,4 +310,5 @@ methodology, and an acceptance budget are still required.
 | Representative insertion envelopes preserve exact documented invariants | `insertion_envelope_covers_positions_and_layouts` | Observed | High |
 | Removal and insertion preserve tested adversarial neighbors outside the envelope | `mutations_preserve_adversarial_neighbors_outside_the_envelope` | Observed | High |
 | Duplicate targets can be refused without changing bytes | `duplicate_targets_are_refused_without_changing_bytes` | Observed | High |
+| Strict gate plus CST is slower than the two value models but completes the tested 391 KB parse/serialize probe in about 15 ms on one documented host | `measure` release-mode example | Observed | Medium: single-host, non-statistical feasibility probe only |
 | A custom span editor would add maintenance burden | Architectural analysis | Inferred | Medium |

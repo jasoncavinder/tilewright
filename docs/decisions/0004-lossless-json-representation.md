@@ -11,16 +11,19 @@ According to [ADR 0003](0003-stock-authoring-data-parity.md), Tilewright must pr
 
 The accompanying [representation study](../lossless-json-representation-study.md)
 considers several JSON representation strategies:
-1. Typed Serde deserialization (`serde_json::Value`).
-2. Order-preserving JSON DOMs (`jstrict`, `hifijson`).
+1. Typed Serde deserialization with insertion-ordered extension storage.
+2. An order-preserving `serde_json::Value` DOM with typed projections.
 3. Concrete Syntax Trees (`jsonc-parser`).
 4. Hybrid String Replacement (Raw String + Spans).
 
-The tracked prototype supplies positive evidence for the CST option. Earlier
-comparative DOM observations are not retained as decision-grade evidence, and
-the proposal does not rely on them. A custom raw-string-and-span mutation engine
-could be made safe, but doing so would require Tilewright to own punctuation,
-trivia, and stale-span behavior that the CST already provides.
+The tracked study now compares the first three strategies against the same
+synthetic inputs. Typed extension storage and the ordered DOM preserve tested
+unknown meaning, but normalize outer trivia and string escapes; typed storage
+also moves known fields ahead of extensions. The CST retains all tested bytes,
+including duplicate names, and permits explicit ambiguity refusal. A custom
+raw-string-and-span mutation engine could be made safe, but doing so would
+require Tilewright to own punctuation, trivia, and stale-span behavior that the
+CST already provides.
 
 ## Decision
 
@@ -35,16 +38,20 @@ We propose that Tilewright adopt a **Concrete Syntax Tree (CST)** architecture:
 
 For accepted inputs—valid UTF-8, no BOM, strict JSON syntax, and at most the
 parser's observed nesting limit—the prototype provides byte identity when no
-mutation occurs. It also demonstrates that CST operations can manage structural
-punctuation while retaining lexemes outside an operation's measured mutation
+mutation occurs. This holds for the synthetic matrix and an authorized local
+corpus of 252 MZ 1.10.0 JSON files. It also demonstrates a read-only typed view,
+an exact typed scalar-replacement envelope, and structural punctuation
+management while retaining tested lexemes outside each operation's measured
 envelope. These are bounded observations, not a production support claim.
 
 ## Consequences
 
 If accepted, this proposal would mean:
-- **Untouched accepted documents** will remain byte-identical. Invalid UTF-8 is
-  rejected before the string parser, and version 0.33.1 rejects a UTF-8 BOM.
-  BOM preservation remains unresolved rather than being silently normalized.
+- **Untouched accepted documents** will remain byte-identical. A prototype byte
+  boundary explicitly refuses invalid UTF-8 and BOM-prefixed input before CST
+  construction, and version 0.33.1 also rejects a UTF-8 BOM. Whether BOM refusal
+  becomes permanent production policy remains unresolved rather than being
+  silently normalized.
 - **Touched documents** have operation-specific mutation envelopes. Structural
   edits may change the target container's punctuation, separators, indentation,
   newline layout, and adjacent or owned trivia. Exact preservation outside that
@@ -66,11 +73,13 @@ If accepted, this proposal would mean:
 
 ## Alternatives Considered
 
-- **Typed or order-preserving DOMs:** Not selected by this proposal because
-  their value-oriented models do not themselves provide the token/trivia
-  retention demonstrated by the CST prototype. The tracked study does not claim
-  a reproducible comparative serialization result for `serde_json`, `jstrict`,
-  or `hifijson`.
+- **Typed Serde with extension storage:** The executed candidate retains tested
+  unknown meaning in an insertion-ordered extension map, but serialization
+  moves its known field ahead of extensions and normalizes outer trivia and
+  decoded string escapes.
+- **Order-preserving value DOM:** The executed candidate retains tested input
+  key order and arbitrary-precision numeric lexemes, but normalizes outer trivia
+  and string escapes and collapses duplicate names to the last value.
 - **Hybrid String Replacement (Raw String + Spans):** Not selected because it
   would require a custom structural mutation engine for punctuation, trivia,
   nested edits, and stale spans. This is an inferred maintenance tradeoff, not
@@ -79,6 +88,13 @@ If accepted, this proposal would mean:
 ## Validation
 
 A tracked prototype exercises the following bounded behavior:
+- **Comparative representation:** All three roadmap-level strategies run over
+  the same synthetic cases with explicit byte-fidelity assertions. The CST is
+  the only candidate that remains exact for every accepted comparison case and
+  retains duplicates for wrapper-level refusal.
+- **Authorized local no-op:** The strict gate and CST reproduce all 252 JSON
+  files from four copied user-owned MZ 1.10.0 `data` directories byte-for-byte;
+  only aggregate results and safe procedure are retained.
 - **Structural edits:** Representative object and array insertions/deletions
   remain valid and have exact output assertions. A combined mutation case also
   records exact preservation of tested unknown nested data, numeric lexemes,
@@ -89,7 +105,14 @@ A tracked prototype exercises the following bounded behavior:
   comments despite `allow_comments = false`, so it cannot be the strict gate.
 - **Mutation safety:** The string constructor quotes names and values, escapes
   required punctuation and controls, and preserves tested Unicode; unchecked
-  numeric and raw-literal APIs require wrappers and output revalidation.
+  numeric and raw-literal APIs require wrappers and output revalidation. A
+  minimal typed view and string replacement preserve tested neighbors exactly
+  and refuse duplicate targets before mutation.
+- **Byte boundary:** A prototype distinguishes explicit invalid-UTF-8, BOM, and
+  strict-syntax refusal without normalization.
 - **Diagnostics:** The parser exposes byte ranges plus 1-indexed line and column
   values. Unicode display width remains feature-dependent, and Tilewright's
   final diagnostic representation is unresolved.
+- **Performance feasibility:** A reproducible, non-gating synthetic probe
+  completes strict parse plus CST serialization of a 391 KB input in about 15
+  ms on one documented arm64 macOS host. No production budget is claimed.
