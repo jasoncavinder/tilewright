@@ -74,7 +74,9 @@ loader API once the project-loading boundary is fully designed.
 
 ## Consequences
 
-- **Dependency:** Will add `cap-std` as a core dependency in a future phase.
+- **Dependency:** The core depends on `cap-std`; the read-only inventory also
+  uses `cap-fs-ext` to open each descendant directory with final-component
+  symlink following disabled.
 - **Refactoring:** Future loaders must be built around `cap_std::fs::Dir`
   instead of `std::path::Path` and `std::fs`.
 - **API Design:** A path-taking API must not claim root identity merely because
@@ -82,7 +84,7 @@ loader API once the project-loading boundary is fully designed.
   define how the initial capability is authorized.
 - **Root Acquisition:** Whether callers provide an authorized `Dir` or the
   library acquires one relative to a trusted parent remains an open question.
-- **Symlink Policy:** By default, `cap-std` prevents escaping the directory. We
-  must explicitly decide how to handle symlinks that resolve *within* the
-  project boundary (whether to follow them or reject them), but escapes are
-  structurally prevented.
+- **Symlink Policy:** The read-only inventory reports every encountered symlink
+  and does not follow it, including links whose targets may remain inside the
+  capability. Policies for later loading and writes remain separate decisions;
+  escaping the supplied capability is structurally prevented.

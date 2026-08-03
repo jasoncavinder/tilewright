@@ -118,9 +118,10 @@ vendor project contents should become fixtures.
 
 ## Implementation-readiness boundary
 
-- **Ready to research-driven implementation:** explicit-root, read-only
-  candidate discovery; exact-path inventory; known/unknown classification; and
-  synthetic path-level tests.
+- **Implemented experimentally:** explicit-root candidate discovery plus
+  capability-relative exact-path inventory, conservative
+  known/extension-candidate/unknown classification, symlink reporting without
+  traversal, and generated path-level tests.
 - **Not ready for a broad compatibility claim:** complete project loading,
   plugin-aware interpretation, deployment recognition across targets, edited
   project validation, or lossless writes.
@@ -128,5 +129,5 @@ vendor project contents should become fixtures.
   host-created, or future-version path. Tilewright must preserve unknown content
   rather than wait for an impossible exhaustive list.
 
-Compatibility remains **Experimental** for explicit-root candidate discovery in
-[`compatibility.md`](../../compatibility.md).
+Compatibility remains **Experimental** for explicit-root candidate discovery and
+capability-relative inventory in [`compatibility.md`](../../compatibility.md).

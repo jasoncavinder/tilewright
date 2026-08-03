@@ -30,10 +30,11 @@ not use “supported” to mean only that one file happened to parse.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Core `tilewright` package | Experimental | Exposes its package version and an experimental candidate discovery API. |
+| Core `tilewright` package | Experimental | Exposes its package version, candidate discovery, and capability-relative read-only project inventory. |
 | `tilewright` CLI executable | Experimental | Provides help/version output and human- or JSON-formatted access to the core library's experimental explicit-root candidate discovery. It does not inventory, load, validate, or modify projects. |
 | `tilewright-mcp` server | Scaffold | Not yet an MCP server; it prints its package version. |
 | RPG Maker MZ explicit-root candidate recognition | Experimental | Path-level recognition is based on the documented marker role and recorded MZ 1.10.0 observations from the tested macOS environment. CI on Ubuntu, macOS, and Windows is implementation regression coverage, not editor-compatibility evidence. Newer MZ versions and unobserved editor/filesystem combinations remain unknown. Discovery does not validate project contents, infer a version, parse JSON, or guarantee compatibility. It uses `std::fs` and does not provide race-free sandbox containment or complete root symlink rejection. |
+| RPG Maker MZ capability-relative project inventory | Experimental | Recursively reports deterministically ordered, exact project-relative native paths, entry kinds, and conservative known/extension-candidate/unknown pathname classifications beneath a caller-authorized `cap_std::fs::Dir`. Symlinks are reported without traversal, and file contents are not read. Known paths are limited to evidenced immediate-root names and immediate standard `data` filename families; other immediate `data/*.json` names are extension candidates, not proven plugin content. The API does not acquire or verify the initial root capability, validate entry kinds or contents, infer compatibility, provide an atomic snapshot during concurrent mutation, or return partial results after an I/O error. |
 | RPG Maker MZ versions before 1.10.0 | Unsupported | Outside the maintained target. Evidence-backed contributor proposals to expand the matrix are welcome. |
 | Project-file parsing | Not implemented | No format models or parsers exist. |
 | Project validation | Not implemented | No validation contract exists. |
