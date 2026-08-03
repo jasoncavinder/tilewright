@@ -5,3 +5,4 @@
 //! This module contains format-specific domain behavior for RPG Maker MZ.
 
 pub mod discovery;
+pub mod inventory;

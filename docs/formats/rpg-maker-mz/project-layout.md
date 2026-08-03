@@ -83,6 +83,29 @@ This behavior deliberately permits false-positive candidates when a marker was
 copied. Validation and version support require additional observations, parsers,
 and tests.
 
+### Implemented inventory boundary
+
+The core's separate capability-relative inventory is **Experimental**. It takes
+a caller-authorized directory handle, recursively reports exact native
+project-relative paths and entry kinds, and reports symlinks without following
+them. It does not acquire the initial capability, inspect marker or file
+contents, parse JSON, or infer validity or compatibility.
+
+Path classification is intentionally narrow and case-sensitive:
+
+- the 12 exact immediate-root names observed across the four MZ 1.10.0 New Game
+  projects are known standard root entries;
+- the exact standard immediate `data` filenames in this research and the
+  three-ASCII-digit `data/MapNNN.json` family are known data paths;
+- other immediate `data/*.json` paths are extension candidates because that
+  location is documented as extension-capable, but are not called plugin data;
+  and
+- every other descendant remains unknown.
+
+Known classification is a pathname observation only. It does not assert that an
+entry has the expected filesystem kind, contains valid data, is required, or is
+compatible with any editor version.
+
 ## Evidence-backed high-level layout
 
 The tree is an inventory of documented locations, not a required-file schema.
@@ -394,9 +417,9 @@ must therefore use an open-world inventory:
 
 ## Proposed fixtures and tests
 
-No fixture data is added by this research change. The next implementation should
-prefer programmatically generated temporary directory trees. If persistent
-fixtures are useful, every one must follow [`fixtures/README.md`](../../../fixtures/README.md).
+The inventory implementation uses programmatically generated temporary directory
+trees and adds no persistent project fixture data. Any future persistent fixture
+must follow [`fixtures/README.md`](../../../fixtures/README.md).
 
 Minimum path-level cases:
 

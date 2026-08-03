@@ -92,6 +92,14 @@ do not normalize, execute, delete, or reinterpret unknown entries. Files that
 look like stock data remain observations until their syntax and role are
 separately established.
 
+**Current status: Experimental.** The core now inventories descendants relative
+to a caller-authorized `cap_std::fs::Dir`, reports exact native `PathBuf` values
+and entry kinds, and does not follow symlinks or read file contents. Exact
+evidenced immediate-root names and immediate standard `data` filename families
+are known; other immediate `data/*.json` paths are extension candidates, not
+proven plugin data; all remaining paths are unknown. Initial capability
+acquisition remains unresolved under ADR 0005.
+
 ### 3. Lossless representation experiment and decision
 
 Before broad parser models or serialization APIs, compare at least:
@@ -228,8 +236,8 @@ expand an implementation merely because adjacent fields look familiar.
 
 ## Immediate next work
 
-The first implementation milestone is explicit-root candidate discovery. In
-parallel, a bounded research or experimental task may prepare the lossless
-representation comparison, but it should not publish broad parser types before
-the preservation decision is reviewed. Typed loading begins only after that
-decision, then advances through the vertical slices above.
+Explicit-root candidate discovery and capability-relative project inventory are
+implemented experimentally. The next core loading work remains bounded by the
+accepted lossless-representation decision and must not turn path inventory into
+an implicit parsing or compatibility claim. Typed loading then advances through
+the vertical slices above.
