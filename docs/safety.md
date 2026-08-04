@@ -19,10 +19,7 @@ Any representation and writer design must answer:
 - what happens when a typed edit conflicts with preserved raw data; and
 - when Tilewright refuses a round trip because it cannot meet its guarantee.
 
-Potential designs include extension maps, preserved raw documents, typed views
-over lossless storage, or explicit strict and permissive modes. None has been
-selected yet. The requirement to avoid silent loss is established; the mechanism
-is an [open decision](open-questions.md#data-representation-and-apis).
+The requirement to avoid silent loss is established; the mechanism uses an accepted CST/raw-storage-plus-typed-view direction ([ADR 0004](decisions/0004-lossless-json-representation.md)).
 
 ## Evidence limits writes
 

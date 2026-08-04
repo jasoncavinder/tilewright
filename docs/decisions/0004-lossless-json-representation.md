@@ -1,7 +1,7 @@
 # ADR 0004: Lossless JSON Representation
 
-- **Status:** Proposed
-- **Date:** 2026-08-02
+- **Status:** Accepted
+- **Date:** 2026-08-04
 
 ## Context
 
@@ -27,26 +27,25 @@ CST already provides.
 
 ## Decision
 
-We propose that Tilewright adopt a **Concrete Syntax Tree (CST)** architecture:
+Tilewright will adopt a **Concrete Syntax Tree (CST)** architecture:
 
-1. **Storage:** Parse the document into a CST (provisionally `jsonc-parser` 0.33.1) that retains all tokens, including whitespace, comments, and exact numeric/string lexemes.
+1. **Storage:** Parse the document into a CST (provisionally `jsonc-parser` 0.33.1) that retains all tokens admitted by the accepted strict-input contract, including whitespace and exact numeric/string lexemes. Comments are a backend capability, not currently accepted input.
 2. **Typed Views:** Project typed domain models over the CST nodes.
-3. **Mutation:** Place validated, typed wrappers around CST edits, then strictly
-   revalidate the serialized result before accepting a mutation.
+3. **Mutation:** Place typed wrappers with type/shape checks around CST edits, then strictly
+   revalidate the serialized result before accepting a mutation. Explicitly require staging, cloning, rollback, or equivalent isolation so failed validation cannot alter the caller-visible accepted document.
 
 ## Rationale
 
-For accepted inputs—valid UTF-8, no BOM, strict JSON syntax, and at most the
-parser's observed nesting limit—the prototype provides byte identity when no
-mutation occurs. This holds for the synthetic matrix and an authorized local
+For accepted inputs—valid UTF-8, no BOM, strict JSON syntax, and at most 512 nested arrays (513 rejected)—the prototype provides byte identity when no
+mutation occurs. Other resource/nesting behavior remains unestablished. This holds for the synthetic matrix and an authorized local
 corpus of 252 MZ 1.10.0 JSON files. It also demonstrates a read-only typed view,
-an exact typed scalar-replacement envelope, and structural punctuation
+an exact tested replacement envelope, and structural punctuation
 management while retaining tested lexemes outside each operation's measured
 envelope. These are bounded observations, not a production support claim.
 
 ## Consequences
 
-If accepted, this proposal would mean:
+This decision means:
 - **Untouched accepted documents** will remain byte-identical. A prototype byte
   boundary explicitly refuses invalid UTF-8 and BOM-prefixed input before CST
   construction, and version 0.33.1 also rejects a UTF-8 BOM. Whether BOM refusal
@@ -106,7 +105,7 @@ A tracked prototype exercises the following bounded behavior:
 - **Mutation safety:** The string constructor quotes names and values, escapes
   required punctuation and controls, and preserves tested Unicode; unchecked
   numeric and raw-literal APIs require wrappers and output revalidation. A
-  minimal typed view and string replacement preserve tested neighbors exactly
+  minimal typed view and an exact tested replacement envelope preserve tested neighbors exactly
   and refuse duplicate targets before mutation.
 - **Byte boundary:** A prototype distinguishes explicit invalid-UTF-8, BOM, and
   strict-syntax refusal without normalization.

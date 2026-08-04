@@ -44,8 +44,7 @@ unknown and plugin-defined content. The following details remain open:
 
 ## Data representation and APIs
 
-- What lossless representation will preserve unknown JSON fields?
-- Should the library expose raw documents, typed views, or both?
+- What production typed-view ownership and API design should sit over the CST?
 - How should raw extension data relate to typed mutation APIs?
 - What constitutes a stable project or resource identifier?
 - How should event-command parameter arrays be typed incrementally?
@@ -53,6 +52,9 @@ unknown and plugin-defined content. The following details remain open:
   diagnostics be represented?
 - Which error library, if any, is appropriate for the core?
 - How should semantic project diffs be represented?
+- Should BOM-prefixed input be rejected permanently or preserved by a separate
+  byte-level envelope?
+- What performance and dependency budgets are acceptable?
 
 ## Loading and writes
 

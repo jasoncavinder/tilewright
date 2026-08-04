@@ -100,21 +100,19 @@ are known; other immediate `data/*.json` paths are extension candidates, not
 proven plugin data; all remaining paths are unknown. Initial capability
 acquisition remains unresolved under ADR 0005.
 
-### 3. Lossless representation experiment and decision
+### 3. Lossless representation decision
 
-Before broad parser models or serialization APIs, compare at least:
+[ADR 0004](decisions/0004-lossless-json-representation.md) selects a CST architecture. The executed comparison evaluated:
 
 - typed deserialization with extension storage;
 - an order-preserving document model with typed views; and
 - a lossless syntax or targeted-edit representation retaining original bytes.
 
-Evaluate no-op byte preservation, unknown keys and nested values, ordering,
+The evaluation covered no-op byte preservation, unknown keys and nested values, ordering,
 numeric lexemes, string escapes, duplicate keys, invalid UTF-8 or BOM handling,
-and a controlled typed scalar edit. Use synthetic adversarial documents plus
-authorized local observations; do not commit vendor data.
+and a controlled typed scalar edit.
 
-Record the chosen raw/typed relationship and fidelity contract in an ADR. At a
-minimum, untouched documents should remain byte-identical. The guarantee for a
+The accepted decision requires untouched documents to remain byte-identical. The guarantee for a
 touched document must be explicit, tested, and allowed to refuse unsafe edits.
 
 ### 4. Raw project loading and diagnostics
