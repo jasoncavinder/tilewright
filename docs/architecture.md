@@ -11,7 +11,7 @@ This is an accepted boundary, recorded in
 authoring-data parity target is defined by
 [ADR 0003](decisions/0003-stock-authoring-data-parity.md), and its staged
 development gates are in the [capability roadmap](capability-roadmap.md). The
-details of raw/typed data layering, project loading, errors, and writes remain
+details of project loading, errors, and writes remain
 open until research and experiments support them.
 
 ## Workspace shape
@@ -106,8 +106,10 @@ separable even if early implementations keep them close together:
 - **Persistence** handles filesystem scope, validation, backups, and atomic
   replacement independently from in-memory edits.
 
-The exact raw-document and typed-view relationship is an
-[open question](open-questions.md#data-representation-and-apis). Silent data
+The exact raw-document and typed-view relationship uses the CST/raw-storage-plus-typed-view
+architectural direction accepted in [ADR 0004](decisions/0004-lossless-json-representation.md).
+Concrete document and view types, ownership, APIs, and operation-specific
+preservation and refusal contracts remain unresolved or unimplemented. Silent data
 loss is not an acceptable answer.
 
 ## Public API principles

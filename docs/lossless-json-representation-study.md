@@ -7,11 +7,11 @@ The completed bounded comparison supports selecting a **Concrete Syntax Tree
 extension storage and an order-preserving value DOM retain unknown meaning but
 do not retain all source bytes. The CST retains the complete tested lexical
 form, supports a read-only typed projection, and performs a controlled typed
-scalar replacement within an exact measured envelope. ADR 0004 remains
-Proposed until maintainer review; this study does not establish production
-support.
+scalar replacement within an exact measured envelope. ADR 0004 is now Accepted,
+but this study does not establish production support.
 
-The proposed layering is:
+The accepted architectural direction was evaluated through this provisional
+layering:
 
 1. Apply a transient strict AST syntax pass before CST construction without
    interpreting numeric lexemes as Rust numeric values.
@@ -40,11 +40,12 @@ proprietary input is committed or reproduced.
 | Criterion | Weight | Status | Current evidence | Remaining work |
 | --- | ---: | --- | --- | --- |
 | Preservation safety | 30% | Observed | Synthetic no-op matrix, duplicate refusal, and `MZ-1.10.0-CST-NOOP-2026-08-03` over 252 authorized local files | Production integration, edited/plugin data, and later versions |
-| Mutation precision | 25% | Observed for tested operations | String and numeric wrappers, exact scalar replacement/insertion/deletion envelopes, adversarial-neighbor preservation, and duplicate refusal | Production wrappers and operation-specific expansion |
+| Mutation precision | 25% | Partially observed | String and numeric wrappers, exact scalar replacement/insertion/deletion envelopes, adversarial-neighbor preservation, and duplicate refusal | Production wrappers and operation-specific expansion |
 | Typed-view integration | 15% | Partially observed | Minimal typed string projections over ordered DOM and retained CST nodes | Design production domain projections and error types |
 | Source spans and diagnostics | 10% | Observed | `direct_parser_reports_exact_diagnostic_location` | Select Tilewright's diagnostic API and Unicode-width policy |
 | Malformed-input behavior | 5% | Observed for tested boundary | Strict rejection, explicit invalid-UTF-8/BOM refusal, and nesting-limit tests | Production diagnostics and broader resource limits |
-| Maintenance health and license | 5% | Documented | Pinned 0.33.1 dependency and upstream MIT metadata | Ongoing dependency policy and upgrade tests |
+| License | 2.5% | Documented | MIT license verified via immutable upstream 0.33.1 [`Cargo.toml`](https://github.com/dprint/jsonc-parser/blob/041f112d0dd6ffb7e181a471c2de5a15e9420b69/Cargo.toml) and [`LICENSE`](https://github.com/dprint/jsonc-parser/blob/041f112d0dd6ffb7e181a471c2de5a15e9420b69/LICENSE) | Ongoing dependency policy |
+| Maintenance health | 2.5% | Unknown | Pinned 0.33.1 dependency | Ongoing dependency policy, backend conformance tests, upgrade review, and an exit strategy |
 | Dependency footprint | 5% | Partially observed | Workspace lockfile | Set an accepted dependency budget |
 | Performance feasibility | 5% | Observed, non-gating | Reproducible synthetic release-mode timing probe on one documented host | Representative production workloads and an accepted budget |
 
@@ -148,7 +149,9 @@ four user-owned fresh MZ 1.10.0 projects already recorded by
 `MZ-1.10.0-FRESH-4-2026-08-01` into a unique ignored workspace. The aggregate
 corpus tool inspected 252 JSON files: all 252 were valid UTF-8, had no BOM,
 passed the strict gate, and serialized from the CST byte-identically. There
-were no strict rejections, changed outputs, symlinks, or read errors.
+were no strict rejections, changed outputs, symlinks, or read errors. Note: The
+`corpus_noop` process success alone does not prove the complete recorded
+invariant; every printed counter must be inspected.
 
 This bridges the synthetic no-op result to those exact authorized files only.
 It does not establish mutation fidelity, edited or plugin-generated data,
@@ -227,14 +230,16 @@ preserves the tested Unicode and non-BMP characters.
 `CstStringLit::set_raw_value` accept unchecked lexical text and can create
 invalid output. Production APIs must hide these surfaces behind typed or
 validated wrappers. The prototype's numeric wrapper validates before mutation,
-and every proposed output must pass the strict gate again.
+but the string replacement prototype does not perform type checking or
+validation-before-acceptance; the test performs revalidation after mutation.
+Every proposed output must pass the strict gate again.
 
 Duplicate decoded property names make name-based mutation ambiguous. A
 prototype wrapper enumerates decoded names and refuses missing or ambiguous
 targets before changing the CST. Tests include literal, nested, and
 escape-equivalent duplicate names and confirm byte identity after refusal.
-The same unique-property lookup now backs a minimal typed string view and a
-safe string replacement using `CstInputValue::String`; exact compact and CRLF
+The same unique-property lookup now backs a minimal typed string view and an
+exact tested replacement envelope using `CstInputValue::String`; exact compact and CRLF
 outputs preserve tested neighboring lexemes. Stale snapshot/hash refusal
 remains future wrapper work for later loading and persistence capabilities, not
 a representation-selection experiment.
@@ -300,7 +305,7 @@ benchmarking, and an accepted budget remain future work.
 | Typed extension storage and an ordered DOM preserve tested unknown meaning but normalize documented lexical forms | `three_required_strategies_have_comparable_no_op_results`; `typed_mutations_preserve_unknown_meaning_but_not_all_lexemes` | Observed | High for the synthetic comparison corpus and selected crate features |
 | The ordered DOM collapses duplicate names while typed deserialization rejects a duplicate known field; CST retains both and permits explicit refusal | `duplicate_names_distinguish_refusal_from_silent_collapse` | Observed | High for the tested duplicate form |
 | A minimal typed CST view reads a decoded string without changing source bytes | `cst_typed_view_reads_without_changing_bytes` | Observed | High for the tested unique string field |
-| Safe typed string replacement changes only the selected literal in tested compact and CRLF layouts and refuses duplicate targets unchanged | `cst_typed_scalar_replacement_has_an_exact_envelope` | Observed | High for the tested envelopes |
+| An exact tested replacement envelope changes only the selected literal in tested compact and CRLF layouts and refuses duplicate targets unchanged | `cst_typed_scalar_replacement_has_an_exact_envelope` | Observed | High for the tested envelopes |
 | A byte wrapper can distinguish and refuse invalid UTF-8, BOM-prefixed input, and strict syntax failure before CST construction | `byte_boundary_can_refuse_invalid_utf8_and_bom_without_normalizing` | Observed | High for the tested byte sequences; production policy remains undecided |
 | All 252 authorized local MZ 1.10.0 JSON files pass the strict gate and no-op serialize from CST byte-identically | `MZ-1.10.0-CST-NOOP-2026-08-03`; `corpus_noop` | Observed | High for the exact ignored corpus and dependency version |
 | String constructor escapes required characters and preserves tested Unicode names and values | `string_constructor_escapes_required_characters_and_preserves_unicode` | Observed | High |
