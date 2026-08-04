@@ -10,7 +10,8 @@ form, supports a read-only typed projection, and performs a controlled typed
 scalar replacement within an exact measured envelope. ADR 0004 is now Accepted,
 but this study does not establish production support.
 
-The proposed layering is:
+The accepted architectural direction was evaluated through this provisional
+layering:
 
 1. Apply a transient strict AST syntax pass before CST construction without
    interpreting numeric lexemes as Rust numeric values.
@@ -43,8 +44,8 @@ proprietary input is committed or reproduced.
 | Typed-view integration | 15% | Partially observed | Minimal typed string projections over ordered DOM and retained CST nodes | Design production domain projections and error types |
 | Source spans and diagnostics | 10% | Observed | `direct_parser_reports_exact_diagnostic_location` | Select Tilewright's diagnostic API and Unicode-width policy |
 | Malformed-input behavior | 5% | Observed for tested boundary | Strict rejection, explicit invalid-UTF-8/BOM refusal, and nesting-limit tests | Production diagnostics and broader resource limits |
-| License | 2.5% | Documented | MIT license verified via immutable upstream 0.33.1 `Cargo.toml` and `LICENSE` | Ongoing dependency policy |
-| Maintenance health | 2.5% | Partially observed | Pinned 0.33.1 dependency and recent upstream activity | Ongoing dependency policy and upgrade tests |
+| License | 2.5% | Documented | MIT license verified via immutable upstream 0.33.1 [`Cargo.toml`](https://github.com/dprint/jsonc-parser/blob/041f112d0dd6ffb7e181a471c2de5a15e9420b69/Cargo.toml) and [`LICENSE`](https://github.com/dprint/jsonc-parser/blob/041f112d0dd6ffb7e181a471c2de5a15e9420b69/LICENSE) | Ongoing dependency policy |
+| Maintenance health | 2.5% | Unknown | Pinned 0.33.1 dependency | Ongoing dependency policy, backend conformance tests, upgrade review, and an exit strategy |
 | Dependency footprint | 5% | Partially observed | Workspace lockfile | Set an accepted dependency budget |
 | Performance feasibility | 5% | Observed, non-gating | Reproducible synthetic release-mode timing probe on one documented host | Representative production workloads and an accepted budget |
 

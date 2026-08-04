@@ -46,6 +46,8 @@ unknown and plugin-defined content. The following details remain open:
 
 - What production typed-view ownership and API design should sit over the CST?
 - How should raw extension data relate to typed mutation APIs?
+- What are the production operation-specific mutation envelopes?
+- How should stale-document or stale-node detection be handled?
 - What constitutes a stable project or resource identifier?
 - How should event-command parameter arrays be typed incrementally?
 - How should validation findings, severities, source locations, and related
@@ -54,6 +56,8 @@ unknown and plugin-defined content. The following details remain open:
 - How should semantic project diffs be represented?
 - Should BOM-prefixed input be rejected permanently or preserved by a separate
   byte-level envelope?
+- What are the document size, nesting, lexeme, document-count, and aggregate
+  resource limits?
 - What performance and dependency budgets are acceptable?
 
 ## Loading and writes
