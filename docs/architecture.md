@@ -106,11 +106,14 @@ separable even if early implementations keep them close together:
 - **Persistence** handles filesystem scope, validation, backups, and atomic
   replacement independently from in-memory edits.
 
-The exact raw-document and typed-view relationship uses the CST/raw-storage-plus-typed-view
-architectural direction accepted in [ADR 0004](decisions/0004-lossless-json-representation.md).
-Concrete document and view types, ownership, APIs, and operation-specific
-preservation and refusal contracts remain unresolved or unimplemented. Silent data
-loss is not an acceptable answer.
+The raw-document and typed-view relationship uses the
+CST/raw-storage-plus-typed-view architectural direction accepted in
+[ADR 0004](decisions/0004-lossless-json-representation.md). The first immutable
+`LosslessJsonDocument` implements strict byte-to-syntax representation while
+keeping its provisional CST backend private. Project document identity, typed
+views, ownership and concurrency policy, mutation, and operation-specific
+preservation and refusal contracts remain unresolved or unimplemented. Silent
+data loss is not an acceptable answer.
 
 ## Public API principles
 
