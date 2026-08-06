@@ -317,6 +317,7 @@ fn inventory_reports_symlinks_without_following() {
     );
 }
 
+#[cfg(unix)]
 #[test]
 fn inventory_escapes_terminal_controls_in_human_output() {
     let temp = TempDir::new().unwrap();
