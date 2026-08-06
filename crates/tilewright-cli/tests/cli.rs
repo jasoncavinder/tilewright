@@ -316,3 +316,67 @@ fn inventory_reports_symlinks_without_following() {
         stdout
     );
 }
+
+#[test]
+fn inventory_escapes_terminal_controls_in_human_output() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path();
+    let malicious_name = "test\n\x1b[31mdir";
+    fs::create_dir(root.join(malicious_name)).unwrap();
+
+    let output = tilewright(&["inventory", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = stdout(&output);
+    assert!(!stdout.contains("\x1b[31m"));
+    assert!(!stdout.contains("test\ndir"));
+    assert!(stdout.contains("test\\n\\u{1b}[31mdir"));
+}
+
+#[test]
+fn inventory_operational_errors_have_human_and_json_forms() {
+    let temp = TempDir::new().unwrap();
+    let missing = temp.path().join("missing\n\x1b[31mdir");
+    let missing_arg = missing.to_str().unwrap();
+
+    let human = tilewright(&["inventory", missing_arg]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    let stderr_str = stderr(&human);
+    assert!(stderr_str.contains("error: failed to open project root"));
+    assert!(!stderr_str.contains("\x1b[31m"));
+    assert!(stderr_str.contains("missing\\n\\u{1b}[31mdir"));
+
+    let json = tilewright(&["inventory", missing_arg, "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert!(
+        report["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("failed to open project root")
+    );
+    assert!(report["error"]["cause"].is_string());
+}
+
+#[cfg(unix)]
+#[test]
+fn inventory_root_symlink_is_resolved_known_limitation() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempDir::new().unwrap();
+    let real_dir = temp.path().join("real_dir");
+    fs::create_dir(&real_dir).unwrap();
+    File::create(real_dir.join("game.rmmzproject")).unwrap();
+
+    let symlink_dir = temp.path().join("symlink_dir");
+    symlink(&real_dir, &symlink_dir).unwrap();
+
+    let output = tilewright(&["inventory", symlink_dir.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = stdout(&output);
+    assert!(stdout.contains("game.rmmzproject"));
+}

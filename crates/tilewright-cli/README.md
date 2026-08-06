@@ -6,10 +6,10 @@
 
 ## Status
 
-This crate is experimental. It provides help and version output plus a
-read-only `discover` and `inventory` commands over the core library's experimental RPG Maker MZ
-candidate-discovery API. It does not load, validate, or modify
-projects.
+This crate is experimental. It provides help and version output plus read-only
+`discover` and `inventory` commands over the core library's experimental RPG Maker MZ
+candidate-discovery and capability-relative project inventory APIs. It does not
+load, validate, or modify projects.
 
 ## Install from a checkout
 
@@ -61,6 +61,10 @@ Candidate, negative, ambiguous, and non-regular marker findings exit with code
 JSON paths include an exact `utf8` value when one exists and a lossy `display`
 value for presentation. Callers must not treat `display` as an exact encoding of
 a non-UTF-8 path.
+
+Note: While descendant symlink entries are reported without traversal, the initial
+`open_ambient_dir` acquisition may resolve root or ancestor symlinks and does not
+prove root identity.
 
 ## Responsibilities
 

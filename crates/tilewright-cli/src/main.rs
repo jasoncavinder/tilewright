@@ -370,6 +370,18 @@ fn write_error_report(report: &ErrorReport, format: OutputFormat) -> ExitCode {
     }
 }
 
+fn escape_controls(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_control() {
+                c.escape_debug().to_string()
+            } else {
+                c.to_string()
+            }
+        })
+        .collect()
+}
+
 fn write_human_report(mut writer: impl Write, report: &DiscoveryReport) -> io::Result<()> {
     match report.result {
         DiscoveryResult::Candidate => {
@@ -383,19 +395,19 @@ fn write_human_report(mut writer: impl Write, report: &DiscoveryReport) -> io::R
         DiscoveryResult::NoMarker => writeln!(
             writer,
             "No RPG Maker MZ marker found in {}",
-            report.root.display
+            escape_controls(&report.root.display)
         ),
         DiscoveryResult::AmbiguousMarkers => {
             writeln!(
                 writer,
                 "Ambiguous RPG Maker MZ markers in {}:",
-                report.root.display
+                escape_controls(&report.root.display)
             )?;
             for marker in &report.markers {
                 writeln!(
                     writer,
                     "  - {} ({})",
-                    marker.path.display,
+                    escape_controls(&marker.path.display),
                     marker.kind.name()
                 )?;
             }
@@ -414,7 +426,7 @@ fn write_human_report(mut writer: impl Write, report: &DiscoveryReport) -> io::R
         DiscoveryResult::Unrecognized => writeln!(
             writer,
             "Discovery returned an unrecognized experimental result for {}",
-            report.root.display
+            escape_controls(&report.root.display)
         ),
     }
 }
@@ -423,7 +435,11 @@ fn write_human_inventory_report(
     mut writer: impl Write,
     report: &InventoryReport,
 ) -> io::Result<()> {
-    writeln!(writer, "Inventory for {}:", report.root.display)?;
+    writeln!(
+        writer,
+        "Inventory for {}:",
+        escape_controls(&report.root.display)
+    )?;
     if report.entries.is_empty() {
         writeln!(writer, "  (empty)")?;
         return Ok(());
@@ -456,7 +472,9 @@ fn write_human_inventory_report(
         writeln!(
             writer,
             "  - {} [{}] ({})",
-            entry.path.display, kind_str, class_str
+            escape_controls(&entry.path.display),
+            kind_str,
+            class_str
         )?;
     }
     Ok(())
@@ -481,15 +499,15 @@ fn write_single_marker(
     writeln!(
         writer,
         "{label}: {} ({})",
-        marker.path.display,
+        escape_controls(&marker.path.display),
         marker.kind.name()
     )
 }
 
 fn write_human_error(mut writer: impl Write, report: &ErrorReport) -> io::Result<()> {
-    writeln!(writer, "error: {}", report.error.message)?;
+    writeln!(writer, "error: {}", escape_controls(&report.error.message))?;
     if let Some(cause) = &report.error.cause {
-        writeln!(writer, "caused by: {cause}")?;
+        writeln!(writer, "caused by: {}", escape_controls(cause))?;
     }
     Ok(())
 }
