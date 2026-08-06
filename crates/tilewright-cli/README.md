@@ -7,8 +7,8 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus a
-read-only `discover` command over the core library's experimental RPG Maker MZ
-candidate-discovery API. It does not inventory, load, validate, or modify
+read-only `discover` and `inventory` commands over the core library's experimental RPG Maker MZ
+candidate-discovery API. It does not load, validate, or modify
 projects.
 
 ## Install from a checkout
@@ -48,6 +48,10 @@ cargo run -p tilewright-cli -- discover path/to/project
 
 # Emit a versioned, machine-readable result.
 cargo run -p tilewright-cli -- discover path/to/project --format json
+
+# Inventory all entries in an RPG Maker MZ project directory.
+cargo run -p tilewright-cli -- inventory path/to/project
+cargo run -p tilewright-cli -- inventory path/to/project --format json
 ```
 
 Candidate, negative, ambiguous, and non-regular marker findings exit with code

@@ -9,6 +9,10 @@ use std::process::ExitCode;
 use tilewright::rpg_maker_mz::discovery::{
     CandidateDiscovery, MarkerEntryKind, MarkerObservation, discover_candidate,
 };
+use tilewright::rpg_maker_mz::inventory::{
+    ExtensionCandidateFamily, InventoryClassification, InventoryEntryKind, KnownEntryFamily,
+    ProjectInventory, inventory_project,
+};
 
 const OUTPUT_SCHEMA_VERSION: u8 = 1;
 
@@ -25,6 +29,14 @@ enum Command {
     /// Inspect one explicit directory for an RPG Maker MZ project marker.
     Discover {
         /// Directory to inspect without recursion.
+        path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+    },
+    /// Inventory all entries in an RPG Maker MZ project directory.
+    Inventory {
+        /// Directory to inventory.
         path: PathBuf,
         /// Output intended for a person or a script.
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
@@ -71,6 +83,55 @@ enum MarkerKind {
     Symlink,
     Directory,
     OtherNonRegular,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct InventoryReport {
+    schema_version: u8,
+    root: PathReport,
+    entries: Vec<InventoryEntryReport>,
+}
+
+#[derive(Debug, Serialize)]
+struct InventoryEntryReport {
+    path: PathReport,
+    kind: EntryKindReport,
+    classification: ClassificationReport,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum EntryKindReport {
+    File,
+    Directory,
+    Symlink,
+    Other,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case", tag = "type")]
+enum ClassificationReport {
+    Known { family: KnownFamilyReport },
+    ExtensionCandidate { family: ExtensionFamilyReport },
+    Unknown,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum KnownFamilyReport {
+    StandardRootEntry,
+    StandardDataFile,
+    MapDataFile,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum ExtensionFamilyReport {
+    DataJson,
     Unrecognized,
 }
 
@@ -147,6 +208,59 @@ impl MarkerReport {
     }
 }
 
+impl InventoryReport {
+    fn new(root: &Path, inventory: &ProjectInventory) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            entries: inventory
+                .entries
+                .iter()
+                .map(InventoryEntryReport::new)
+                .collect(),
+        }
+    }
+}
+
+impl InventoryEntryReport {
+    fn new(entry: &tilewright::rpg_maker_mz::inventory::InventoryEntry) -> Self {
+        let kind = match entry.kind {
+            InventoryEntryKind::File => EntryKindReport::File,
+            InventoryEntryKind::Directory => EntryKindReport::Directory,
+            InventoryEntryKind::Symlink => EntryKindReport::Symlink,
+            InventoryEntryKind::Other => EntryKindReport::Other,
+            _ => EntryKindReport::Unrecognized,
+        };
+
+        let classification = match entry.classification {
+            InventoryClassification::Known { family, .. } => ClassificationReport::Known {
+                family: match family {
+                    KnownEntryFamily::StandardRootEntry => KnownFamilyReport::StandardRootEntry,
+                    KnownEntryFamily::StandardDataFile => KnownFamilyReport::StandardDataFile,
+                    KnownEntryFamily::MapDataFile => KnownFamilyReport::MapDataFile,
+                    _ => KnownFamilyReport::Unrecognized,
+                },
+            },
+            InventoryClassification::ExtensionCandidate { family, .. } => {
+                ClassificationReport::ExtensionCandidate {
+                    family: match family {
+                        ExtensionCandidateFamily::DataJson => ExtensionFamilyReport::DataJson,
+                        _ => ExtensionFamilyReport::Unrecognized,
+                    },
+                }
+            }
+            InventoryClassification::Unknown => ClassificationReport::Unknown,
+            _ => ClassificationReport::Unrecognized,
+        };
+
+        Self {
+            path: PathReport::new(&entry.path),
+            kind,
+            classification,
+        }
+    }
+}
+
 impl PathReport {
     fn new(path: &Path) -> Self {
         Self {
@@ -161,6 +275,7 @@ fn main() -> ExitCode {
 
     match cli.command {
         Command::Discover { path, format } => run_discover(&path, format),
+        Command::Inventory { path, format } => run_inventory(&path, format),
     }
 }
 
@@ -183,17 +298,75 @@ fn run_discover(path: &Path, format: OutputFormat) -> ExitCode {
                     cause: error.source().map(ToString::to_string),
                 },
             };
+            write_error_report(&report, format)
+        }
+    }
+}
+
+fn run_inventory(path: &Path, format: OutputFormat) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match inventory_project(&root_dir) {
+        Ok(inventory) => {
+            let report = InventoryReport::new(path, &inventory);
+
+            if matches!(format, OutputFormat::Json)
+                && (report.root.utf8.is_none()
+                    || report.entries.iter().any(|e| e.path.utf8.is_none()))
+            {
+                let error_report = ErrorReport {
+                    schema_version: OUTPUT_SCHEMA_VERSION,
+                    root: PathReport::new(path),
+                    error: ErrorDetail {
+                        message: "JSON output cannot safely represent non-UTF-8 paths without lossy conversion".to_string(),
+                        cause: None,
+                    },
+                };
+                return write_error_report(&error_report, format);
+            }
 
             let write_result = match format {
-                OutputFormat::Human => write_human_error(io::stderr().lock(), &report),
+                OutputFormat::Human => write_human_inventory_report(io::stdout().lock(), &report),
                 OutputFormat::Json => write_json(io::stdout().lock(), &report),
             };
-
-            match write_result {
-                Ok(()) => ExitCode::from(1),
-                Err(write_error) => report_write_error(write_error),
-            }
+            finish_write(write_result)
         }
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            write_error_report(&report, format)
+        }
+    }
+}
+
+fn write_error_report(report: &ErrorReport, format: OutputFormat) -> ExitCode {
+    let write_result = match format {
+        OutputFormat::Human => write_human_error(io::stderr().lock(), report),
+        OutputFormat::Json => write_json(io::stdout().lock(), report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
     }
 }
 
@@ -244,6 +417,49 @@ fn write_human_report(mut writer: impl Write, report: &DiscoveryReport) -> io::R
             report.root.display
         ),
     }
+}
+
+fn write_human_inventory_report(
+    mut writer: impl Write,
+    report: &InventoryReport,
+) -> io::Result<()> {
+    writeln!(writer, "Inventory for {}:", report.root.display)?;
+    if report.entries.is_empty() {
+        writeln!(writer, "  (empty)")?;
+        return Ok(());
+    }
+
+    for entry in &report.entries {
+        let kind_str = match entry.kind {
+            EntryKindReport::File => "file",
+            EntryKindReport::Directory => "dir",
+            EntryKindReport::Symlink => "symlink",
+            EntryKindReport::Other => "other",
+            EntryKindReport::Unrecognized => "unrecognized",
+        };
+
+        let class_str = match &entry.classification {
+            ClassificationReport::Known { family } => match family {
+                KnownFamilyReport::StandardRootEntry => "known (standard root entry)",
+                KnownFamilyReport::StandardDataFile => "known (standard data file)",
+                KnownFamilyReport::MapDataFile => "known (map data file)",
+                KnownFamilyReport::Unrecognized => "known (unrecognized family)",
+            },
+            ClassificationReport::ExtensionCandidate { family } => match family {
+                ExtensionFamilyReport::DataJson => "extension candidate (data json)",
+                ExtensionFamilyReport::Unrecognized => "extension candidate (unrecognized family)",
+            },
+            ClassificationReport::Unknown => "unknown",
+            ClassificationReport::Unrecognized => "unrecognized classification",
+        };
+
+        writeln!(
+            writer,
+            "  - {} [{}] ({})",
+            entry.path.display, kind_str, class_str
+        )?;
+    }
+    Ok(())
 }
 
 fn write_expected_marker(
