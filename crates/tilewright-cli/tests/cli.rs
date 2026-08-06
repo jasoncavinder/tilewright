@@ -2,6 +2,7 @@
 
 use serde_json::Value;
 use std::fs::{self, File};
+use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
@@ -194,9 +195,19 @@ fn inventory_reports_entries_for_people() {
     assert!(stdout.contains("Inventory for"));
     assert!(stdout.contains("data [dir] (known (standard root entry))"));
     assert!(stdout.contains("game.rmmzproject [file] (known (standard root entry))"));
-    assert!(stdout.contains("data/Actors.json [file] (known (standard data file))"));
-    assert!(stdout.contains("data/Map001.json [file] (known (map data file))"));
-    assert!(stdout.contains("data/PluginData.json [file] (extension candidate (data json))"));
+    let data_path = PathBuf::from("data");
+    assert!(stdout.contains(&format!(
+        "{} [file] (known (standard data file))",
+        data_path.join("Actors.json").display()
+    )));
+    assert!(stdout.contains(&format!(
+        "{} [file] (known (map data file))",
+        data_path.join("Map001.json").display()
+    )));
+    assert!(stdout.contains(&format!(
+        "{} [file] (extension candidate (data json))",
+        data_path.join("PluginData.json").display()
+    )));
     assert!(stdout.contains("unknown.txt [file] (unknown)"));
 }
 
