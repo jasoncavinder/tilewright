@@ -52,7 +52,7 @@ for the distinction between planned and supported behavior.
 
 | Package | Role | Current state |
 | --- | --- | --- |
-| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental candidate discovery and capability-relative inventory |
+| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, and strict lossless JSON syntax representation |
 | [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 

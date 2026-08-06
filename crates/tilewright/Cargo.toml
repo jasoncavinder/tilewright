@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 cap-fs-ext = "4.0.2"
 cap-std = "4.0.2"
+jsonc-parser = { version = "0.33.1", features = ["cst"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

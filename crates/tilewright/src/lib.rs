@@ -5,6 +5,8 @@
 //! This crate should remain independent of MCP, AI models, user interfaces,
 //! and any particular agent host.
 
+pub mod json;
+pub mod rpg_maker_mz;
+
 /// Current Tilewright library version.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-pub mod rpg_maker_mz;

@@ -45,6 +45,8 @@ unknown and plugin-defined content. The following details remain open:
 ## Data representation and APIs
 
 - What production typed-view ownership and API design should sit over the CST?
+- What `Send`/`Sync` and cross-thread ownership guarantees should raw documents
+  and typed views provide?
 - How should raw extension data relate to typed mutation APIs?
 - What are the production operation-specific mutation envelopes?
 - How should stale-document or stale-node detection be handled?
