@@ -53,7 +53,7 @@ for the distinction between planned and supported behavior.
 | Package | Role | Current state |
 | --- | --- | --- |
 | [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, and strict lossless JSON syntax representation |
-| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery adapter |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery and inventory adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 
 The dependency direction is inward:
@@ -106,6 +106,7 @@ cargo test --workspace
 cargo run -p tilewright-cli -- --help
 cargo run -p tilewright-cli -- discover path/to/project
 cargo run -p tilewright-cli -- discover path/to/project --format json
+cargo run -p tilewright-cli -- inventory path/to/project
 ```
 
 To install the executable from the current checkout and run it without
@@ -116,6 +117,7 @@ cargo install --locked --path crates/tilewright-cli
 tilewright --version
 tilewright discover path/to/project
 tilewright discover path/to/project --format json
+tilewright inventory path/to/project
 ```
 
 Re-run the install command with `--force` after pulling CLI changes. See the
