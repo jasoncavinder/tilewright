@@ -8,12 +8,14 @@ Tilewright workspace.
 This crate is in early development. It currently exposes its package version,
 experimental candidate discovery, experimental capability-relative project
 inventory, an experimental immutable strict-JSON syntax representation, and an
-experimental read-only raw project snapshot loader. It does not yet understand,
-validate, or write RPG Maker project-file contents.
+experimental read-only raw project snapshot loader. Its first typed projection
+can inspect map IDs, names, display order, and parent relationships. It does not
+yet provide broader understanding, validation, or write support.
 
 ### Example: Candidate Discovery
 
-Candidate discovery identifies directories that appear to be RPG Maker MZ projects based on marker files. It does not validate the project contents.
+Candidate discovery identifies directories that appear to be RPG Maker MZ
+projects based on marker files. It does not validate the project contents.
 
 Discovery results, marker observations, marker kinds, and errors are
 non-exhaustive while this API is experimental. Downstream matches must retain a
@@ -84,9 +86,9 @@ assert_eq!(document.to_string().as_bytes(), input);
 
 The current experimental contract accepts valid UTF-8 strict JSON without a
 leading UTF-8 byte-order mark. It retains duplicate names and lexical details,
-but provides no typed RPG Maker views or mutation API. Backend ownership,
-cross-thread use, resource limits, and final diagnostic policy remain subject to
-change.
+but by itself provides no typed RPG Maker view or mutation API. Backend
+ownership, cross-thread use, resource limits, and final diagnostic policy remain
+subject to change.
 
 ### Example: Read-Only Project Snapshot
 
@@ -119,6 +121,36 @@ fn load_authorized_project(root: &Dir) -> Result<(), SnapshotError> {
 }
 ```
 
+### Example: Typed Map Catalog
+
+The experimental map catalog projects a structurally coherent
+`data/MapInfos.json` document from an existing snapshot. Unknown fields and
+exact source bytes remain untouched in the raw snapshot.
+
+```rust
+use tilewright::rpg_maker_mz::map_catalog::map_catalog;
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+
+fn print_maps(snapshot: &ProjectSnapshot) {
+    match map_catalog(snapshot) {
+        Ok(catalog) => {
+            for map in catalog.records_in_display_order() {
+                println!("{}: {}", map.id(), map.name());
+            }
+            for finding in catalog.findings() {
+                println!("map catalog finding: {finding:?}");
+            }
+        }
+        Err(error) => eprintln!("map catalog unavailable: {error}"),
+    }
+}
+```
+
+The projection refuses ambiguous or malformed required fields. Its contextual
+findings identify relationships that Tilewright cannot reconcile; they do not
+claim that RPG Maker MZ rejects the project. No map mutation or serialization
+API exists.
+
 ## Responsibilities
 
 As the project develops, this crate owns reusable:
@@ -136,8 +168,8 @@ GUI frameworks, cloud services, and commercial Tilewright code. Recoverable
 input and I/O errors must not become panics, and unsupported fields must not be
 silently discarded.
 
-Initial root acquisition, production project loading, typed-view ownership, and
-write transaction design remain open. See the workspace
+Initial root acquisition, production project loading, production typed-view
+ownership, and write transaction design remain open. See the workspace
 [architecture](../../docs/architecture.md),
 [safety model](../../docs/safety.md), and
 [open questions](../../docs/open-questions.md) before adding public APIs.

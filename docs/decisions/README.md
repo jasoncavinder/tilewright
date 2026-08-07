@@ -5,7 +5,7 @@ implementation context has changed.
 
 ## Proposed decisions
 
-None currently proposed.
+No decisions are currently proposed.
 
 ## Accepted decisions
 
@@ -17,6 +17,7 @@ None currently proposed.
 | [0004: Lossless JSON representation](0004-lossless-json-representation.md) | Accepted | Adopt a Concrete Syntax Tree (CST) architectural direction to retain source bytes, project typed views, and apply operation-specific edit envelopes. |
 | [0005: Filesystem sandboxing](0005-filesystem-sandboxing.md) | Accepted | Tilewright will use capability-based filesystem APIs (`cap-std`) to confine project operations beneath an already-authorized directory handle. Initial root acquisition remains unresolved, and the current experimental discovery API uses `std::fs` as a temporary exception. |
 | [0006: Snapshot loading contract](0006-snapshot-loading-contract.md) | Accepted | Adopt an experimental, capability-relative, bounded, read-only raw snapshot loader with deterministic partial diagnostics. |
+| [0007: Experimental map catalog projection](0007-experimental-map-catalog-projection.md) | Accepted | Adopt a read-only, owned typed projection for map identity, display order, hierarchy, and contextual findings over a raw project snapshot. |
 
 ## Adding or changing a decision
 

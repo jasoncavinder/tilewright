@@ -15,6 +15,7 @@ records and compatibility scope.
 | --- | --- | --- | --- | --- |
 | [`mz-project-detection-001`](#mz-project-detection-001-what-minimum-evidence-identifies-an-rpg-maker-mz-project-root) | What minimum evidence identifies an RPG Maker MZ project root? | Active | Documented and observed for MZ 1.10.0; later target versions unresolved | 2026-08-01 |
 | [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-03 |
+| [`mz-map-catalog-001`](#mz-map-catalog-001-what-is-the-smallest-evidenced-typed-map-catalog) | What is the smallest evidenced typed map catalog? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
@@ -1470,6 +1471,62 @@ above 1.10.0. Never commit vendor material.
 
 Use stable, descriptive IDs such as `mz-project-detection-001`. A completed
 investigation may move to a focused sibling document; keep its index row here.
+
+## `mz-map-catalog-001`: What is the smallest evidenced typed map catalog?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only typed map listing, display order,
+  parent hierarchy, and contextual project findings.
+- **Scope:** `data/MapInfos.json` in RPG Maker MZ 1.10.0. Later target
+  versions, malformed-input editor behavior, mutation, and persistence remain
+  outside this investigation.
+- **Last updated:** 2026-08-06
+
+### Evidence ledger
+
+The claim-level ledger, bounded typed contract, fixture implications, and next
+experiments are maintained in
+[`map-catalog.md`](map-catalog.md#evidence-ledger). That document composes the
+existing official script-reference record and controlled map lifecycle records
+with `MZ-1.10.0-MAP-INFOS-SHAPE-AUDIT-2026-08-06`.
+
+### Evidence record: `MZ-1.10.0-MAP-INFOS-SHAPE-AUDIT-2026-08-06`
+
+- **Kind:** Read-only aggregate shape audit.
+- **Version/environment:** Four authorized, user-owned projects created with
+  RPG Maker MZ 1.10.0 on the macOS environment recorded by
+  `MZ-1.10.0-FRESH-4-2026-08-01`; audited with `jq` 1.8.1 on 2026-08-06.
+- **Procedure:** Verified the canonical ignored research root, regular-file
+  types, sizes, and absence of source symlinks. Queried only root/field JSON
+  kinds, decoded property-name sets, counts, integer relationships, ID/index
+  equality, order uniqueness/compactness, and parent-reference existence.
+- **Observed:** Four array roots contain 196 object records and four null index
+  zero entries. Every record has numeric `id`, `order`, and `parentId` plus
+  string `name`; IDs equal indices, positive orders are unique and compact per
+  document, and every nonzero parent resolves. Five records have an additional
+  boolean `quick` field. Some scroll coordinates are fractional.
+- **Limits:** The audit does not establish editor validation, alternate numeric
+  lexeme tolerance, field semantics beyond existing controlled evidence,
+  behavior above ID 999, or other MZ versions. Duplicate decoded properties
+  were not asserted absent and remain an explicit typed-view refusal case.
+- **Redistribution:** No project value, map name, raw document, excerpt,
+  per-project manifest, or proprietary content is retained. Only aggregate
+  derived observations and the safe procedure are recorded.
+
+### Implementation implications
+
+The first typed projection may use `id`, `name`, `order`, and `parentId` while
+retaining every other field in the raw lossless document. It must refuse
+ambiguous or malformed required fields, distinguish structural refusal from
+contextual relationship findings, and make no mutation or editor-validation
+claim. The accepted architecture is recorded in
+[ADR 0007](../../decisions/0007-experimental-map-catalog-projection.md).
+
+### Next experiment
+
+Test parent deletion or multiple ID holes in a disposable authorized copy when
+one of those behaviors is needed for a compatibility claim. Observe another
+named MZ version at or above 1.10.0 before generalizing the contract.
 
 ## Investigation template
 

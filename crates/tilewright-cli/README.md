@@ -72,7 +72,8 @@ The `snapshot` command reports complete and partial snapshots as successful
 results. Per-document syntax, entry-kind, and resource-limit problems appear as
 structured diagnostics. Its default limits are 1,024 attempted documents,
 16 MiB per document, and 256 MiB across all documents. These are adjustable CLI
-operational safeguards, not RPG Maker MZ format or compatibility limits:
+operational safeguards for selected-document processing, not bounds on the
+initial inventory traversal or RPG Maker MZ format or compatibility limits:
 
 ```sh
 cargo run -p tilewright-cli -- snapshot path/to/project \
