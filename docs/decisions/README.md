@@ -5,9 +5,7 @@ implementation context has changed.
 
 ## Proposed decisions
 
-| ADR | Status | Summary |
-| --- | --- | --- |
-| [0008: Experimental selected-map summary](0008-experimental-selected-map-summary.md) | Proposed | Add a read-only owned summary for one catalog-selected map's basic metadata, dimensions, tileset scalar, and opaque event count. |
+No decisions are currently proposed.
 
 ## Accepted decisions
 
@@ -20,6 +18,7 @@ implementation context has changed.
 | [0005: Filesystem sandboxing](0005-filesystem-sandboxing.md) | Accepted | Tilewright will use capability-based filesystem APIs (`cap-std`) to confine project operations beneath an already-authorized directory handle. Initial root acquisition remains unresolved, and the current experimental discovery API uses `std::fs` as a temporary exception. |
 | [0006: Snapshot loading contract](0006-snapshot-loading-contract.md) | Accepted | Adopt an experimental, capability-relative, bounded, read-only raw snapshot loader with deterministic partial diagnostics. |
 | [0007: Experimental map catalog projection](0007-experimental-map-catalog-projection.md) | Accepted | Adopt a read-only, owned typed projection for map identity, display order, hierarchy, and contextual findings over a raw project snapshot. |
+| [0008: Experimental selected-map summary](0008-experimental-selected-map-summary.md) | Accepted | Adopt a read-only owned summary for one catalog-selected map's basic metadata, dimensions, tileset scalar, and opaque event count. |
 
 ## Adding or changing a decision
 

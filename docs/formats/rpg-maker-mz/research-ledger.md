@@ -1542,7 +1542,7 @@ named MZ version at or above 1.10.0 before generalizing the contract.
 
 ### Evidence ledger
 
-The claim-level ledger, bounded contract candidate, fixture implications, and
+The claim-level ledger, bounded contract, fixture implications, and
 remaining experiments are maintained in
 [`map-summary.md`](map-summary.md#evidence-ledger). The implementation is
 corroborated by `MZ-1.10.0-MAP-SUMMARY-DIFFERENTIAL-2026-08-06`.
@@ -1606,7 +1606,7 @@ The experimental core projection exposes a catalog-selected map's two decoded
 names, evidenced path, positive dimensions, positive tileset scalar, and opaque
 event object count. It retains every other field in the raw snapshot, refuses
 ambiguous required structure, avoids interpreting tile arrays or event bodies,
-and makes no validation or editor-compatibility claim. The proposed architecture
+and makes no validation or editor-compatibility claim. The accepted architecture
 is recorded in
 [ADR 0008](../../decisions/0008-experimental-selected-map-summary.md).
 
