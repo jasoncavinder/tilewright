@@ -53,7 +53,7 @@ for the distinction between planned and supported behavior.
 | Package | Role | Current state |
 | --- | --- | --- |
 | [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, and strict lossless JSON syntax representation |
-| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery and inventory adapter |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, and JSON inspection adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 
 The dependency direction is inward:
@@ -107,6 +107,7 @@ cargo run -p tilewright-cli -- --help
 cargo run -p tilewright-cli -- discover path/to/project
 cargo run -p tilewright-cli -- discover path/to/project --format json
 cargo run -p tilewright-cli -- inventory path/to/project
+cargo run -p tilewright-cli -- inspect-json path/to/file.json
 ```
 
 To install the executable from the current checkout and run it without
@@ -118,14 +119,14 @@ tilewright --version
 tilewright discover path/to/project
 tilewright discover path/to/project --format json
 tilewright inventory path/to/project
+tilewright inspect-json path/to/file.json
 ```
 
 Re-run the install command with `--force` after pulling CLI changes. See the
 [`tilewright-cli` README](crates/tilewright-cli/README.md#install-from-a-checkout)
 for update and uninstall details.
 
-The CLI currently exposes only experimental candidate discovery; it does not
-inventory, load, validate, or modify projects. Contributors should use the full
+The CLI currently exposes experimental candidate discovery, project inventory, and strict lossless JSON syntax inspection; it does not load, validate, or modify projects. Contributors should use the full
 verification process described in
 [CONTRIBUTING.md](CONTRIBUTING.md#verification).
 

@@ -3,9 +3,11 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 use std::error::Error;
-use std::io::{self, Write};
+use std::fs::File;
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use tilewright::json::{LosslessJsonDocument, LosslessJsonError};
 use tilewright::rpg_maker_mz::discovery::{
     CandidateDiscovery, MarkerEntryKind, MarkerObservation, discover_candidate,
 };
@@ -41,6 +43,17 @@ enum Command {
         /// Output intended for a person or a script.
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
         format: OutputFormat,
+    },
+    /// Inspect a file for strict lossless JSON syntax.
+    InspectJson {
+        /// File to inspect.
+        path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        /// Maximum bytes to read.
+        #[arg(long, default_value_t = 10_485_760)]
+        max_bytes: usize,
     },
 }
 
@@ -154,6 +167,47 @@ struct ErrorReport {
 struct ErrorDetail {
     message: String,
     cause: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct InspectJsonReport {
+    schema_version: u8,
+    path: PathReport,
+    byte_length: usize,
+    strict_syntax_accepted: bool,
+    byte_identical: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct InspectJsonErrorReport {
+    schema_version: u8,
+    path: PathReport,
+    error: InspectJsonErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct InspectJsonErrorDetail {
+    category: InspectJsonErrorCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    byte_range: Option<RangeReport>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum InspectJsonErrorCategory {
+    IoError,
+    TooLarge,
+    InvalidUtf8,
+    Utf8Bom,
+    InvalidSyntax,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct RangeReport {
+    start: usize,
+    end: usize,
 }
 
 impl DiscoveryReport {
@@ -276,6 +330,7 @@ fn main() -> ExitCode {
     match cli.command {
         Command::Discover { path, format } => run_discover(&path, format),
         Command::Inventory { path, format } => run_inventory(&path, format),
+        Command::InspectJson { path, format, max_bytes } => run_inspect_json(&path, format, max_bytes),
     }
 }
 
@@ -355,6 +410,150 @@ fn run_inventory(path: &Path, format: OutputFormat) -> ExitCode {
             };
             write_error_report(&report, format)
         }
+    }
+}
+
+fn run_inspect_json(path: &Path, format: OutputFormat, max_bytes: usize) -> ExitCode {
+    if max_bytes == 0 {
+        return write_inspect_json_error(
+            path,
+            format,
+            InspectJsonErrorCategory::TooLarge,
+            "max_bytes must be greater than 0".to_string(),
+            None,
+        );
+    }
+
+    if matches!(format, OutputFormat::Json) && path.to_str().is_none() {
+        return write_inspect_json_error(
+            path,
+            format,
+            InspectJsonErrorCategory::IoError,
+            "JSON output cannot safely represent non-UTF-8 paths without lossy conversion".to_string(),
+            None,
+        );
+    }
+
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(e) => {
+            return write_inspect_json_error(
+                path,
+                format,
+                InspectJsonErrorCategory::IoError,
+                e.to_string(),
+                None,
+            );
+        }
+    };
+
+    // Read at most max_bytes + 1
+    let mut buffer = Vec::new();
+    let limit = max_bytes.saturating_add(1);
+    if let Err(e) = file.try_clone().unwrap().take(limit as u64).read_to_end(&mut buffer) {
+        return write_inspect_json_error(
+            path,
+            format,
+            InspectJsonErrorCategory::IoError,
+            e.to_string(),
+            None,
+        );
+    }
+
+    if buffer.len() > max_bytes {
+        return write_inspect_json_error(
+            path,
+            format,
+            InspectJsonErrorCategory::TooLarge,
+            format!("file exceeds maximum size of {} bytes", max_bytes),
+            None,
+        );
+    }
+
+    match LosslessJsonDocument::parse(&buffer) {
+        Ok(document) => {
+            let byte_identical = document.to_string().as_bytes() == buffer;
+            if !byte_identical {
+                return write_inspect_json_error(
+                    path,
+                    format,
+                    InspectJsonErrorCategory::InvalidSyntax,
+                    "document parsed successfully but failed byte-identity invariant".to_string(),
+                    None,
+                );
+            }
+
+            let report = InspectJsonReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                path: PathReport::new(path),
+                byte_length: buffer.len(),
+                strict_syntax_accepted: true,
+                byte_identical: true,
+            };
+
+            let write_result = match format {
+                OutputFormat::Human => write_human_inspect_json_report(io::stdout().lock(), &report),
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let (category, message, byte_range) = match error {
+                LosslessJsonError::InvalidUtf8 { source, .. } => (
+                    InspectJsonErrorCategory::InvalidUtf8,
+                    format!("JSON input is not valid UTF-8: {}", source),
+                    None,
+                ),
+                LosslessJsonError::Utf8ByteOrderMark => (
+                    InspectJsonErrorCategory::Utf8Bom,
+                    "JSON input starts with a UTF-8 byte-order mark".to_string(),
+                    None,
+                ),
+                LosslessJsonError::InvalidSyntax { diagnostic, .. } => (
+                    InspectJsonErrorCategory::InvalidSyntax,
+                    diagnostic.message().to_string(),
+                    Some(RangeReport {
+                        start: diagnostic.byte_range().start,
+                        end: diagnostic.byte_range().end,
+                    }),
+                ),
+                _ => (
+                    InspectJsonErrorCategory::Unrecognized,
+                    error.to_string(),
+                    None,
+                ),
+            };
+
+            write_inspect_json_error(path, format, category, message, byte_range)
+        }
+    }
+}
+
+fn write_inspect_json_error(
+    path: &Path,
+    format: OutputFormat,
+    category: InspectJsonErrorCategory,
+    message: String,
+    byte_range: Option<RangeReport>,
+) -> ExitCode {
+    let report = InspectJsonErrorReport {
+        schema_version: OUTPUT_SCHEMA_VERSION,
+        path: PathReport::new(path),
+        error: InspectJsonErrorDetail {
+            category,
+            message,
+            byte_range,
+        },
+    };
+
+    let write_result = match format {
+        OutputFormat::Human => write_human_inspect_json_error(io::stderr().lock(), &report),
+        OutputFormat::Json => write_json(io::stdout().lock(), &report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
     }
 }
 
@@ -476,6 +675,36 @@ fn write_human_inventory_report(
             kind_str,
             class_str
         )?;
+    }
+    Ok(())
+}
+
+fn write_human_inspect_json_report(
+    mut writer: impl Write,
+    report: &InspectJsonReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Strict JSON syntax accepted for {}",
+        escape_controls(&report.path.display)
+    )?;
+    writeln!(writer, "  Byte length: {}", report.byte_length)?;
+    writeln!(writer, "  Byte-identical serialization: {}", report.byte_identical)?;
+    Ok(())
+}
+
+fn write_human_inspect_json_error(
+    mut writer: impl Write,
+    report: &InspectJsonErrorReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "error: {} for {}",
+        escape_controls(&report.error.message),
+        escape_controls(&report.path.display)
+    )?;
+    if let Some(range) = &report.error.byte_range {
+        writeln!(writer, "  at bytes {}..{}", range.start, range.end)?;
     }
     Ok(())
 }

@@ -392,3 +392,205 @@ fn inventory_root_symlink_is_resolved_known_limitation() {
     let stdout = stdout(&output);
     assert!(stdout.contains("game.rmmzproject"));
 }
+
+#[test]
+fn help_lists_inspect_json() {
+    let help = tilewright(&["--help"]);
+    assert!(help.status.success());
+    assert!(stdout(&help).contains("inspect-json"));
+    
+    let inspect_help = tilewright(&["inspect-json", "--help"]);
+    assert!(inspect_help.status.success());
+    let out = stdout(&inspect_help);
+    assert!(out.contains("--format"));
+    assert!(out.contains("--max-bytes"));
+}
+
+#[test]
+fn inspect_json_accepts_compact_and_formatted_strict_json() {
+    let temp = TempDir::new().unwrap();
+    
+    let compact = temp.path().join("compact.json");
+    fs::write(&compact, r#"{"a":1,"b":"hello"}"#).unwrap();
+    let out = tilewright(&["inspect-json", compact.to_str().unwrap()]);
+    assert!(out.status.success());
+    assert!(stdout(&out).contains("Strict JSON syntax accepted"));
+    assert!(stdout(&out).contains("Byte-identical serialization: true"));
+    
+    let formatted = temp.path().join("formatted.json");
+    fs::write(&formatted, "{\n  \"a\": 1,\n  \"b\": \"hello\"\n}\n").unwrap();
+    let out = tilewright(&["inspect-json", formatted.to_str().unwrap()]);
+    assert!(out.status.success());
+    assert!(stdout(&out).contains("Strict JSON syntax accepted"));
+    assert!(stdout(&out).contains("Byte-identical serialization: true"));
+}
+
+#[test]
+fn inspect_json_accepts_duplicate_keys_and_unusual_lexemes() {
+    let temp = TempDir::new().unwrap();
+    let file = temp.path().join("unusual.json");
+    fs::write(&file, r#"{"a":1,"a":2,"b":1e2,"c":"\u0061"}"#).unwrap();
+    
+    let out = tilewright(&["inspect-json", file.to_str().unwrap()]);
+    assert!(out.status.success());
+    assert!(stdout(&out).contains("Strict JSON syntax accepted"));
+    assert!(stdout(&out).contains("Byte-identical serialization: true"));
+}
+
+#[test]
+fn inspect_json_invalid_syntax_returns_structured_diagnostic() {
+    let temp = TempDir::new().unwrap();
+    let file = temp.path().join("invalid.json");
+    fs::write(&file, r#"{"a":1,}"#).unwrap();
+    
+    let out = tilewright(&["inspect-json", file.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(out.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "invalid_syntax");
+    assert!(report["error"]["message"].is_string());
+    assert!(report["error"]["byte_range"]["start"].is_number());
+    assert!(report["error"]["byte_range"]["end"].is_number());
+}
+
+#[test]
+fn inspect_json_refuses_comments_and_trailing_commas() {
+    let temp = TempDir::new().unwrap();
+    
+    let comments = temp.path().join("comments.json");
+    fs::write(&comments, r#"{"a":1}// comment"#).unwrap();
+    let out = tilewright(&["inspect-json", comments.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(stderr(&out).contains("error:"));
+    
+    let trailing = temp.path().join("trailing.json");
+    fs::write(&trailing, r#"{"a":1,}"#).unwrap();
+    let out = tilewright(&["inspect-json", trailing.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(stderr(&out).contains("error:"));
+}
+
+#[test]
+fn inspect_json_refuses_empty_input() {
+    let temp = TempDir::new().unwrap();
+    let file = temp.path().join("empty.json");
+    fs::write(&file, " \t\r\n").unwrap();
+    
+    let out = tilewright(&["inspect-json", file.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(stderr(&out).contains("error:"));
+}
+
+#[test]
+fn inspect_json_invalid_utf8_and_bom_are_distinct() {
+    let temp = TempDir::new().unwrap();
+    
+    let invalid_utf8 = temp.path().join("invalid_utf8.json");
+    fs::write(&invalid_utf8, b"{\"a\":\"\xff\"}").unwrap();
+    let out = tilewright(&["inspect-json", invalid_utf8.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(out.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "invalid_utf8");
+    
+    let bom = temp.path().join("bom.json");
+    fs::write(&bom, b"\xef\xbb\xbf{\"a\":1}").unwrap();
+    let out = tilewright(&["inspect-json", bom.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(out.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "utf8_bom");
+}
+
+#[test]
+fn inspect_json_missing_file_behavior() {
+    let temp = TempDir::new().unwrap();
+    let missing = temp.path().join("missing.json");
+    
+    let human = tilewright(&["inspect-json", missing.to_str().unwrap()]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stderr(&human).contains("error:"));
+    
+    let json = tilewright(&["inspect-json", missing.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "io_error");
+}
+
+#[test]
+fn inspect_json_max_bytes_boundary() {
+    let temp = TempDir::new().unwrap();
+    let file = temp.path().join("data.json");
+    let content = r#"{"a":1}"#; // 7 bytes
+    fs::write(&file, content).unwrap();
+    
+    // Exact boundary
+    let exact = tilewright(&["inspect-json", file.to_str().unwrap(), "--max-bytes", "7"]);
+    assert!(exact.status.success());
+    
+    // One byte over
+    let over = tilewright(&["inspect-json", file.to_str().unwrap(), "--max-bytes", "6"]);
+    assert_eq!(over.status.code(), Some(1));
+    assert!(stderr(&over).contains("exceeds maximum size"));
+    
+    // Zero rejection
+    let zero = tilewright(&["inspect-json", file.to_str().unwrap(), "--max-bytes", "0"]);
+    assert_eq!(zero.status.code(), Some(1));
+    assert!(stderr(&zero).contains("max_bytes must be greater than 0"));
+}
+
+#[cfg(unix)]
+#[test]
+fn inspect_json_escapes_terminal_controls_in_human_output() {
+    let temp = TempDir::new().unwrap();
+    let malicious_name = "test\n\x1b[31m.json";
+    let file = temp.path().join(malicious_name);
+    fs::write(&file, r#"{"a":1}"#).unwrap();
+    
+    let out = tilewright(&["inspect-json", file.to_str().unwrap()]);
+    assert!(out.status.success());
+    let stdout = stdout(&out);
+    assert!(!stdout.contains("\x1b[31m"));
+    assert!(!stdout.contains("test\n.json"));
+    assert!(stdout.contains("test\\n\\u{1b}[31m.json"));
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn inspect_json_non_utf8_paths() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let temp = TempDir::new().unwrap();
+    let invalid_name = OsString::from_vec(b"unknown-\xff.json".to_vec());
+    let file = temp.path().join(&invalid_name);
+    fs::write(&file, r#"{"a":1}"#).unwrap();
+
+    let human = Command::new(env!("CARGO_BIN_EXE_tilewright"))
+        .arg("inspect-json")
+        .arg(&file)
+        .output()
+        .expect("tilewright CLI should run");
+    assert!(human.status.success());
+    
+    let json = Command::new(env!("CARGO_BIN_EXE_tilewright"))
+        .arg("inspect-json")
+        .arg(&file)
+        .args(["--format", "json"])
+        .output()
+        .expect("tilewright CLI should run");
+    assert_eq!(json.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "io_error");
+    assert!(report["error"]["message"].as_str().unwrap().contains("lossy conversion"));
+}
+
+#[test]
+fn inspect_json_json_output_contains_no_source_document_contents() {
+    let temp = TempDir::new().unwrap();
+    let file = temp.path().join("data.json");
+    fs::write(&file, r#"{"secret_key":"secret_value"}"#).unwrap();
+    
+    let out = tilewright(&["inspect-json", file.to_str().unwrap(), "--format", "json"]);
+    assert!(out.status.success());
+    let stdout = stdout(&out);
+    assert!(!stdout.contains("secret_key"));
+    assert!(!stdout.contains("secret_value"));
+}
