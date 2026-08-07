@@ -260,5 +260,9 @@ Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
-experimentally. Differential verification against the local MZ 1.10.0 evidence
-corpus is the remaining gate before selecting the next typed slice.
+experimentally. The next evidence-bounded typed slice summarizes one selected
+map, and its `map` CLI adapter exposes that projection without interpreting tile
+or event contents. Differential checks against the local MZ 1.10.0 evidence
+corpus cover the fields exposed by both projections. The next typed slice must
+again begin with evidence and an explicit contract rather than expanding these
+projections speculatively.
