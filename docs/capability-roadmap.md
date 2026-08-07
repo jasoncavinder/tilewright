@@ -162,6 +162,11 @@ ambiguous required structure, and reports contextual relationship findings
 without treating them as editor validation. No typed map-content, mutation, or
 persistence behavior is implied.
 
+The next bounded slice is the selected-map summary accepted in
+[ADR 0008](decisions/0008-experimental-selected-map-summary.md). Acceptance
+defines its experimental read-only contract; it does not claim that the slice
+is implemented or supported.
+
 ### 6. Project-wide validation
 
 Compose parsers and typed views into distinct validation layers:
@@ -259,5 +264,5 @@ project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
 experimentally. Differential verification matched all 196 projected records
 and map-document identities in the local four-project MZ 1.10.0 evidence
-corpus. The next work is to select and evidence the smallest useful typed slice
-beyond map-catalog metadata without widening the existing compatibility claim.
+corpus. The next work is to implement the accepted, evidence-bounded
+selected-map summary without widening the existing compatibility claim.
