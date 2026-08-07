@@ -18,6 +18,17 @@ use tilewright::rpg_maker_mz::inventory::{
 
 const OUTPUT_SCHEMA_VERSION: u8 = 1;
 
+fn parse_max_bytes(s: &str) -> Result<usize, String> {
+    let val: usize = s.parse().map_err(|_| "must be a valid positive integer")?;
+    if val == 0 {
+        return Err("max_bytes must be greater than 0".to_string());
+    }
+    if val == usize::MAX {
+        return Err(format!("max_bytes must be less than {}", usize::MAX));
+    }
+    Ok(val)
+}
+
 /// Inspect tile-based RPG project data through the Tilewright library.
 #[derive(Debug, Parser)]
 #[command(name = "tilewright", version = tilewright::VERSION)]
@@ -52,7 +63,7 @@ enum Command {
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
         format: OutputFormat,
         /// Maximum bytes to read.
-        #[arg(long, default_value_t = 10_485_760)]
+        #[arg(long, default_value_t = 10_485_760, value_parser = parse_max_bytes)]
         max_bytes: usize,
     },
 }
@@ -201,6 +212,7 @@ enum InspectJsonErrorCategory {
     InvalidUtf8,
     Utf8Bom,
     InvalidSyntax,
+    ByteIdentityMismatch,
     Unrecognized,
 }
 
@@ -330,7 +342,11 @@ fn main() -> ExitCode {
     match cli.command {
         Command::Discover { path, format } => run_discover(&path, format),
         Command::Inventory { path, format } => run_inventory(&path, format),
-        Command::InspectJson { path, format, max_bytes } => run_inspect_json(&path, format, max_bytes),
+        Command::InspectJson {
+            path,
+            format,
+            max_bytes,
+        } => run_inspect_json(&path, format, max_bytes),
     }
 }
 
@@ -414,26 +430,6 @@ fn run_inventory(path: &Path, format: OutputFormat) -> ExitCode {
 }
 
 fn run_inspect_json(path: &Path, format: OutputFormat, max_bytes: usize) -> ExitCode {
-    if max_bytes == 0 {
-        return write_inspect_json_error(
-            path,
-            format,
-            InspectJsonErrorCategory::TooLarge,
-            "max_bytes must be greater than 0".to_string(),
-            None,
-        );
-    }
-
-    if matches!(format, OutputFormat::Json) && path.to_str().is_none() {
-        return write_inspect_json_error(
-            path,
-            format,
-            InspectJsonErrorCategory::IoError,
-            "JSON output cannot safely represent non-UTF-8 paths without lossy conversion".to_string(),
-            None,
-        );
-    }
-
     let file = match File::open(path) {
         Ok(f) => f,
         Err(e) => {
@@ -449,8 +445,8 @@ fn run_inspect_json(path: &Path, format: OutputFormat, max_bytes: usize) -> Exit
 
     // Read at most max_bytes + 1
     let mut buffer = Vec::new();
-    let limit = max_bytes.saturating_add(1);
-    if let Err(e) = file.try_clone().unwrap().take(limit as u64).read_to_end(&mut buffer) {
+    let limit = max_bytes + 1;
+    if let Err(e) = file.take(limit as u64).read_to_end(&mut buffer) {
         return write_inspect_json_error(
             path,
             format,
@@ -477,7 +473,7 @@ fn run_inspect_json(path: &Path, format: OutputFormat, max_bytes: usize) -> Exit
                 return write_inspect_json_error(
                     path,
                     format,
-                    InspectJsonErrorCategory::InvalidSyntax,
+                    InspectJsonErrorCategory::ByteIdentityMismatch,
                     "document parsed successfully but failed byte-identity invariant".to_string(),
                     None,
                 );
@@ -492,7 +488,9 @@ fn run_inspect_json(path: &Path, format: OutputFormat, max_bytes: usize) -> Exit
             };
 
             let write_result = match format {
-                OutputFormat::Human => write_human_inspect_json_report(io::stdout().lock(), &report),
+                OutputFormat::Human => {
+                    write_human_inspect_json_report(io::stdout().lock(), &report)
+                }
                 OutputFormat::Json => write_json(io::stdout().lock(), &report),
             };
             finish_write(write_result)
@@ -689,7 +687,11 @@ fn write_human_inspect_json_report(
         escape_controls(&report.path.display)
     )?;
     writeln!(writer, "  Byte length: {}", report.byte_length)?;
-    writeln!(writer, "  Byte-identical serialization: {}", report.byte_identical)?;
+    writeln!(
+        writer,
+        "  Byte-identical serialization: {}",
+        report.byte_identical
+    )?;
     Ok(())
 }
 
