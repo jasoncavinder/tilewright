@@ -262,5 +262,7 @@ Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
-experimentally. Differential verification against the local MZ 1.10.0 evidence
-corpus is the remaining gate before selecting the next typed slice.
+experimentally. Differential verification matched all 196 projected records
+and map-document identities in the local four-project MZ 1.10.0 evidence
+corpus. The next work is to implement the accepted, evidence-bounded
+selected-map summary without widening the existing compatibility claim.
