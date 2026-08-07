@@ -165,6 +165,11 @@ positive dimensions and tileset scalar, and opaque event-object count. It
 deliberately does not interpret tile arrays or event contents, and neither
 projection implies mutation or persistence behavior.
 
+The selected-map summary contract is accepted in
+[ADR 0008](decisions/0008-experimental-selected-map-summary.md) and implemented
+experimentally. Neither acceptance nor implementation makes the capability
+Supported.
+
 ### 6. Project-wide validation
 
 Compose parsers and typed views into distinct validation layers:
@@ -260,9 +265,9 @@ Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
-experimentally. The next evidence-bounded typed slice summarizes one selected
-map, and its `map` CLI adapter exposes that projection without interpreting tile
-or event contents. Differential checks against the local MZ 1.10.0 evidence
-corpus cover the fields exposed by both projections. The next typed slice must
-again begin with evidence and an explicit contract rather than expanding these
-projections speculatively.
+experimentally. The selected-map summary and its `map` CLI adapter are also
+implemented experimentally without interpreting tile or event contents.
+Differential verification matched all 196 catalog records and all 196
+selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. The
+next typed slice must again begin with evidence and an explicit contract rather
+than expanding these projections speculatively.

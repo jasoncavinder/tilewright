@@ -28,6 +28,7 @@ reordering, child creation, and reparenting experiments already recorded in the
 | `parentId` is zero for top-level maps and otherwise names another map ID. | Official script reference, shape audit, child creation, and reparenting records | Documented and Observed | High for the observed states | Missing parents, self-parenting, cycles, parent deletion, and deeper hierarchy remain untested. |
 | Map-info objects are open to additional fields. | Shape audit found two key sets; five records contain an additional boolean `quick` field | Observed | High that uniform closed-object decoding would reject legitimate observed data | The meaning, version scope, and ownership of `quick` and future extra fields remain unknown. |
 | A corresponding three-digit `MapNNN.json` exists for every observed non-null map-info entry. | Fresh-project audit and controlled map lifecycle records | Observed | High through ID 189 | Requiredness, orphan handling, IDs above 999, and editor behavior after manual inconsistency remain unknown. |
+| Tilewright's typed map-catalog output matches an independent direct extraction of the bounded fields and map-file identities. | `MZ-1.10.0-MAP-CATALOG-DIFFERENTIAL-2026-08-06` | Observed | High across all 196 records in the four-project MZ 1.10.0 corpus | This does not test later versions, malformed-input editor behavior, map contents, or editor reopen behavior. |
 
 ## Derived shape audit
 
@@ -55,6 +56,33 @@ The audit observed:
 
 The aggregate audit corroborates the controlled lifecycle evidence. It does
 not establish editor validation rules for manually malformed input.
+
+## Differential projection audit
+
+On 2026-08-06, the `tilewright maps` adapter at implementation commit
+`576e650e11e3683af4127de3f8dc75a91cb1aaa3` was run read-only against the same
+four authorized MZ 1.10.0 projects. An independent `jq` expression decoded the
+four bounded fields directly from each non-null `MapInfos.json` entry,
+normalized top-level `parentId` zero to no parent, and ordered records by
+display order then ID. The comparison was performed in memory and emitted only
+anonymized counts and boolean results.
+
+The audit observed:
+
+- exact equality for all projected IDs, decoded names, display orders, and
+  parent IDs across all 196 records;
+- exact equality between catalog IDs and the independently enumerated
+  three-digit map-document filename identities in all four projects;
+- complete snapshots with no map-catalog findings or snapshot diagnostics in
+  all four projects; and
+- byte-identical versioned JSON output across two consecutive invocations for
+  each unchanged project.
+
+No CLI JSON report, project path, map name, raw document, excerpt, or
+per-project manifest was retained. This result verifies Tilewright's
+read-only projection against independently decoded MZ-generated data; it is not
+an editor validation, mutation, save, or reopen experiment and does not extend
+the version scope beyond MZ 1.10.0.
 
 ## Bounded typed contract
 

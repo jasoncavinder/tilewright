@@ -1,7 +1,7 @@
 # RPG Maker MZ selected-map summary contract
 
 This document defines the evidence boundary for a small read-only projection of
-one evidenced `data/MapNNN.json` document. It is a research result and proposed
+one evidenced `data/MapNNN.json` document. It is a research result and accepted
 experimental contract, not a support claim.
 
 ## Question and scope
@@ -94,12 +94,12 @@ catalog-scoped `MapId`, then exposes only:
 
 The operation requires a structurally coherent map catalog and a matching
 catalog record, refuses IDs outside the evidenced three-digit filename family,
-and distinguish an absent document from a document unavailable through snapshot
-diagnostics. It refuses missing, duplicate, wrong-kind, or unsupported
+and distinguishes an absent document from a document unavailable through
+snapshot diagnostics. It refuses missing, duplicate, wrong-kind, or unsupported
 required values rather than silently choose or coerce them.
 
 Unknown map fields and all event contents remain in the untouched raw snapshot.
-The projection should not parse `data`, interpret layers or tiles, validate a
+The projection does not parse `data`, interpret layers or tiles, validate a
 tileset reference, inspect events, or expose mutation and serialization.
 Catalog findings unrelated to the selected document should not prevent a
 summary once the required catalog and document structures are coherent.
