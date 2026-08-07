@@ -609,9 +609,9 @@ mod tests {
         fs::create_dir(temp.path().join("data")).unwrap();
         fs::write(temp.path().join("data/Map001.json"), b"12345").unwrap(); // 5 bytes
 
-        // We make Map002 a directory so that if it were opened as a file, it would fail or behave differently,
-        // but wait, if it's a directory, it's caught by `entry.kind != InventoryEntryKind::File`.
-        // Let's just use a file without read permissions to ensure it's not opened.
+        // Create a file without read permissions. If the aggregate exhaustion logic
+        // fails to skip this candidate, opening it will cause an Open error rather
+        // than the expected ExceedsAggregateByteLimit diagnostic.
         let map2 = temp.path().join("data/Map002.json");
         fs::write(&map2, b"{}").unwrap();
 

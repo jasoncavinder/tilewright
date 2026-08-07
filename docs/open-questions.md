@@ -58,18 +58,21 @@ unknown and plugin-defined content. The following details remain open:
 - How should semantic project diffs be represented?
 - Should BOM-prefixed input be rejected permanently or preserved by a separate
   byte-level envelope?
-- What are the production document size, nesting, lexeme, document-count, and aggregate
-  resource limits? (The experimental snapshot loader requires explicit caller-supplied limits.)
+- What are the production document size, nesting, lexeme, document-count, and
+  aggregate resource limits? (The experimental snapshot loader requires explicit
+  caller-supplied limits.)
 - What performance and dependency budgets are acceptable?
 
 ## Loading and writes
 
-- What is the production project-loading API and what proves a path is a compatible
-  project? (The experimental snapshot loader uses a capability-relative `Dir` and does not prove compatibility.)
+- What is the production project-loading API and what proves a path is a
+  compatible project? (The experimental snapshot loader uses a
+  capability-relative `Dir` and does not prove compatibility.)
 - How will Tilewright acquire and verify the initial project-root capability
   without ambient root or ancestor symlink substitution or TOCTOU ambiguity?
 - When may symlinks that resolve within an authorized project capability be
-  followed, rejected, or reported? (The experimental snapshot loader rejects them.)
+  followed, rejected, or reported? (The experimental snapshot loader rejects
+  them.)
 - What backup, locking, temporary-file, and atomic-replacement strategy is safe
   across supported platforms?
 - When must a write be refused because lossless preservation is not established?

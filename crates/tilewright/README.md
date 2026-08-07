@@ -111,10 +111,10 @@ fn load_authorized_project(root: &Dir) -> Result<(), SnapshotError> {
     let snapshot = load_snapshot(root, limits)?;
 
     if snapshot.completeness() == SnapshotCompleteness::Partial {
-        println!("Loaded partial snapshot with {} errors", snapshot.diagnostics.len());
+        println!("Loaded partial snapshot with {} errors", snapshot.diagnostics().len());
     }
 
-    println!("Loaded {} documents", snapshot.documents.len());
+    println!("Loaded {} documents", snapshot.documents().len());
     Ok(())
 }
 ```
@@ -136,8 +136,8 @@ GUI frameworks, cloud services, and commercial Tilewright code. Recoverable
 input and I/O errors must not become panics, and unsupported fields must not be
 silently discarded.
 
-Initial root acquisition, production project loading, typed-view ownership, and write
-transaction design remain open. See the workspace
+Initial root acquisition, production project loading, typed-view ownership, and
+write transaction design remain open. See the workspace
 [architecture](../../docs/architecture.md),
 [safety model](../../docs/safety.md), and
 [open questions](../../docs/open-questions.md) before adding public APIs.
