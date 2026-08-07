@@ -56,7 +56,7 @@ for the distinction between planned and supported behavior.
 | Package | Role | Current state |
 | --- | --- | --- |
 | [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, typed map catalog, and selected-map summary |
-| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, typed map catalog, and JSON inspection adapter |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, typed map catalog, selected-map summary, and JSON inspection adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 
 The dependency direction is inward:
@@ -112,6 +112,7 @@ cargo run -p tilewright-cli -- discover path/to/project --format json
 cargo run -p tilewright-cli -- inventory path/to/project
 cargo run -p tilewright-cli -- snapshot path/to/project
 cargo run -p tilewright-cli -- maps path/to/project
+cargo run -p tilewright-cli -- map path/to/project 1
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
 ```
 
@@ -126,6 +127,7 @@ tilewright discover path/to/project --format json
 tilewright inventory path/to/project
 tilewright snapshot path/to/project
 tilewright maps path/to/project
+tilewright map path/to/project 1
 tilewright inspect-json path/to/file.json
 ```
 
@@ -134,11 +136,12 @@ Re-run the install command with `--force` after pulling CLI changes. See the
 for update and uninstall details.
 
 The CLI currently exposes experimental candidate discovery, project inventory,
-bounded raw snapshot loading, typed map-catalog inspection, and strict lossless
-JSON syntax inspection. The map catalog is a narrow structural projection, not
-general project understanding or validation. No command establishes project or
-MZ-version compatibility, round-trip behavior, or write support. Contributors
-should use the full verification process described in
+bounded raw snapshot loading, typed map-catalog inspection, selected-map
+summaries, and strict lossless JSON syntax inspection. The typed map commands
+are narrow structural projections, not general project understanding or
+validation. No command establishes project or MZ-version compatibility,
+round-trip behavior, or write support. Contributors should use the full
+verification process described in
 [CONTRIBUTING.md](CONTRIBUTING.md#verification).
 
 ## License

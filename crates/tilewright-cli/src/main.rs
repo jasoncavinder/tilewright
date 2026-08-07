@@ -17,8 +17,9 @@ use tilewright::rpg_maker_mz::inventory::{
     ProjectInventory, inventory_project,
 };
 use tilewright::rpg_maker_mz::map_catalog::{
-    JsonValueKind, MapCatalog, MapCatalogError, MapCatalogFinding, MapInfoField, map_catalog,
+    JsonValueKind, MapCatalog, MapCatalogError, MapCatalogFinding, MapId, MapInfoField, map_catalog,
 };
+use tilewright::rpg_maker_mz::map_summary::{MapSummary, MapSummaryError, map_summary};
 use tilewright::rpg_maker_mz::snapshot::{
     DocumentDiagnostic, ProjectSnapshot, SnapshotCompleteness, SnapshotLimits, load_snapshot,
 };
@@ -39,6 +40,11 @@ fn parse_max_bytes(s: &str) -> Result<usize, String> {
 fn parse_nonzero_usize(s: &str) -> Result<NonZeroUsize, String> {
     let value: usize = s.parse().map_err(|_| "must be a positive integer")?;
     NonZeroUsize::new(value).ok_or_else(|| "must be greater than zero".to_string())
+}
+
+fn parse_map_id(s: &str) -> Result<MapId, String> {
+    let value: u32 = s.parse().map_err(|_| "must be a positive integer")?;
+    MapId::new(value).ok_or_else(|| "must be greater than zero".to_string())
 }
 
 #[derive(Clone, Copy, Debug, Args)]
@@ -116,6 +122,19 @@ enum Command {
     Maps {
         /// RPG Maker MZ project directory to inspect.
         path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        #[command(flatten)]
+        limits: SnapshotLimitArgs,
+    },
+    /// Summarize one experimental, catalog-selected RPG Maker MZ map.
+    Map {
+        /// RPG Maker MZ project directory to inspect.
+        path: PathBuf,
+        /// Positive map ID from the project's map catalog.
+        #[arg(value_parser = parse_map_id)]
+        id: MapId,
         /// Output intended for a person or a script.
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
         format: OutputFormat,
@@ -427,6 +446,75 @@ struct MapCatalogErrorDetail {
 }
 
 #[derive(Debug, Serialize)]
+struct SelectedMapReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostic_count: usize,
+    map: SelectedMapDetail,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+}
+
+#[derive(Debug, Serialize)]
+struct SelectedMapDetail {
+    id: u32,
+    catalog_name: String,
+    document_path: PathReport,
+    display_name: String,
+    width: u32,
+    height: u32,
+    tileset_id: u32,
+    event_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct SelectedMapErrorReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+    error: MapSummaryErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct MapSummaryErrorDetail {
+    category: MapSummaryErrorCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    map_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    path: Option<PathReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    field: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    index: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    actual_kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    catalog_error: Option<MapCatalogErrorDetail>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum MapSummaryErrorCategory {
+    CatalogError,
+    UnknownMapId,
+    UnevidencedDocumentPath,
+    MissingDocument,
+    UnavailableDocument,
+    UnexpectedRootKind,
+    MissingField,
+    DuplicateField,
+    UnexpectedFieldKind,
+    UnsupportedInteger,
+    InvalidString,
+    UnexpectedEventEntryKind,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum MapCatalogErrorCategory {
     MissingDocument,
@@ -692,6 +780,184 @@ impl MapsReport {
     }
 }
 
+impl SelectedMapReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        summary: &MapSummary,
+        limits: SnapshotLimits,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostic_count: snapshot.diagnostics().len(),
+            map: SelectedMapDetail {
+                id: summary.id().get(),
+                catalog_name: summary.catalog_name().to_owned(),
+                document_path: PathReport::new(summary.document_path()),
+                display_name: summary.display_name().to_owned(),
+                width: summary.width(),
+                height: summary.height(),
+                tileset_id: summary.tileset_id(),
+                event_count: summary.event_count(),
+            },
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+        }
+    }
+}
+
+impl SelectedMapErrorReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        limits: SnapshotLimits,
+        error: &MapSummaryError,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+            error: MapSummaryErrorDetail::new(error),
+        }
+    }
+}
+
+impl MapSummaryErrorDetail {
+    fn new(error: &MapSummaryError) -> Self {
+        let mut detail = Self {
+            category: MapSummaryErrorCategory::Unrecognized,
+            message: error.to_string(),
+            map_id: None,
+            path: None,
+            field: None,
+            index: None,
+            actual_kind: None,
+            catalog_error: None,
+        };
+
+        match error {
+            MapSummaryError::Catalog { source, .. } => {
+                detail.category = MapSummaryErrorCategory::CatalogError;
+                detail.catalog_error = Some(MapCatalogErrorDetail::new(source));
+            }
+            MapSummaryError::UnknownMapId { map_id, .. } => {
+                detail.category = MapSummaryErrorCategory::UnknownMapId;
+                detail.map_id = Some(map_id.get());
+            }
+            MapSummaryError::UnevidencedDocumentPath { map_id, .. } => {
+                detail.category = MapSummaryErrorCategory::UnevidencedDocumentPath;
+                detail.map_id = Some(map_id.get());
+            }
+            MapSummaryError::MissingDocument { map_id, path, .. } => {
+                detail.category = MapSummaryErrorCategory::MissingDocument;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+            }
+            MapSummaryError::UnavailableDocument { map_id, path, .. } => {
+                detail.category = MapSummaryErrorCategory::UnavailableDocument;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+            }
+            MapSummaryError::UnexpectedRootKind {
+                map_id,
+                path,
+                actual,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::UnexpectedRootKind;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.actual_kind = Some(json_value_kind_name(*actual));
+            }
+            MapSummaryError::MissingField {
+                map_id,
+                path,
+                field,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::MissingField;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.field = Some(field.to_string());
+            }
+            MapSummaryError::DuplicateField {
+                map_id,
+                path,
+                field,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::DuplicateField;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.field = Some(field.to_string());
+            }
+            MapSummaryError::UnexpectedFieldKind {
+                map_id,
+                path,
+                field,
+                actual,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::UnexpectedFieldKind;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.field = Some(field.to_string());
+                detail.actual_kind = Some(json_value_kind_name(*actual));
+            }
+            MapSummaryError::UnsupportedInteger {
+                map_id,
+                path,
+                field,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::UnsupportedInteger;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.field = Some(field.to_string());
+            }
+            MapSummaryError::InvalidString {
+                map_id,
+                path,
+                field,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::InvalidString;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.field = Some(field.to_string());
+            }
+            MapSummaryError::UnexpectedEventEntryKind {
+                map_id,
+                path,
+                index,
+                actual,
+                ..
+            } => {
+                detail.category = MapSummaryErrorCategory::UnexpectedEventEntryKind;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.index = Some(*index);
+                detail.actual_kind = Some(json_value_kind_name(*actual));
+            }
+            _ => {}
+        }
+
+        detail
+    }
+}
+
 impl MapFindingReport {
     fn new(finding: &MapCatalogFinding) -> Self {
         match finding {
@@ -888,6 +1154,12 @@ fn main() -> ExitCode {
             format,
             limits,
         } => run_maps(&path, format, limits.limits()),
+        Command::Map {
+            path,
+            id,
+            format,
+            limits,
+        } => run_map(&path, id, format, limits.limits()),
         Command::InspectJson {
             path,
             format,
@@ -978,6 +1250,55 @@ fn run_maps(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> ExitCo
         Err(error) => {
             let report = MapsErrorReport::new(path, &snapshot, limits, &error);
             write_maps_error_report(&report, format)
+        }
+    }
+}
+
+fn run_map(path: &Path, map_id: MapId, format: OutputFormat, limits: SnapshotLimits) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    let snapshot = match load_snapshot(&root_dir, limits) {
+        Ok(snapshot) => snapshot,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match map_summary(&snapshot, map_id) {
+        Ok(summary) => {
+            let report = SelectedMapReport::new(path, &snapshot, &summary, limits);
+            let write_result = match format {
+                OutputFormat::Human => {
+                    write_human_selected_map_report(io::stdout().lock(), &report)
+                }
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let report = SelectedMapErrorReport::new(path, &snapshot, limits, &error);
+            write_selected_map_error_report(&report, format)
         }
     }
 }
@@ -1211,6 +1532,21 @@ fn write_maps_error_report(report: &MapsErrorReport, format: OutputFormat) -> Ex
     }
 }
 
+fn write_selected_map_error_report(
+    report: &SelectedMapErrorReport,
+    format: OutputFormat,
+) -> ExitCode {
+    let write_result = match format {
+        OutputFormat::Human => write_human_selected_map_error(io::stderr().lock(), report),
+        OutputFormat::Json => write_json(io::stdout().lock(), report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
+    }
+}
+
 fn escape_controls(s: &str) -> String {
     s.chars()
         .map(|c| {
@@ -1423,6 +1759,62 @@ fn write_human_maps_report(mut writer: impl Write, report: &MapsReport) -> io::R
     )
 }
 
+fn write_human_selected_map_report(
+    mut writer: impl Write,
+    report: &SelectedMapReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Map {} for {}:",
+        report.map.id,
+        escape_controls(&report.root.display)
+    )?;
+    writeln!(
+        writer,
+        "  Catalog name: {}",
+        escape_controls(&report.map.catalog_name)
+    )?;
+    writeln!(
+        writer,
+        "  Display name: {}",
+        escape_controls(&report.map.display_name)
+    )?;
+    writeln!(
+        writer,
+        "  Document: {}",
+        escape_controls(&report.map.document_path.display)
+    )?;
+    writeln!(
+        writer,
+        "  Size: {} x {}",
+        report.map.width, report.map.height
+    )?;
+    writeln!(writer, "  Tileset ID: {}", report.map.tileset_id)?;
+    writeln!(writer, "  Opaque event objects: {}", report.map.event_count)?;
+    writeln!(
+        writer,
+        "  Snapshot completeness: {}",
+        report.snapshot_completeness.name()
+    )?;
+    writeln!(
+        writer,
+        "  Snapshot diagnostics: {}",
+        report.snapshot_diagnostic_count
+    )?;
+    writeln!(
+        writer,
+        "  Limits: {} documents, {} bytes/document, {} aggregate bytes",
+        report.limits.max_documents,
+        report.limits.max_bytes_per_document,
+        report.limits.max_aggregate_bytes
+    )?;
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
 fn write_human_map_finding(writer: &mut impl Write, finding: &MapFindingReport) -> io::Result<()> {
     match finding {
         MapFindingReport::MissingParent { map_id, parent_id } => {
@@ -1508,6 +1900,23 @@ fn write_human_snapshot_diagnostics(
 }
 
 fn write_human_maps_error(mut writer: impl Write, report: &MapsErrorReport) -> io::Result<()> {
+    writeln!(
+        writer,
+        "error: {} for {}",
+        escape_controls(&report.error.message),
+        escape_controls(&report.root.display)
+    )?;
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_selected_map_error(
+    mut writer: impl Write,
+    report: &SelectedMapErrorReport,
+) -> io::Result<()> {
     writeln!(
         writer,
         "error: {} for {}",

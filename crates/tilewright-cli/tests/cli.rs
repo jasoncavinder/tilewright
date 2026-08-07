@@ -32,6 +32,12 @@ fn write_map_project(temp: &TempDir, map_infos: &[u8], map_documents: &[u32]) ->
     root
 }
 
+fn write_selected_map_project(temp: &TempDir, map_infos: &[u8], map_document: &[u8]) -> PathBuf {
+    let root = write_map_project(temp, map_infos, &[]);
+    fs::write(root.join("data/Map001.json"), map_document).unwrap();
+    root
+}
+
 #[test]
 fn help_and_version_are_available() {
     let help = tilewright(&["--help"]);
@@ -985,6 +991,225 @@ fn maps_operational_errors_preserve_stream_separation() {
             .unwrap()
             .contains("failed to open project root")
     );
+}
+
+#[test]
+fn map_help_lists_id_format_and_snapshot_limits() {
+    let help = tilewright(&["map", "--help"]);
+    assert!(help.status.success());
+    let output = stdout(&help);
+    assert!(output.contains("<PATH>"));
+    assert!(output.contains("<ID>"));
+    assert!(output.contains("--format"));
+    assert!(output.contains("--max-documents"));
+    assert!(output.contains("--max-bytes-per-document"));
+    assert!(output.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn map_reports_selected_summary_and_escapes_controls_for_people() {
+    let temp = TempDir::new().unwrap();
+    let root = write_selected_map_project(
+        &temp,
+        br#"[null,{"id":1,"name":"Catalog\n\u001b[31m","order":1,"parentId":0}]"#,
+        br#"{"displayName":"Display\rName","width":17,"height":13,"tilesetId":2,"events":[null,{"id":1},{"id":2}],"secret":"do not print"}"#,
+    );
+
+    let output = tilewright(&["map", root.to_str().unwrap(), "1"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output = stdout(&output);
+    assert!(output.contains("Map 1"));
+    assert!(output.contains("Catalog name: Catalog\\n\\u{1b}[31m"));
+    assert!(output.contains("Display name: Display\\rName"));
+    assert!(output.contains("Size: 17 x 13"));
+    assert!(output.contains("Tileset ID: 2"));
+    assert!(output.contains("Opaque event objects: 2"));
+    assert!(!output.contains('\u{1b}'));
+    assert!(!output.contains("do not print"));
+}
+
+#[test]
+fn map_emits_versioned_json_without_unprojected_contents() {
+    let temp = TempDir::new().unwrap();
+    let root = write_selected_map_project(
+        &temp,
+        br#"[null,{"id":1,"name":"First","order":1,"parentId":0}]"#,
+        br#"{"displayName":"Town","width":20,"height":15,"tilesetId":3,"events":[null,{}],"secret_key":"secret_value"}"#,
+    );
+
+    let first = tilewright(&["map", root.to_str().unwrap(), "1", "--format", "json"]);
+    let second = tilewright(&["map", root.to_str().unwrap(), "1", "--format", "json"]);
+
+    assert!(first.status.success());
+    assert!(stderr(&first).is_empty());
+    assert_eq!(first.stdout, second.stdout);
+    let report: Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["snapshot_completeness"], "complete");
+    assert_eq!(report["map"]["id"], 1);
+    assert_eq!(report["map"]["catalog_name"], "First");
+    assert_eq!(report["map"]["display_name"], "Town");
+    assert_eq!(report["map"]["width"], 20);
+    assert_eq!(report["map"]["height"], 15);
+    assert_eq!(report["map"]["tileset_id"], 3);
+    assert_eq!(report["map"]["event_count"], 1);
+    let map_path = PathBuf::from("data").join("Map001.json");
+    assert_eq!(
+        report["map"]["document_path"]["utf8"],
+        map_path.to_str().unwrap()
+    );
+    let output = stdout(&first);
+    assert!(!output.contains("secret_key"));
+    assert!(!output.contains("secret_value"));
+}
+
+#[test]
+fn map_keeps_unrelated_snapshot_diagnostics_separate() {
+    let temp = TempDir::new().unwrap();
+    let root = write_selected_map_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        br#"{"displayName":"","width":17,"height":13,"tilesetId":1,"events":[]}"#,
+    );
+    fs::write(root.join("data/Actors.json"), b"not json").unwrap();
+
+    let output = tilewright(&["map", root.to_str().unwrap(), "1", "--format", "json"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["map"]["id"], 1);
+    assert_eq!(report["snapshot_completeness"], "partial");
+    assert_eq!(report["snapshot_diagnostic_count"], 1);
+    assert_eq!(
+        report["snapshot_diagnostics"][0]["category"],
+        "invalid_syntax"
+    );
+}
+
+#[test]
+fn map_id_boundaries_are_explicit() {
+    let temp = TempDir::new().unwrap();
+    let root = write_selected_map_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        br#"{"displayName":"","width":17,"height":13,"tilesetId":1,"events":[]}"#,
+    );
+
+    let zero = tilewright(&["map", root.to_str().unwrap(), "0"]);
+    assert_eq!(zero.status.code(), Some(2));
+    assert!(stdout(&zero).is_empty());
+    assert!(stderr(&zero).contains("must be greater than zero"));
+
+    let mut entries = vec!["null"; 1001];
+    entries[1000] = r#"{"id":1000,"name":"Far","order":1,"parentId":0}"#;
+    fs::write(
+        root.join("data/MapInfos.json"),
+        format!("[{}]", entries.join(",")),
+    )
+    .unwrap();
+    let beyond_evidence = tilewright(&["map", root.to_str().unwrap(), "1000", "--format", "json"]);
+    assert_eq!(beyond_evidence.status.code(), Some(1));
+    assert!(stderr(&beyond_evidence).is_empty());
+    let report: Value = serde_json::from_slice(&beyond_evidence.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "unevidenced_document_path");
+    assert_eq!(report["error"]["map_id"], 1000);
+}
+
+#[test]
+fn map_projection_errors_have_structured_human_and_json_forms() {
+    let temp = TempDir::new().unwrap();
+    let root = write_selected_map_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        br#"{"displayName":"","width":17,"height":13,"tilesetId":1,"events":42}"#,
+    );
+
+    let human = tilewright(&["map", root.to_str().unwrap(), "2"]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    assert!(stderr(&human).contains("no record for map 2"));
+
+    let json = tilewright(&["map", root.to_str().unwrap(), "1", "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "unexpected_field_kind");
+    assert_eq!(report["error"]["map_id"], 1);
+    assert_eq!(report["error"]["field"], "events");
+    assert_eq!(report["error"]["actual_kind"], "number");
+}
+
+#[test]
+fn map_forwards_limits_and_reports_unavailable_selected_document() {
+    let temp = TempDir::new().unwrap();
+    let root = write_selected_map_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        br#"{"displayName":"a deliberately long display name","width":17,"height":13,"tilesetId":1,"events":[]}"#,
+    );
+
+    let output = tilewright(&[
+        "map",
+        root.to_str().unwrap(),
+        "1",
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "80",
+    ]);
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["limits"]["max_bytes_per_document"], 80);
+    assert_eq!(report["error"]["category"], "unavailable_document");
+    let map_path = PathBuf::from("data").join("Map001.json");
+    assert_eq!(report["error"]["path"]["utf8"], map_path.to_str().unwrap());
+    assert!(
+        report["snapshot_diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(
+                |diagnostic| diagnostic["path"]["utf8"] == map_path.to_str().unwrap()
+                    && diagnostic["category"] == "exceeds_document_byte_limit"
+            )
+    );
+}
+
+#[test]
+fn map_catalog_failures_and_operational_errors_remain_distinct() {
+    let malformed = TempDir::new().unwrap();
+    let malformed_root = write_selected_map_project(
+        &malformed,
+        br#"{}"#,
+        br#"{"displayName":"","width":17,"height":13,"tilesetId":1,"events":[]}"#,
+    );
+    let catalog_error = tilewright(&[
+        "map",
+        malformed_root.to_str().unwrap(),
+        "1",
+        "--format",
+        "json",
+    ]);
+    assert_eq!(catalog_error.status.code(), Some(1));
+    assert!(stderr(&catalog_error).is_empty());
+    let report: Value = serde_json::from_slice(&catalog_error.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "catalog_error");
+    assert_eq!(
+        report["error"]["catalog_error"]["category"],
+        "unexpected_root_kind"
+    );
+
+    let missing = malformed.path().join("missing\n\u{1b}[31mdir");
+    let operational = tilewright(&["map", missing.to_str().unwrap(), "1"]);
+    assert_eq!(operational.status.code(), Some(1));
+    assert!(stdout(&operational).is_empty());
+    assert!(!stderr(&operational).contains('\u{1b}'));
+    assert!(stderr(&operational).contains("missing\\n\\u{1b}[31mdir"));
 }
 
 #[test]
