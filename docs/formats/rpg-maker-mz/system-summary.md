@@ -1,8 +1,8 @@
 # RPG Maker MZ system-summary contract
 
 This document defines the evidence boundary for a small read-only projection of
-`data/System.json`. It is a research result and proposed experimental contract,
-not a support claim.
+`data/System.json`. It is a research result and implemented experimental
+contract, not a support claim.
 
 ## Question and scope
 
@@ -54,8 +54,8 @@ states; they do not establish editor validation rules.
 
 ## Bounded typed contract
 
-The proposed experimental slice accepts an existing `ProjectSnapshot` and
-reads only exact `data/System.json`. It exposes:
+The experimental slice accepts an existing `ProjectSnapshot` and reads only
+exact `data/System.json`. It exposes:
 
 - the exact project-relative document path;
 - decoded game-title, currency-unit, and locale strings;

@@ -1717,11 +1717,11 @@ roles are documented by `MZ-HELP-SYSTEM1-2026-08-07` and the existing
 
 ### Implementation implications
 
-The proposed projection may decode only the three selected strings and four
-nonnegative integer scalars while retaining every other property in the raw
-lossless document. It must refuse ambiguous required structure, avoid
-normalizing strings or treating map scalars as stable identifiers, and make no
-validation, mutation, or editor-compatibility claim. The proposed architecture
+The implemented experimental projection decodes only the three selected strings
+and four nonnegative integer scalars while retaining every other property in the
+raw lossless document. It refuses ambiguous required structure, avoids
+normalizing strings or treating map scalars as stable identifiers, and makes no
+validation, mutation, or editor-compatibility claim. The accepted architecture
 is recorded in
 [ADR 0009](../../decisions/0009-experimental-system-summary.md).
 

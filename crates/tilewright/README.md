@@ -13,6 +13,8 @@ can inspect map IDs, names, display order, and parent relationships. It does not
 yet provide broader understanding, validation, or write support. A second
 experimental projection can summarize one catalog-selected map's display name,
 dimensions, tileset ID scalar, and opaque event count.
+An additional experimental projection reports selected `System.json` strings
+and stored map-position scalars without validating their relationships.
 
 ### Example: Candidate Discovery
 
@@ -188,6 +190,36 @@ The operation requires a coherent map catalog and a matching document in the
 evidenced three-digit filename family. It does not validate tileset references,
 interpret events or tile layers, establish editor compatibility, or expose
 mutation and serialization.
+
+### Example: System Summary
+
+The experimental system summary reads seven bounded fields from exact
+`data/System.json` in an existing snapshot. Unknown settings and exact source
+bytes remain untouched.
+
+```rust
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+use tilewright::rpg_maker_mz::system_summary::system_summary;
+
+fn print_system_summary(snapshot: &ProjectSnapshot) {
+    match system_summary(snapshot) {
+        Ok(summary) => println!(
+            "{} ({}) starts on map {} at ({}, {})",
+            summary.game_title(),
+            summary.locale(),
+            summary.start_map_id(),
+            summary.start_x(),
+            summary.start_y()
+        ),
+        Err(error) => eprintln!("system summary unavailable: {error}"),
+    }
+}
+```
+
+The map ID and coordinate values are nonnegative scalars, not validated map
+references. The operation does not interpret other system settings, compare
+titles across files, establish editor compatibility, or expose mutation and
+serialization.
 
 ## Responsibilities
 

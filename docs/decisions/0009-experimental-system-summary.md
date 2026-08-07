@@ -1,6 +1,6 @@
 # ADR 0009: Experimental System Summary
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-07
 
 ## Context
@@ -92,10 +92,9 @@ even when a project is incomplete or internally inconsistent.
 
 ## Validation
 
-Before implementation is ready for review, it must include generated synthetic
-tests for successful projection, empty and escaped strings, zero and `u32`
-numeric boundaries, every structural refusal, document availability, raw-byte
-preservation, ignored unknown properties, and absence of mutation. Public
-Rustdoc and the compatibility matrix must state the exact experimental
-non-claims. Each adapter must add equivalent tests and non-claims when it
-exposes the operation.
+Implementation includes generated synthetic tests for successful projection,
+empty and escaped strings, zero and `u32` numeric boundaries, structural
+refusals, document availability, raw-byte preservation, ignored unknown
+properties, and absence of mutation. Public Rustdoc and the compatibility
+matrix state the exact experimental non-claims. Each adapter must add equivalent
+tests and non-claims when it exposes the operation.
