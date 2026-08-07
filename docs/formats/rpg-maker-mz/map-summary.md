@@ -26,6 +26,7 @@ creation. Later versions and malformed-input editor behavior remain unknown.
 | `tilesetId` is a positive integer-valued number from 1 through 4, and every value resolves to a matching `Tilesets.json` record in its project. | Shape audit and independent cross-file comparison | Observed; reference meaning Inferred | High for all 196 documents | Tileset zero, missing references, other identifiers, and editor enforcement remain unknown. |
 | `events` is an array containing only null holes and objects; the corpus contains 1,555 object entries, and every observed object ID equals its array index. | Shape audit plus documented map-event role and controlled event creation | Documented and Observed | High across all 196 documents | Event fields, pages, commands, duplicate IDs, malformed entries, and editor enforcement remain outside this slice. |
 | `data` is an integer array whose length equals `width * height * 6` in every audited document. | Shape audit | Observed; layer meaning Unknown | High for the arithmetic relationship in this corpus | Layer ordering, tile encoding, mutation rules, and other-version stability remain unestablished. |
+| Tilewright's selected-map summary matches an independent direct extraction of every bounded field. | `MZ-1.10.0-MAP-SUMMARY-DIFFERENTIAL-2026-08-06` | Observed | High across all 196 summaries in the four-project MZ 1.10.0 corpus | This does not test malformed-input editor behavior, later versions, tile meaning, event meaning, or editor reopen behavior. |
 
 ## Aggregate shape audit
 
@@ -56,6 +57,28 @@ The audit observed:
 - event object IDs equal to their array indices in every observed entry.
 
 These are observations of MZ-generated states, not editor validation rules.
+
+## Differential projection audit
+
+On 2026-08-06, the selected-map summary at implementation commit
+`8dfa46c0dee0e8f8b229101c45428b0e066d9655` was run read-only against the same
+four authorized MZ 1.10.0 projects. A temporary external Rust harness used
+`serde_json` 1.0.151 to decode the source documents independently from
+Tilewright's retained CST.
+
+For every coherent catalog record, the harness compared catalog name, exact
+three-digit project-relative path, map `displayName`, width, height, tileset ID,
+and non-null object event count. Comparisons occurred in memory and emitted only
+anonymized case numbers, counts, and boolean results.
+
+All 196 selected-map summaries matched exactly. Every project snapshot was
+complete, and all four projects produced zero snapshot diagnostics and zero
+map-catalog findings. No project path, decoded name, raw document, excerpt,
+field value, CLI report, digest, or per-project manifest was retained.
+
+This verifies the implemented read-only projection against independently
+decoded MZ-generated data. It is not an editor validation, mutation, save, or
+reopen experiment and does not extend the version scope beyond MZ 1.10.0.
 
 ## Bounded typed contract
 
