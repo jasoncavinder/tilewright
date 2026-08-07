@@ -104,5 +104,6 @@ Before implementation is ready for review, it must include generated synthetic
 tests for successful projection, empty and nonempty display names, null event
 holes, opaque unknown event content, every structural refusal, numeric
 boundaries, catalog and document failures, unevidenced IDs, raw byte
-preservation, and absence of mutation. Public Rustdoc, CLI documentation, and
-the compatibility matrix must state the exact experimental non-claims.
+preservation, and absence of mutation. Public Rustdoc and the compatibility
+matrix must state the exact experimental non-claims. Each adapter must add
+equivalent tests and non-claims when it exposes the operation.

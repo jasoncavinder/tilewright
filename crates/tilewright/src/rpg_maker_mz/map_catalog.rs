@@ -525,11 +525,10 @@ fn collect_findings(
         .map(|entry| entry.path.as_path())
         .collect();
     for id in records.keys().copied() {
-        if id.get() > 999 {
+        let Some(expected_path) = evidenced_map_document_path(id) else {
             findings.push(MapCatalogFinding::UnevidencedMapDocumentPath { map_id: id });
             continue;
-        }
-        let expected_path = PathBuf::from("data").join(format!("Map{:03}.json", id.get()));
+        };
         if !inventory_paths.contains(expected_path.as_path()) {
             findings.push(MapCatalogFinding::MissingMapDocument {
                 map_id: id,
@@ -565,6 +564,11 @@ fn collect_findings(
     }
 
     findings
+}
+
+pub(super) fn evidenced_map_document_path(map_id: MapId) -> Option<PathBuf> {
+    (map_id.get() <= 999)
+        .then(|| PathBuf::from("data").join(format!("Map{:03}.json", map_id.get())))
 }
 
 fn parent_cycles(records: &BTreeMap<MapId, MapRecord>) -> BTreeSet<Vec<MapId>> {

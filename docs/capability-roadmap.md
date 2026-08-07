@@ -159,8 +159,11 @@ experimental projection contract accepted in
 loaded map-info document into map IDs, decoded names, display order, and parent
 relationships. It retains raw bytes and unknown fields in the snapshot, refuses
 ambiguous required structure, and reports contextual relationship findings
-without treating them as editor validation. No typed map-content, mutation, or
-persistence behavior is implied.
+without treating them as editor validation. A second bounded projection can
+summarize one catalog-selected map's exact document path, decoded display name,
+positive dimensions and tileset scalar, and opaque event-object count. It
+deliberately does not interpret tile arrays or event contents, and neither
+projection implies mutation or persistence behavior.
 
 ### 6. Project-wide validation
 

@@ -1575,11 +1575,11 @@ remaining experiments are maintained in
 
 ### Implementation implications
 
-The next typed slice may expose a catalog-selected map's two decoded names,
-evidenced path, positive dimensions, positive tileset scalar, and opaque event
-object count. It must retain every other field in the raw snapshot, refuse
-ambiguous required structure, avoid interpreting tile arrays or event bodies,
-and make no validation or editor-compatibility claim. The proposed architecture
+The experimental core projection exposes a catalog-selected map's two decoded
+names, evidenced path, positive dimensions, positive tileset scalar, and opaque
+event object count. It retains every other field in the raw snapshot, refuses
+ambiguous required structure, avoids interpreting tile arrays or event bodies,
+and makes no validation or editor-compatibility claim. The proposed architecture
 is recorded in
 [ADR 0008](../../decisions/0008-experimental-selected-map-summary.md).
 

@@ -16,9 +16,10 @@ not a current support claim.
 > [!IMPORTANT]
 > Tilewright is experimental. It can inventory and load selected project JSON
 > into bounded, read-only raw snapshots, then project map IDs, names, display
-> order, and parent relationships into a typed catalog. It does not yet provide
-> broader semantic understanding, validation, or modification. Do not rely on
-> it for valuable project workflows.
+> order, and parent relationships into a typed catalog. It can also summarize
+> one catalog-selected map's basic metadata and opaque event count. It does not
+> yet provide broader semantic understanding, validation, or modification. Do
+> not rely on it for valuable project workflows.
 
 ## What Tilewright aims to provide
 
@@ -54,7 +55,7 @@ for the distinction between planned and supported behavior.
 
 | Package | Role | Current state |
 | --- | --- | --- |
-| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, and typed map catalog |
+| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, typed map catalog, and selected-map summary |
 | [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, and JSON inspection adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 

@@ -57,10 +57,10 @@ The audit observed:
 
 These are observations of MZ-generated states, not editor validation rules.
 
-## Bounded typed contract candidate
+## Bounded typed contract
 
-The next experimental typed slice should accept an existing `ProjectSnapshot`
-and a catalog-scoped `MapId`, then expose only:
+The experimental typed slice accepts an existing `ProjectSnapshot` and a
+catalog-scoped `MapId`, then exposes only:
 
 - the selected map ID and catalog name;
 - the exact evidenced project-relative map-document path;
@@ -69,10 +69,10 @@ and a catalog-scoped `MapId`, then expose only:
 - a positive tileset ID scalar; and
 - the number of non-null event objects.
 
-The operation should require a structurally coherent map catalog and a matching
+The operation requires a structurally coherent map catalog and a matching
 catalog record, refuse IDs outside the evidenced three-digit filename family,
 and distinguish an absent document from a document unavailable through snapshot
-diagnostics. It should refuse missing, duplicate, wrong-kind, or unsupported
+diagnostics. It refuses missing, duplicate, wrong-kind, or unsupported
 required values rather than silently choose or coerce them.
 
 Unknown map fields and all event contents remain in the untouched raw snapshot.
