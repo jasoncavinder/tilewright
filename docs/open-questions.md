@@ -46,8 +46,10 @@ unknown and plugin-defined content. The following details remain open:
 
 - What production typed-view ownership and API design should sit over the CST?
   [ADR 0007](decisions/0007-experimental-map-catalog-projection.md)
-  selects an owned projection only for the initial experimental map catalog;
-  it deliberately does not settle mutable or production views.
+  selects an owned projection for the experimental map catalog, and
+  [ADR 0009](decisions/0009-experimental-system-summary.md) does the same for
+  the bounded system summary. They deliberately do not settle mutable or
+  production views.
 - What `Send`/`Sync` and cross-thread ownership guarantees should raw documents
   and typed views provide?
 - How should raw extension data relate to typed mutation APIs?
@@ -55,7 +57,8 @@ unknown and plugin-defined content. The following details remain open:
 - How should stale-document or stale-node detection be handled?
 - What constitutes a stable project or resource identifier? ADR 0007
   introduces an experimental positive `MapId` scoped to map-catalog records,
-  not a stable project-wide identity scheme.
+  not a stable project-wide identity scheme. ADR 0009 deliberately retains
+  system map fields as unvalidated `u32` scalars.
 - How should event-command parameter arrays be typed incrementally?
 - How should validation findings, severities, source locations, and related
   diagnostics be represented?

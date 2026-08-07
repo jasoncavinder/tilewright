@@ -170,6 +170,13 @@ The selected-map summary contract is accepted in
 experimentally. Neither acceptance nor implementation makes the capability
 Supported.
 
+The bounded `System.json` orientation summary is accepted in
+[ADR 0009](decisions/0009-experimental-system-summary.md) and implemented
+experimentally. It projects only the seven accepted string and nonnegative
+integer fields, retains raw bytes and unknown settings in the snapshot, and
+does not validate map references or coordinate bounds. Neither acceptance nor
+implementation makes the capability Supported.
+
 ### 6. Project-wide validation
 
 Compose parsers and typed views into distinct validation layers:
@@ -266,8 +273,11 @@ immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
 experimentally. The selected-map summary and its `map` CLI adapter are also
-implemented experimentally without interpreting tile or event contents.
+implemented experimentally without interpreting tile or event contents. The
+system summary and its `system` CLI adapter are implemented experimentally
+without interpreting other system settings or validating map relationships.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. The
-next typed slice must again begin with evidence and an explicit contract rather
-than expanding these projections speculatively.
+new system slice still needs an independent differential implementation audit
+across that corpus before any broader compatibility claim or adjacent typed
+projection is considered.

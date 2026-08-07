@@ -19,6 +19,7 @@ No decisions are currently proposed.
 | [0006: Snapshot loading contract](0006-snapshot-loading-contract.md) | Accepted | Adopt an experimental, capability-relative, bounded, read-only raw snapshot loader with deterministic partial diagnostics. |
 | [0007: Experimental map catalog projection](0007-experimental-map-catalog-projection.md) | Accepted | Adopt a read-only, owned typed projection for map identity, display order, hierarchy, and contextual findings over a raw project snapshot. |
 | [0008: Experimental selected-map summary](0008-experimental-selected-map-summary.md) | Accepted | Adopt a read-only owned summary for one catalog-selected map's basic metadata, dimensions, tileset scalar, and opaque event count. |
+| [0009: Experimental system summary](0009-experimental-system-summary.md) | Accepted | Add a read-only owned summary for selected `System.json` metadata and map-position scalars. |
 
 ## Adding or changing a decision
 

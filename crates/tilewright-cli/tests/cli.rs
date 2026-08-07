@@ -38,6 +38,13 @@ fn write_selected_map_project(temp: &TempDir, map_infos: &[u8], map_document: &[
     root
 }
 
+fn write_system_project(temp: &TempDir, system_document: &[u8]) -> PathBuf {
+    let root = temp.path().join("root");
+    fs::create_dir_all(root.join("data")).unwrap();
+    fs::write(root.join("data/System.json"), system_document).unwrap();
+    root
+}
+
 #[test]
 fn help_and_version_are_available() {
     let help = tilewright(&["--help"]);
@@ -1210,6 +1217,171 @@ fn map_catalog_failures_and_operational_errors_remain_distinct() {
     assert!(stdout(&operational).is_empty());
     assert!(!stderr(&operational).contains('\u{1b}'));
     assert!(stderr(&operational).contains("missing\\n\\u{1b}[31mdir"));
+}
+
+#[test]
+fn help_lists_system_and_resource_limits() {
+    let help = tilewright(&["--help"]);
+    assert!(help.status.success());
+    assert!(stdout(&help).contains("system"));
+
+    let system_help = tilewright(&["system", "--help"]);
+    assert!(system_help.status.success());
+    let out = stdout(&system_help);
+    assert!(out.contains("--format"));
+    assert!(out.contains("--max-documents"));
+    assert!(out.contains("--max-bytes-per-document"));
+    assert!(out.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn system_reports_selected_summary_and_escapes_controls_for_people() {
+    let temp = TempDir::new().unwrap();
+    let root = write_system_project(
+        &temp,
+        br#"{"gameTitle":"Project\n\u001b[31m","currencyUnit":"C\r","locale":"en\tUS","editMapId":7,"startMapId":9,"startX":11,"startY":13}"#,
+    );
+
+    let output = tilewright(&["system", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output = stdout(&output);
+    assert!(output.contains("System summary for"));
+    assert!(output.contains("Game title: Project\\n\\u{1b}[31m"));
+    assert!(output.contains("Currency unit: C\\r"));
+    assert!(output.contains("Locale: en\\tUS"));
+    assert!(output.contains("Editor map ID: 7"));
+    assert!(output.contains("Player start: map 9 at (11, 13)"));
+    assert!(!output.contains('\u{1b}'));
+}
+
+#[test]
+fn system_emits_versioned_json_without_unprojected_contents() {
+    let temp = TempDir::new().unwrap();
+    let root = write_system_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":0,"startMapId":1,"startX":2,"startY":3,"partyMembers":[99],"versionId":123,"secret":"not emitted"}"#,
+    );
+
+    let output = tilewright(&["system", root.to_str().unwrap(), "--format", "json"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output_text = stdout(&output);
+    assert!(!output_text.contains("partyMembers"));
+    assert!(!output_text.contains("versionId"));
+    assert!(!output_text.contains("secret"));
+    assert!(!output_text.contains("not emitted"));
+    let report: Value = serde_json::from_str(&output_text).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["snapshot_completeness"], "complete");
+    assert_eq!(report["snapshot_diagnostic_count"], 0);
+    assert_eq!(report["system"]["game_title"], "Game");
+    assert_eq!(report["system"]["currency_unit"], "G");
+    assert_eq!(report["system"]["locale"], "en_US");
+    assert_eq!(report["system"]["edit_map_id"], 0);
+    assert_eq!(report["system"]["start_map_id"], 1);
+    assert_eq!(report["system"]["start_x"], 2);
+    assert_eq!(report["system"]["start_y"], 3);
+    assert_eq!(
+        report["system"]["document_path"]["utf8"],
+        "data/System.json"
+    );
+    assert_eq!(report["snapshot_diagnostics"], Value::Array(Vec::new()));
+}
+
+#[test]
+fn system_keeps_unrelated_snapshot_diagnostics_separate() {
+    let temp = TempDir::new().unwrap();
+    let root = write_system_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":2,"startY":3}"#,
+    );
+    fs::write(root.join("data/Actors.json"), b"not json").unwrap();
+
+    let output = tilewright(&["system", root.to_str().unwrap(), "--format", "json"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["snapshot_completeness"], "partial");
+    assert_eq!(report["snapshot_diagnostic_count"], 1);
+    assert_eq!(
+        report["snapshot_diagnostics"][0]["category"],
+        "invalid_syntax"
+    );
+}
+
+#[test]
+fn system_projection_errors_have_structured_human_and_json_forms() {
+    let missing = TempDir::new().unwrap();
+    fs::create_dir(missing.path().join("data")).unwrap();
+    let human = tilewright(&["system", missing.path().to_str().unwrap()]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    assert!(stderr(&human).contains("system document data/System.json is missing"));
+
+    let malformed = TempDir::new().unwrap();
+    let root = write_system_project(
+        &malformed,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":false,"startY":3}"#,
+    );
+    let json = tilewright(&["system", root.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "unexpected_field_kind");
+    assert_eq!(report["error"]["path"]["utf8"], "data/System.json");
+    assert_eq!(report["error"]["field"], "startX");
+    assert_eq!(report["error"]["actual_kind"], "boolean");
+}
+
+#[test]
+fn system_forwards_limits_and_reports_unavailable_document() {
+    let temp = TempDir::new().unwrap();
+    let root = write_system_project(
+        &temp,
+        br#"{"gameTitle":"A deliberately long title","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":2,"startY":3}"#,
+    );
+
+    let output = tilewright(&[
+        "system",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "80",
+    ]);
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["limits"]["max_bytes_per_document"], 80);
+    assert_eq!(report["error"]["category"], "unavailable_document");
+    assert_eq!(report["error"]["path"]["utf8"], "data/System.json");
+    assert_eq!(
+        report["snapshot_diagnostics"][0]["category"],
+        "exceeds_document_byte_limit"
+    );
+}
+
+#[test]
+fn system_operational_errors_preserve_stream_separation() {
+    let temp = TempDir::new().unwrap();
+    let missing = temp.path().join("missing\n\u{1b}[31mdir");
+
+    let human = tilewright(&["system", missing.to_str().unwrap()]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    assert!(!stderr(&human).contains('\u{1b}'));
+    assert!(stderr(&human).contains("missing\\n\\u{1b}[31mdir"));
+
+    let json = tilewright(&["system", missing.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert!(report["error"]["message"].is_string());
 }
 
 #[test]

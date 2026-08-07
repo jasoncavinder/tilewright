@@ -7,11 +7,12 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover`, `inventory`, `snapshot`, `maps`, `map`, and `inspect-json` commands
-over the core library's experimental RPG Maker MZ candidate-discovery,
-capability-relative project inventory, raw snapshot loader, typed map catalog,
-selected-map summary, and strict lossless JSON syntax APIs. It does not provide
-general project understanding, editor validation, or modification.
+`discover`, `inventory`, `snapshot`, `maps`, `map`, `system`, and `inspect-json`
+commands over the core library's experimental RPG Maker MZ
+candidate-discovery, capability-relative project inventory, raw snapshot
+loader, typed map catalog, selected-map summary, system summary, and strict
+lossless JSON syntax APIs. It does not provide general project understanding,
+editor validation, or modification.
 
 ## Install from a checkout
 
@@ -66,6 +67,10 @@ cargo run -p tilewright-cli -- maps path/to/project --format json
 # Summarize one catalog-selected map.
 cargo run -p tilewright-cli -- map path/to/project 1
 cargo run -p tilewright-cli -- map path/to/project 1 --format json
+
+# Summarize selected project-level system settings.
+cargo run -p tilewright-cli -- system path/to/project
+cargo run -p tilewright-cli -- system path/to/project --format json
 
 # Inspect a file for strict lossless JSON syntax.
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
@@ -128,15 +133,29 @@ options shown above are available on both `maps` and `map`. Neither command
 validates editor compatibility, provides stable project-wide resource identity,
 or establishes mutation, round-trip, or write support.
 
+The `system` command loads the same bounded snapshot and delegates projection
+to the core library. It reports the decoded game title, currency unit, locale,
+stored editor-map scalar, and player-start map/X/Y scalars from exact
+`data/System.json`. A missing, unavailable, or structurally ambiguous system
+document exits with code 1. Unrelated snapshot diagnostics remain separate and
+can accompany a successful summary.
+
+The command does not emit raw documents or unprojected system fields. Its map
+and coordinate values are stored nonnegative scalars, not validated map
+references or positions. It does not interpret party members or `versionId`,
+compare titles across files, validate editor compatibility, or establish
+mutation, round-trip, and write support. The snapshot resource-limit options
+are available on `system`.
+
 JSON paths include an exact `utf8` value when one exists and a lossy `display`
 value for presentation. Callers must not treat `display` as an exact encoding of
 a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the
 initial `open_ambient_dir` acquisition used by `inventory`, `snapshot`, `maps`,
-and `map` may resolve root or ancestor symlinks and does not prove root identity.
-The `inspect-json` command explicitly opens the provided path and makes no
-project-containment claim.
+`map`, and `system` may resolve root or ancestor symlinks and does not prove
+root identity. The `inspect-json` command explicitly opens the provided path
+and makes no project-containment claim.
 
 ## Responsibilities
 
