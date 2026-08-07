@@ -7,8 +7,8 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover` and `inventory` commands over the core library's experimental RPG Maker MZ
-candidate-discovery and capability-relative project inventory APIs. It does not
+`discover`, `inventory`, and `inspect-json` commands over the core library's experimental RPG Maker MZ
+candidate-discovery, capability-relative project inventory, and strict lossless JSON syntax APIs. It does not
 load, validate, or modify projects.
 
 ## Install from a checkout
@@ -52,6 +52,11 @@ cargo run -p tilewright-cli -- discover path/to/project --format json
 # Inventory all entries in an RPG Maker MZ project directory.
 cargo run -p tilewright-cli -- inventory path/to/project
 cargo run -p tilewright-cli -- inventory path/to/project --format json
+
+# Inspect a file for strict lossless JSON syntax.
+cargo run -p tilewright-cli -- inspect-json path/to/file.json
+cargo run -p tilewright-cli -- inspect-json path/to/file.json --format json
+cargo run -p tilewright-cli -- inspect-json path/to/file.json --max-bytes 1048576
 ```
 
 Candidate, negative, ambiguous, and non-regular marker findings exit with code
@@ -64,7 +69,8 @@ a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the initial
 `open_ambient_dir` acquisition may resolve root or ancestor symlinks and does not
-prove root identity.
+prove root identity. The `inspect-json` command explicitly opens the provided path
+and makes no project-containment claim.
 
 ## Responsibilities
 
