@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-None currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0006: Snapshot loading contract](0006-snapshot-loading-contract.md) | Proposed | Define the contract for an experimental, read-only raw project snapshot loader. |
 
 ## Accepted decisions
 

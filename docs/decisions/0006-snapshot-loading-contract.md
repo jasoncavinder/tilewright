@@ -53,6 +53,15 @@ We will implement an experimental `ProjectSnapshot` loader with the following co
 - **Symlink Policy:** Refusing to open symlinks prevents unexpected behavior and potential escapes, aligning with the conservative approach to filesystem safety.
 - **Deterministic Order:** Processing in inventory path order ensures reproducible behavior, especially when resource limits are hit.
 
+## Consequences
+
+- The core library now provides a bounded, read-only project snapshot that can be used for inspection and validation.
+- Callers must explicitly provide resource limits, forcing them to consider their environment's constraints.
+- The snapshot is not atomic; concurrent modifications may result in an inconsistent snapshot.
+- The snapshot does not provide typed views or semantic understanding of the loaded documents.
+- The snapshot does not provide a stable project or document identifier beyond `PathBuf`.
+- The snapshot does not support writing or mutating the loaded documents.
+
 ## Alternatives Considered
 
 - **Fatal on any parse error:** Rejected because it prevents inspecting or recovering from partially damaged projects.

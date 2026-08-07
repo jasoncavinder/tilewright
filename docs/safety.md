@@ -23,7 +23,7 @@ The requirement to avoid silent loss is established. The mechanism uses the
 CST/raw-storage-plus-typed-view architectural direction accepted in
 [ADR 0004](decisions/0004-lossless-json-representation.md). The first immutable
 `LosslessJsonDocument` retains accepted source bytes exactly and exposes no
-mutation surface. Project loading, typed views, ownership, and operation-specific
+mutation surface. Production project loading, typed views, ownership, and operation-specific
 preservation or refusal contracts remain unresolved or unimplemented.
 
 ## Evidence limits writes
