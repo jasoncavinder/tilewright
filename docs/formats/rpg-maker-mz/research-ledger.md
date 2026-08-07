@@ -1488,7 +1488,8 @@ The claim-level ledger, bounded typed contract, fixture implications, and next
 experiments are maintained in
 [`map-catalog.md`](map-catalog.md#evidence-ledger). That document composes the
 existing official script-reference record and controlled map lifecycle records
-with `MZ-1.10.0-MAP-INFOS-SHAPE-AUDIT-2026-08-06`.
+with `MZ-1.10.0-MAP-INFOS-SHAPE-AUDIT-2026-08-06` and the independent
+projection audit `MZ-1.10.0-MAP-CATALOG-DIFFERENTIAL-2026-08-06`.
 
 ### Evidence record: `MZ-1.10.0-MAP-INFOS-SHAPE-AUDIT-2026-08-06`
 
@@ -1513,6 +1514,36 @@ with `MZ-1.10.0-MAP-INFOS-SHAPE-AUDIT-2026-08-06`.
   per-project manifest, or proprietary content is retained. Only aggregate
   derived observations and the safe procedure are recorded.
 
+### Evidence record: `MZ-1.10.0-MAP-CATALOG-DIFFERENTIAL-2026-08-06`
+
+- **Kind:** Read-only differential projection audit.
+- **Version/environment:** The same four authorized MZ 1.10.0 projects;
+  Tilewright implementation commit
+  `576e650e11e3683af4127de3f8dc75a91cb1aaa3`; `tilewright 0.1.0`, Rust
+  1.97.1, and `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** Verified the canonical ignored research root, regular
+  `MapInfos.json` file types and sizes, and absence of source symlinks. Ran
+  `tilewright maps <root> --format json` with default snapshot limits. A
+  separate `jq` expression directly decoded each non-null entry's `id`,
+  `name`, `order`, and `parentId`, normalized top-level parent zero to no
+  parent, sorted by order then ID, and compared the resulting arrays in memory.
+  A separate filename enumeration compared all three-digit map-document IDs
+  with the non-null catalog IDs. Two consecutive CLI invocations per project
+  were compared byte for byte. Commands emitted only anonymized case numbers,
+  aggregate counts, and boolean results.
+- **Observed:** All 196 projected records matched the independent extraction
+  exactly. The per-project record counts were 1, 1, 189, and 5. All four
+  map-document identity sets matched exactly; all four snapshots were complete
+  with zero catalog findings and zero snapshot diagnostics; and repeated JSON
+  output was byte-identical for every unchanged project.
+- **Limits:** This verifies the implemented read-only projection against four
+  MZ-generated 1.10.0 states. It does not establish MZ's response to malformed
+  data, map-content semantics, behavior above ID 999, later-version behavior,
+  mutation fidelity, persistence safety, or editor reopen compatibility.
+- **Redistribution:** No project path, map name, CLI report, raw document,
+  excerpt, digest, or per-project manifest is retained. Only aggregate derived
+  observations and the non-content-revealing procedure are recorded.
+
 ### Implementation implications
 
 The first typed projection may use `id`, `name`, `order`, and `parentId` while
@@ -1520,7 +1551,11 @@ retaining every other field in the raw lossless document. It must refuse
 ambiguous or malformed required fields, distinguish structural refusal from
 contextual relationship findings, and make no mutation or editor-validation
 claim. The accepted architecture is recorded in
-[ADR 0007](../../decisions/0007-experimental-map-catalog-projection.md).
+[ADR 0007](../../decisions/0007-experimental-map-catalog-projection.md). The
+implemented library projection and CLI adapter now have synthetic regression
+coverage plus a clean differential audit across the authorized MZ 1.10.0
+corpus; the compatibility status remains Experimental because the version and
+operation scope are still narrow.
 
 ### Next experiment
 
