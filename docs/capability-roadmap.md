@@ -256,5 +256,6 @@ expand an implementation merely because adjacent fields look familiar.
 Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
-map-catalog projection is also implemented experimentally; the next work is its
-CLI adapter and differential verification before expanding typed map content.
+map-catalog projection and its `maps` CLI adapter are also implemented
+experimentally. Differential verification against the local MZ 1.10.0 evidence
+corpus is the remaining gate before selecting the next typed slice.
