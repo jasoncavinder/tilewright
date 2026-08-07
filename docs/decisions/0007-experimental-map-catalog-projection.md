@@ -1,6 +1,6 @@
 # ADR 0007: Experimental Map Catalog Projection
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-06
 
 ## Context
@@ -27,7 +27,9 @@ For the experimental map-catalog slice:
    ownership model for future mutable views.
 3. A public `MapId` will represent a positive `u32` map identifier. A record is
    accepted only when its decoded `id` equals its array index. `parentId == 0`
-   maps to no parent; other accepted parent values map to `MapId`.
+   maps to no parent; other accepted parent values map to `MapId`. The `u32`
+   range is Tilewright's experimental projection bound, not a claim about the
+   editor's maximum identifier or order value.
 4. The first record exposes only `id`, decoded `name`, positive `order`, and
    optional parent ID. Other fields remain in the untouched raw document and do
    not make an otherwise understood record fail.
@@ -36,12 +38,14 @@ For the experimental map-catalog slice:
    duplicated, the wrong JSON kind, or outside the bounded integer contract.
    The caller still retains the raw snapshot for inspection.
 6. Once structural projection succeeds, deterministic contextual findings may
-   report missing parents, cycles, duplicate order values, missing corresponding
-   map documents, orphan evidenced map-document paths, and IDs whose document
-   filename relationship is not evidenced. Classified map paths that do not
-   encode a positive ID are also reported. Findings are observations about the
-   project and Tilewright's evidence boundary, not claims that MZ rejects the
-   project.
+   report missing parents, cycles, duplicate order values, absent expected
+   map-document paths, orphan evidenced regular map-document paths, and IDs
+   whose document filename relationship is not evidenced. Classified map paths
+   that do not encode a positive ID are also reported. An entry at an expected
+   path with an unsupported kind or a loading failure remains represented by
+   the snapshot's diagnostics rather than being reclassified as absent by the
+   catalog. Findings are observations about the project and Tilewright's
+   evidence boundary, not claims that MZ rejects the project.
 7. Records are addressable in map-ID order and separately enumerable in
    display order with the map ID as a deterministic tie-breaker.
 8. No mutation, serialization, validation severity, or persistent write API is
@@ -96,5 +100,6 @@ rather than normalizing either value.
 Before implementation is ready for review, it must include synthetic tests for
 all structural refusals, duplicate required names, unknown-field tolerance,
 identifier/index handling, deterministic ordering, relationship findings, raw
-byte preservation, and absence of mutation. Public Rustdoc, CLI documentation,
-and the compatibility matrix must state the exact experimental non-claims.
+byte preservation, and absence of mutation. Public Rustdoc and the compatibility
+matrix must state the exact experimental non-claims. Each adapter must add the
+same non-claims to its own documentation when it exposes this capability.

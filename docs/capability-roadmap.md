@@ -150,9 +150,9 @@ contextual diagnostics, reference behavior, and its own compatibility scope.
 Unknown event commands, extra object keys, and plugin-defined values must remain
 representable rather than becoming unconditional parse failures.
 
-The first proposed slice is the bounded read-only
+The first implemented slice is the bounded read-only
 [`MapInfos.json` map catalog](formats/rpg-maker-mz/map-catalog.md), with its
-experimental projection contract proposed in
+experimental projection contract accepted in
 [ADR 0007](decisions/0007-experimental-map-catalog-projection.md).
 
 **Current status: Experimental.** The core projects a structurally coherent
