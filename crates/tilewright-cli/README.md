@@ -7,10 +7,11 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover`, `inventory`, `snapshot`, and `inspect-json` commands over the core
-library's experimental RPG Maker MZ candidate-discovery, capability-relative
-project inventory and raw snapshot loader, and strict lossless JSON syntax APIs.
-It does not semantically understand, validate, or modify projects.
+`discover`, `inventory`, `snapshot`, `maps`, and `inspect-json` commands over the
+core library's experimental RPG Maker MZ candidate-discovery,
+capability-relative project inventory, raw snapshot loader, typed map catalog,
+and strict lossless JSON syntax APIs. It does not provide general project
+understanding, editor validation, or modification.
 
 ## Install from a checkout
 
@@ -58,6 +59,10 @@ cargo run -p tilewright-cli -- inventory path/to/project --format json
 cargo run -p tilewright-cli -- snapshot path/to/project
 cargo run -p tilewright-cli -- snapshot path/to/project --format json
 
+# List the typed map catalog in editor display order.
+cargo run -p tilewright-cli -- maps path/to/project
+cargo run -p tilewright-cli -- maps path/to/project --format json
+
 # Inspect a file for strict lossless JSON syntax.
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
 cargo run -p tilewright-cli -- inspect-json path/to/file.json --format json
@@ -86,14 +91,32 @@ Snapshot output includes document paths and byte lengths but never document
 contents. Raw syntax loading does not establish project validity, semantic
 understanding, MZ-version compatibility, or round-trip and write support.
 
+The `maps` command loads the same bounded snapshot and delegates typed
+projection to the core library. It reports map IDs, decoded editor-facing names,
+positive display order, optional parent IDs, and deterministic contextual
+findings. Map-catalog findings describe relationships or Tilewright's evidence
+boundary; they are successful results and do not claim that RPG Maker MZ rejects
+the project. A missing, unavailable, or structurally ambiguous
+`data/MapInfos.json` prevents projection and exits with code 1. Unrelated
+snapshot diagnostics remain separate and can accompany a successful map
+catalog.
+
+Human output escapes terminal control characters in names, paths, and
+diagnostics. Versioned JSON output includes projected map names because they are
+part of the command's requested result, but it does not emit source documents or
+unprojected fields. The snapshot resource-limit options shown above are also
+available on `maps`. The command does not interpret map contents or events,
+validate editor compatibility, provide stable project-wide resource identities,
+or establish mutation, round-trip, and write support.
+
 JSON paths include an exact `utf8` value when one exists and a lossy `display`
 value for presentation. Callers must not treat `display` as an exact encoding of
 a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the
-initial `open_ambient_dir` acquisition used by `inventory` and `snapshot` may
-resolve root or ancestor symlinks and does not prove root identity. The
-`inspect-json` command explicitly opens the provided path and makes no
+initial `open_ambient_dir` acquisition used by `inventory`, `snapshot`, and
+`maps` may resolve root or ancestor symlinks and does not prove root identity.
+The `inspect-json` command explicitly opens the provided path and makes no
 project-containment claim.
 
 ## Responsibilities
