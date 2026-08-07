@@ -11,7 +11,7 @@ This is an accepted boundary, recorded in
 authoring-data parity target is defined by
 [ADR 0003](decisions/0003-stock-authoring-data-parity.md), and its staged
 development gates are in the [capability roadmap](capability-roadmap.md). The
-details of project loading, errors, and writes remain
+details of production project loading, typed views, errors, and writes remain
 open until research and experiments support them.
 
 ## Workspace shape

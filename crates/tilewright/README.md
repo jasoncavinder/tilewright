@@ -6,10 +6,10 @@ Tilewright workspace.
 ## Status
 
 This crate is in early development. It currently exposes its package version,
-experimental candidate discovery, and experimental capability-relative project
-inventory, plus an experimental immutable strict-JSON syntax representation. It
-does not yet load, understand, validate, or write RPG Maker project-file
-contents.
+experimental candidate discovery, experimental capability-relative project
+inventory, an experimental immutable strict-JSON syntax representation, and an
+experimental read-only raw project snapshot loader. It does not yet understand,
+validate, or write RPG Maker project-file contents.
 
 ### Example: Candidate Discovery
 
@@ -88,6 +88,37 @@ but provides no typed RPG Maker views or mutation API. Backend ownership,
 cross-thread use, resource limits, and final diagnostic policy remain subject to
 change.
 
+### Example: Read-Only Project Snapshot
+
+The snapshot loader composes inventory with `LosslessJsonDocument` to load
+candidate project files into memory. It enforces caller-supplied resource limits
+and returns a partial snapshot if some documents fail to load.
+
+```rust
+use cap_std::fs::Dir;
+use std::num::NonZeroUsize;
+use tilewright::rpg_maker_mz::snapshot::{
+    load_snapshot, SnapshotLimits, SnapshotCompleteness, SnapshotError
+};
+
+fn load_authorized_project(root: &Dir) -> Result<(), SnapshotError> {
+    let limits = SnapshotLimits {
+        max_documents: NonZeroUsize::new(100).unwrap(),
+        max_bytes_per_document: NonZeroUsize::new(1024 * 1024).unwrap(),
+        max_aggregate_bytes: NonZeroUsize::new(10 * 1024 * 1024).unwrap(),
+    };
+
+    let snapshot = load_snapshot(root, limits)?;
+
+    if snapshot.completeness() == SnapshotCompleteness::Partial {
+        println!("Loaded partial snapshot with {} errors", snapshot.diagnostics().len());
+    }
+
+    println!("Loaded {} documents", snapshot.documents().len());
+    Ok(())
+}
+```
+
 ## Responsibilities
 
 As the project develops, this crate owns reusable:
@@ -105,8 +136,8 @@ GUI frameworks, cloud services, and commercial Tilewright code. Recoverable
 input and I/O errors must not become panics, and unsupported fields must not be
 silently discarded.
 
-Initial root acquisition, project loading, typed-view ownership, and write
-transaction design remain open. See the workspace
+Initial root acquisition, production project loading, typed-view ownership, and
+write transaction design remain open. See the workspace
 [architecture](../../docs/architecture.md),
 [safety model](../../docs/safety.md), and
 [open questions](../../docs/open-questions.md) before adding public APIs.

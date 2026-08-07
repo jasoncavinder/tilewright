@@ -126,13 +126,12 @@ The loader must retain source paths, document identity, and unknown contents.
 Strict versus permissive behavior, error types, and source-location contracts
 must be decided from concrete use cases rather than adapter needs.
 
-**Current substep: Experimental.** The core can parse one caller-supplied byte
-slice into an immutable `LosslessJsonDocument`, retain accepted UTF-8 source
-bytes exactly, and distinguish invalid UTF-8, a leading UTF-8 BOM, and strict
-syntax failures with byte ranges. This is a syntax-representation primitive,
-not a project loader: it performs no filesystem I/O, retains no project path or
-document identity, provides no partial project snapshot, and makes no domain or
-compatibility claim.
+**Current status: Experimental.** The core can load an experimental, read-only
+raw project snapshot that composes authorized inventory with per-document
+identity and syntax diagnostics. It enforces caller-supplied resource limits,
+preserves exact accepted bytes, and returns a partial snapshot if some documents
+fail to load. It does not turn path classification or syntax acceptance into an
+implicit domain or compatibility claim.
 
 ### 5. Typed vertical slices
 
@@ -242,10 +241,7 @@ expand an implementation merely because adjacent fields look familiar.
 
 ## Immediate next work
 
-Explicit-root candidate discovery, capability-relative project inventory, and
-an immutable single-document lossless syntax representation are implemented
-experimentally. The next core loading work is a bounded project snapshot that
-composes authorized inventory with per-document identity and syntax diagnostics;
-it must not turn path classification or syntax acceptance into an implicit
-domain or compatibility claim. Typed loading then advances through the vertical
-slices above.
+Explicit-root candidate discovery, capability-relative project inventory, an
+immutable single-document lossless syntax representation, and a read-only raw
+project snapshot loader are implemented experimentally. Typed loading then
+advances through the vertical slices above.

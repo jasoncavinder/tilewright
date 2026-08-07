@@ -6,3 +6,4 @@
 
 pub mod discovery;
 pub mod inventory;
+pub mod snapshot;
