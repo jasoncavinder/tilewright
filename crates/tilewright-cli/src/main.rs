@@ -62,7 +62,7 @@ enum Command {
         /// Output intended for a person or a script.
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
         format: OutputFormat,
-        /// Maximum bytes to read.
+        /// Maximum accepted file size in bytes; one extra byte may be read to detect overflow.
         #[arg(long, default_value_t = 10_485_760, value_parser = parse_max_bytes)]
         max_bytes: usize,
     },
