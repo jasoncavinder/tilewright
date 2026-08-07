@@ -1579,7 +1579,8 @@ named MZ version at or above 1.10.0 before generalizing the contract.
 
 The claim-level ledger, bounded contract, fixture implications, and
 remaining experiments are maintained in
-[`map-summary.md`](map-summary.md#evidence-ledger).
+[`map-summary.md`](map-summary.md#evidence-ledger). The implementation is
+corroborated by `MZ-1.10.0-MAP-SUMMARY-DIFFERENTIAL-2026-08-06`.
 
 ### Evidence record: `MZ-1.10.0-MAP-SUMMARY-SHAPE-AUDIT-2026-08-06`
 
@@ -1608,14 +1609,40 @@ remaining experiments are maintained in
   value, raw document, excerpt, digest, or per-project manifest is retained.
   Only aggregate derived observations and the safe procedure are recorded.
 
+### Evidence record: `MZ-1.10.0-MAP-SUMMARY-DIFFERENTIAL-2026-08-06`
+
+- **Kind:** Read-only differential projection audit.
+- **Version/environment:** The same four authorized MZ 1.10.0 projects;
+  Tilewright implementation commit
+  `8dfa46c0dee0e8f8b229101c45428b0e066d9655`; Rust 1.97.1 and
+  `serde_json` 1.0.151 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** A temporary external Rust harness loaded each project through
+  Tilewright with limits of 512 attempted documents, 16 MiB per document, and
+  256 MiB aggregate. It independently decoded `MapInfos.json` and each selected
+  map document with `serde_json`, then compared catalog name, exact evidenced
+  path, display name, width, height, tileset scalar, and non-null object event
+  count for every catalog record. It emitted only anonymized case numbers,
+  counts, and boolean results.
+- **Observed:** All 196 summaries matched the independent extraction exactly.
+  The four snapshots were complete, with zero snapshot diagnostics and zero
+  map-catalog findings.
+- **Limits:** This verifies one implementation on four MZ-generated 1.10.0
+  states. It does not establish editor validation rules, later-version behavior,
+  tile or event semantics, mutation fidelity, persistence safety, or editor
+  reopen compatibility.
+- **Redistribution:** No project path, decoded name, raw document, excerpt,
+  field value, report, digest, or per-project manifest is retained. Only
+  aggregate derived observations and the non-content-revealing procedure are
+  recorded.
+
 ### Implementation implications
 
-The accepted next typed slice will expose a catalog-selected map's two decoded
+The experimental core projection exposes a catalog-selected map's two decoded
 names, evidenced path, positive dimensions, positive tileset scalar, and opaque
-event object count. It must retain every other field in the raw snapshot,
-refuse ambiguous required structure, avoid interpreting tile arrays or event
-bodies, and make no validation or editor-compatibility claim. The accepted
-architecture is recorded in
+event object count. It retains every other field in the raw snapshot, refuses
+ambiguous required structure, avoids interpreting tile arrays or event bodies,
+and makes no validation or editor-compatibility claim. The accepted architecture
+is recorded in
 [ADR 0008](../../decisions/0008-experimental-selected-map-summary.md).
 
 ### Next experiment

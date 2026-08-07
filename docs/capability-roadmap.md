@@ -159,13 +159,16 @@ experimental projection contract accepted in
 loaded map-info document into map IDs, decoded names, display order, and parent
 relationships. It retains raw bytes and unknown fields in the snapshot, refuses
 ambiguous required structure, and reports contextual relationship findings
-without treating them as editor validation. No typed map-content, mutation, or
-persistence behavior is implied.
+without treating them as editor validation. A second bounded projection can
+summarize one catalog-selected map's exact document path, decoded display name,
+positive dimensions and tileset scalar, and opaque event-object count. It
+deliberately does not interpret tile arrays or event contents, and neither
+projection implies mutation or persistence behavior.
 
-The next bounded slice is the selected-map summary accepted in
-[ADR 0008](decisions/0008-experimental-selected-map-summary.md). Acceptance
-defines its experimental read-only contract; it does not claim that the slice
-is implemented or supported.
+The selected-map summary contract is accepted in
+[ADR 0008](decisions/0008-experimental-selected-map-summary.md) and implemented
+experimentally. Neither acceptance nor implementation makes the capability
+Supported.
 
 ### 6. Project-wide validation
 
@@ -262,7 +265,8 @@ Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
-experimentally. Differential verification matched all 196 projected records
-and map-document identities in the local four-project MZ 1.10.0 evidence
-corpus. The next work is to implement the accepted, evidence-bounded
-selected-map summary without widening the existing compatibility claim.
+experimentally. The selected-map summary is implemented experimentally, and
+differential verification matched all 196 catalog records and all 196
+selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. The
+next work is the selected-map CLI adapter without widening the existing
+compatibility claim.

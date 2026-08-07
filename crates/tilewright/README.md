@@ -10,7 +10,9 @@ experimental candidate discovery, experimental capability-relative project
 inventory, an experimental immutable strict-JSON syntax representation, and an
 experimental read-only raw project snapshot loader. Its first typed projection
 can inspect map IDs, names, display order, and parent relationships. It does not
-yet provide broader understanding, validation, or write support.
+yet provide broader understanding, validation, or write support. A second
+experimental projection can summarize one catalog-selected map's display name,
+dimensions, tileset ID scalar, and opaque event count.
 
 ### Example: Candidate Discovery
 
@@ -150,6 +152,42 @@ The projection refuses ambiguous or malformed required fields. Its contextual
 findings identify relationships that Tilewright cannot reconcile; they do not
 claim that RPG Maker MZ rejects the project. No map mutation or serialization
 API exists.
+
+### Example: Selected-Map Summary
+
+The experimental selected-map summary reuses a catalog-scoped `MapId` and reads
+only bounded fields from the evidenced matching map document. Tile data and
+event bodies remain opaque and untouched.
+
+```rust
+use tilewright::rpg_maker_mz::map_catalog::MapId;
+use tilewright::rpg_maker_mz::map_summary::map_summary;
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+
+fn print_map_summary(snapshot: &ProjectSnapshot, id: u32) {
+    let Some(id) = MapId::new(id) else {
+        eprintln!("map ID must be positive");
+        return;
+    };
+
+    match map_summary(snapshot, id) {
+        Ok(summary) => println!(
+            "{}: {}x{}, tileset {}, {} events",
+            summary.catalog_name(),
+            summary.width(),
+            summary.height(),
+            summary.tileset_id(),
+            summary.event_count()
+        ),
+        Err(error) => eprintln!("map summary unavailable: {error}"),
+    }
+}
+```
+
+The operation requires a coherent map catalog and a matching document in the
+evidenced three-digit filename family. It does not validate tileset references,
+interpret events or tile layers, establish editor compatibility, or expose
+mutation and serialization.
 
 ## Responsibilities
 
