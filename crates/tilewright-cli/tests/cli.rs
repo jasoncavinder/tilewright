@@ -949,13 +949,14 @@ fn maps_reports_unavailable_map_infos_with_bounded_snapshot_diagnostic() {
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(report["error"]["category"], "unavailable_document");
     assert_eq!(report["snapshot_completeness"], "partial");
+    let map_infos_path = PathBuf::from("data").join("MapInfos.json");
     assert!(
         report["snapshot_diagnostics"]
             .as_array()
             .unwrap()
             .iter()
             .any(
-                |diagnostic| diagnostic["path"]["utf8"] == "data/MapInfos.json"
+                |diagnostic| diagnostic["path"]["utf8"] == map_infos_path.to_str().unwrap()
                     && diagnostic["category"] == "exceeds_document_byte_limit"
             )
     );
