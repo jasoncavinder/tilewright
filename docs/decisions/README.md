@@ -5,9 +5,7 @@ implementation context has changed.
 
 ## Proposed decisions
 
-| ADR | Status | Summary |
-| --- | --- | --- |
-| [0006: Snapshot loading contract](0006-snapshot-loading-contract.md) | Proposed | Define the contract for an experimental, read-only raw project snapshot loader. |
+None currently proposed.
 
 ## Accepted decisions
 
@@ -18,6 +16,7 @@ implementation context has changed.
 | [0003: Stock authoring-data parity](0003-stock-authoring-data-parity.md) | Accepted | Tilewright pursues version-scoped, independently tested parity for stock MZ authoring data while preserving unknown and plugin-defined content. |
 | [0004: Lossless JSON representation](0004-lossless-json-representation.md) | Accepted | Adopt a Concrete Syntax Tree (CST) architectural direction to retain source bytes, project typed views, and apply operation-specific edit envelopes. |
 | [0005: Filesystem sandboxing](0005-filesystem-sandboxing.md) | Accepted | Tilewright will use capability-based filesystem APIs (`cap-std`) to confine project operations beneath an already-authorized directory handle. Initial root acquisition remains unresolved, and the current experimental discovery API uses `std::fs` as a temporary exception. |
+| [0006: Snapshot loading contract](0006-snapshot-loading-contract.md) | Accepted | Adopt an experimental, capability-relative, bounded, read-only raw snapshot loader with deterministic partial diagnostics. |
 
 ## Adding or changing a decision
 

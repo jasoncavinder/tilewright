@@ -609,9 +609,9 @@ mod tests {
         fs::create_dir(temp.path().join("data")).unwrap();
         fs::write(temp.path().join("data/Map001.json"), b"12345").unwrap(); // 5 bytes
 
-        // Create a file without read permissions. If the aggregate exhaustion logic
-        // fails to skip this candidate, opening it will cause an Open error rather
-        // than the expected ExceedsAggregateByteLimit diagnostic.
+        // A later readable candidate would load if exhaustion did not short-circuit.
+        // On Unix, remove its read permissions as an additional signal that it was
+        // not opened.
         let map2 = temp.path().join("data/Map002.json");
         fs::write(&map2, b"{}").unwrap();
 
@@ -632,9 +632,8 @@ mod tests {
         let snapshot = load_snapshot(&open_root(temp.path()), limits).unwrap();
         assert_eq!(snapshot.completeness(), SnapshotCompleteness::Partial);
 
-        // Map001 consumes 5 bytes. Aggregate is exhausted (5 >= 5).
-        // Map002 should not be opened, so it shouldn't fail with Open/Read error even if it has no permissions.
-        // It should just get ExceedsAggregateByteLimit.
+        // Map001 exhausts the aggregate budget. Map002 must be skipped before any
+        // open or read and receive the aggregate-limit diagnostic.
         assert!(matches!(
             snapshot
                 .diagnostics()

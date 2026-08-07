@@ -1,6 +1,6 @@
 # ADR 0006: Snapshot Loading Contract
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-06
 
 ## Context
