@@ -1,6 +1,6 @@
 # ADR 0008: Experimental Selected-Map Summary
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-06
 
 ## Context

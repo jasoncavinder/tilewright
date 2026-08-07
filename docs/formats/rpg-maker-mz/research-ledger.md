@@ -1542,7 +1542,7 @@ named MZ version at or above 1.10.0 before generalizing the contract.
 
 ### Evidence ledger
 
-The claim-level ledger, bounded contract candidate, fixture implications, and
+The claim-level ledger, bounded contract, fixture implications, and
 remaining experiments are maintained in
 [`map-summary.md`](map-summary.md#evidence-ledger).
 
@@ -1575,12 +1575,12 @@ remaining experiments are maintained in
 
 ### Implementation implications
 
-The next typed slice may expose a catalog-selected map's two decoded names,
-evidenced path, positive dimensions, positive tileset scalar, and opaque event
-object count. It must retain every other field in the raw snapshot, refuse
-ambiguous required structure, avoid interpreting tile arrays or event bodies,
-and make no validation or editor-compatibility claim. The proposed architecture
-is recorded in
+The accepted next typed slice will expose a catalog-selected map's two decoded
+names, evidenced path, positive dimensions, positive tileset scalar, and opaque
+event object count. It must retain every other field in the raw snapshot,
+refuse ambiguous required structure, avoid interpreting tile arrays or event
+bodies, and make no validation or editor-compatibility claim. The accepted
+architecture is recorded in
 [ADR 0008](../../decisions/0008-experimental-selected-map-summary.md).
 
 ### Next experiment
