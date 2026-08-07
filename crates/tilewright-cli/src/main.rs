@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, Read, Write};
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use tilewright::json::{LosslessJsonDocument, LosslessJsonError};
@@ -14,6 +15,9 @@ use tilewright::rpg_maker_mz::discovery::{
 use tilewright::rpg_maker_mz::inventory::{
     ExtensionCandidateFamily, InventoryClassification, InventoryEntryKind, KnownEntryFamily,
     ProjectInventory, inventory_project,
+};
+use tilewright::rpg_maker_mz::snapshot::{
+    DocumentDiagnostic, ProjectSnapshot, SnapshotCompleteness, SnapshotLimits, load_snapshot,
 };
 
 const OUTPUT_SCHEMA_VERSION: u8 = 1;
@@ -27,6 +31,11 @@ fn parse_max_bytes(s: &str) -> Result<usize, String> {
         return Err(format!("max_bytes must be less than {}", usize::MAX));
     }
     Ok(val)
+}
+
+fn parse_nonzero_usize(s: &str) -> Result<NonZeroUsize, String> {
+    let value: usize = s.parse().map_err(|_| "must be a positive integer")?;
+    NonZeroUsize::new(value).ok_or_else(|| "must be greater than zero".to_string())
 }
 
 /// Inspect tile-based RPG project data through the Tilewright library.
@@ -54,6 +63,35 @@ enum Command {
         /// Output intended for a person or a script.
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
         format: OutputFormat,
+    },
+    /// Load a bounded, read-only raw project snapshot.
+    Snapshot {
+        /// RPG Maker MZ project directory to load.
+        path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        /// Maximum number of regular candidate documents to attempt.
+        #[arg(
+            long,
+            default_value = "1024",
+            value_parser = parse_nonzero_usize
+        )]
+        max_documents: NonZeroUsize,
+        /// Maximum bytes to examine for one candidate document.
+        #[arg(
+            long,
+            default_value = "16777216",
+            value_parser = parse_nonzero_usize
+        )]
+        max_bytes_per_document: NonZeroUsize,
+        /// Maximum aggregate bytes to examine across candidate documents.
+        #[arg(
+            long,
+            default_value = "268435456",
+            value_parser = parse_nonzero_usize
+        )]
+        max_aggregate_bytes: NonZeroUsize,
     },
     /// Inspect a file for strict lossless JSON syntax.
     InspectJson {
@@ -222,6 +260,66 @@ struct RangeReport {
     end: usize,
 }
 
+#[derive(Debug, Serialize)]
+struct SnapshotReport {
+    schema_version: u8,
+    root: PathReport,
+    completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    inventory_entry_count: usize,
+    loaded_document_count: usize,
+    diagnostic_count: usize,
+    documents: Vec<SnapshotDocumentReport>,
+    diagnostics: Vec<SnapshotDiagnosticReport>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum SnapshotCompletenessReport {
+    Complete,
+    Partial,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct SnapshotLimitsReport {
+    max_documents: usize,
+    max_bytes_per_document: usize,
+    max_aggregate_bytes: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct SnapshotDocumentReport {
+    path: PathReport,
+    byte_length: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct SnapshotDiagnosticReport {
+    path: PathReport,
+    category: SnapshotDiagnosticCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cause: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    byte_range: Option<RangeReport>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum SnapshotDiagnosticCategory {
+    UnsupportedEntryKind,
+    OpenError,
+    ReadError,
+    ExceedsDocumentByteLimit,
+    ExceedsAggregateByteLimit,
+    ExceedsDocumentCountLimit,
+    InvalidUtf8,
+    Utf8Bom,
+    InvalidSyntax,
+    Unrecognized,
+}
+
 impl DiscoveryReport {
     fn new(root: &Path, discovery: &CandidateDiscovery) -> Self {
         let (result, markers) = match discovery {
@@ -336,17 +434,172 @@ impl PathReport {
     }
 }
 
+impl SnapshotReport {
+    fn new(root: &Path, snapshot: &ProjectSnapshot, limits: SnapshotLimits) -> Self {
+        let documents = snapshot
+            .documents()
+            .iter()
+            .map(|(path, document)| SnapshotDocumentReport {
+                path: PathReport::new(path),
+                byte_length: document.source_bytes().len(),
+            })
+            .collect();
+        let diagnostics = snapshot
+            .diagnostics()
+            .iter()
+            .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+            .collect();
+
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            completeness: match snapshot.completeness() {
+                SnapshotCompleteness::Complete => SnapshotCompletenessReport::Complete,
+                SnapshotCompleteness::Partial => SnapshotCompletenessReport::Partial,
+                _ => SnapshotCompletenessReport::Unrecognized,
+            },
+            limits: SnapshotLimitsReport {
+                max_documents: limits.max_documents.get(),
+                max_bytes_per_document: limits.max_bytes_per_document.get(),
+                max_aggregate_bytes: limits.max_aggregate_bytes.get(),
+            },
+            inventory_entry_count: snapshot.inventory().entries.len(),
+            loaded_document_count: snapshot.documents().len(),
+            diagnostic_count: snapshot.diagnostics().len(),
+            documents,
+            diagnostics,
+        }
+    }
+}
+
+impl SnapshotDiagnosticReport {
+    fn new(path: &Path, diagnostic: &DocumentDiagnostic) -> Self {
+        let (category, cause, byte_range) = match diagnostic {
+            DocumentDiagnostic::UnsupportedEntryKind { .. } => {
+                (SnapshotDiagnosticCategory::UnsupportedEntryKind, None, None)
+            }
+            DocumentDiagnostic::Open { source, .. } => (
+                SnapshotDiagnosticCategory::OpenError,
+                Some(source.to_string()),
+                None,
+            ),
+            DocumentDiagnostic::Read { source, .. } => (
+                SnapshotDiagnosticCategory::ReadError,
+                Some(source.to_string()),
+                None,
+            ),
+            DocumentDiagnostic::ExceedsDocumentByteLimit { .. } => (
+                SnapshotDiagnosticCategory::ExceedsDocumentByteLimit,
+                None,
+                None,
+            ),
+            DocumentDiagnostic::ExceedsAggregateByteLimit { .. } => (
+                SnapshotDiagnosticCategory::ExceedsAggregateByteLimit,
+                None,
+                None,
+            ),
+            DocumentDiagnostic::ExceedsDocumentCountLimit { .. } => (
+                SnapshotDiagnosticCategory::ExceedsDocumentCountLimit,
+                None,
+                None,
+            ),
+            DocumentDiagnostic::Parse { source, .. } => match source {
+                LosslessJsonError::InvalidUtf8 { source, .. } => (
+                    SnapshotDiagnosticCategory::InvalidUtf8,
+                    Some(source.to_string()),
+                    None,
+                ),
+                LosslessJsonError::Utf8ByteOrderMark => {
+                    (SnapshotDiagnosticCategory::Utf8Bom, None, None)
+                }
+                LosslessJsonError::InvalidSyntax { diagnostic, .. } => (
+                    SnapshotDiagnosticCategory::InvalidSyntax,
+                    None,
+                    Some(RangeReport {
+                        start: diagnostic.byte_range().start,
+                        end: diagnostic.byte_range().end,
+                    }),
+                ),
+                _ => (SnapshotDiagnosticCategory::Unrecognized, None, None),
+            },
+            _ => (SnapshotDiagnosticCategory::Unrecognized, None, None),
+        };
+
+        Self {
+            path: PathReport::new(path),
+            category,
+            message: diagnostic.to_string(),
+            cause,
+            byte_range,
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
 
     match cli.command {
         Command::Discover { path, format } => run_discover(&path, format),
         Command::Inventory { path, format } => run_inventory(&path, format),
+        Command::Snapshot {
+            path,
+            format,
+            max_documents,
+            max_bytes_per_document,
+            max_aggregate_bytes,
+        } => run_snapshot(
+            &path,
+            format,
+            SnapshotLimits {
+                max_documents,
+                max_bytes_per_document,
+                max_aggregate_bytes,
+            },
+        ),
         Command::InspectJson {
             path,
             format,
             max_bytes,
         } => run_inspect_json(&path, format, max_bytes),
+    }
+}
+
+fn run_snapshot(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match load_snapshot(&root_dir, limits) {
+        Ok(snapshot) => {
+            let report = SnapshotReport::new(path, &snapshot, limits);
+            let write_result = match format {
+                OutputFormat::Human => write_human_snapshot_report(io::stdout().lock(), &report),
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            write_error_report(&report, format)
+        }
     }
 }
 
@@ -677,6 +930,66 @@ fn write_human_inventory_report(
     Ok(())
 }
 
+fn write_human_snapshot_report(mut writer: impl Write, report: &SnapshotReport) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Snapshot for {}:",
+        escape_controls(&report.root.display)
+    )?;
+    writeln!(writer, "  Completeness: {}", report.completeness.name())?;
+    writeln!(
+        writer,
+        "  Inventory entries: {}",
+        report.inventory_entry_count
+    )?;
+    writeln!(
+        writer,
+        "  Loaded documents: {}",
+        report.loaded_document_count
+    )?;
+    writeln!(writer, "  Diagnostics: {}", report.diagnostic_count)?;
+    writeln!(
+        writer,
+        "  Limits: {} documents, {} bytes/document, {} aggregate bytes",
+        report.limits.max_documents,
+        report.limits.max_bytes_per_document,
+        report.limits.max_aggregate_bytes
+    )?;
+
+    if !report.documents.is_empty() {
+        writeln!(writer, "Documents:")?;
+        for document in &report.documents {
+            writeln!(
+                writer,
+                "  - {} ({} bytes)",
+                escape_controls(&document.path.display),
+                document.byte_length
+            )?;
+        }
+    }
+
+    if !report.diagnostics.is_empty() {
+        writeln!(writer, "Diagnostics:")?;
+        for diagnostic in &report.diagnostics {
+            writeln!(
+                writer,
+                "  - {} [{}]: {}",
+                escape_controls(&diagnostic.path.display),
+                diagnostic.category.name(),
+                escape_controls(&diagnostic.message)
+            )?;
+            if let Some(cause) = &diagnostic.cause {
+                writeln!(writer, "    caused by: {}", escape_controls(cause))?;
+            }
+            if let Some(range) = &diagnostic.byte_range {
+                writeln!(writer, "    at bytes {}..{}", range.start, range.end)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn write_human_inspect_json_report(
     mut writer: impl Write,
     report: &InspectJsonReport,
@@ -693,6 +1006,33 @@ fn write_human_inspect_json_report(
         report.byte_identical
     )?;
     Ok(())
+}
+
+impl SnapshotCompletenessReport {
+    fn name(&self) -> &'static str {
+        match self {
+            Self::Complete => "complete",
+            Self::Partial => "partial",
+            Self::Unrecognized => "unrecognized",
+        }
+    }
+}
+
+impl SnapshotDiagnosticCategory {
+    fn name(&self) -> &'static str {
+        match self {
+            Self::UnsupportedEntryKind => "unsupported_entry_kind",
+            Self::OpenError => "open_error",
+            Self::ReadError => "read_error",
+            Self::ExceedsDocumentByteLimit => "exceeds_document_byte_limit",
+            Self::ExceedsAggregateByteLimit => "exceeds_aggregate_byte_limit",
+            Self::ExceedsDocumentCountLimit => "exceeds_document_count_limit",
+            Self::InvalidUtf8 => "invalid_utf8",
+            Self::Utf8Bom => "utf8_bom",
+            Self::InvalidSyntax => "invalid_syntax",
+            Self::Unrecognized => "unrecognized",
+        }
+    }
 }
 
 fn write_human_inspect_json_error(

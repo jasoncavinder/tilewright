@@ -394,6 +394,356 @@ fn inventory_root_symlink_is_resolved_known_limitation() {
 }
 
 #[test]
+fn help_lists_snapshot_and_resource_limits() {
+    let help = tilewright(&["--help"]);
+    assert!(help.status.success());
+    assert!(stdout(&help).contains("snapshot"));
+
+    let snapshot_help = tilewright(&["snapshot", "--help"]);
+    assert!(snapshot_help.status.success());
+    let out = stdout(&snapshot_help);
+    assert!(out.contains("--format"));
+    assert!(out.contains("--max-documents"));
+    assert!(out.contains("--max-bytes-per-document"));
+    assert!(out.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn snapshot_reports_loaded_documents_for_people() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("root");
+    fs::create_dir(&root).unwrap();
+    fs::create_dir(root.join("data")).unwrap();
+    fs::create_dir_all(root.join("nested")).unwrap();
+    fs::write(root.join("package.json"), r#"{"name":"synthetic"}"#).unwrap();
+    fs::write(
+        root.join("data/System.json"),
+        r#"{"gameTitle":"Synthetic"}"#,
+    )
+    .unwrap();
+    fs::write(root.join("data/Map001.json"), r#"{"events":[]}"#).unwrap();
+    fs::write(root.join("data/PluginData.json"), r#"{"unknown":true}"#).unwrap();
+    fs::write(root.join("nested/ignored.json"), r#"{"ignored":true}"#).unwrap();
+
+    let output = tilewright(&["snapshot", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let stdout = stdout(&output);
+    assert!(stdout.contains("Snapshot for"));
+    assert!(stdout.contains("Completeness: complete"));
+    assert!(stdout.contains("Loaded documents: 4"));
+    assert!(stdout.contains("Diagnostics: 0"));
+    assert!(
+        stdout.contains(
+            &PathBuf::from("data")
+                .join("Map001.json")
+                .display()
+                .to_string()
+        )
+    );
+    assert!(
+        stdout.contains(
+            &PathBuf::from("data")
+                .join("PluginData.json")
+                .display()
+                .to_string()
+        )
+    );
+    assert!(stdout.contains("package.json"));
+    assert!(
+        !stdout.contains(
+            &PathBuf::from("nested")
+                .join("ignored.json")
+                .display()
+                .to_string()
+        )
+    );
+    assert!(!stdout.contains("Synthetic"));
+}
+
+#[test]
+fn snapshot_emits_deterministic_versioned_json_without_source_contents() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("root");
+    fs::create_dir(&root).unwrap();
+    fs::create_dir(root.join("data")).unwrap();
+    fs::write(root.join("package.json"), r#"{"secret":"package-secret"}"#).unwrap();
+    fs::write(root.join("data/Actors.json"), r#"["actors-secret"]"#).unwrap();
+    fs::write(root.join("data/Map001.json"), r#"{"secret":"map-secret"}"#).unwrap();
+
+    let output = tilewright(&["snapshot", root.to_str().unwrap(), "--format", "json"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["completeness"], "complete");
+    assert_eq!(report["loaded_document_count"], 3);
+    assert_eq!(report["diagnostic_count"], 0);
+    assert_eq!(report["limits"]["max_documents"], 1_024);
+    assert_eq!(report["limits"]["max_bytes_per_document"], 16_777_216);
+    assert_eq!(report["limits"]["max_aggregate_bytes"], 268_435_456);
+
+    let paths: Vec<_> = report["documents"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|document| document["path"]["utf8"].as_str().unwrap())
+        .collect();
+    let expected_paths = [
+        PathBuf::from("data").join("Actors.json"),
+        PathBuf::from("data").join("Map001.json"),
+        PathBuf::from("package.json"),
+    ];
+    let expected_paths: Vec<_> = expected_paths
+        .iter()
+        .map(|path| path.to_str().unwrap())
+        .collect();
+    assert_eq!(paths, expected_paths);
+    assert!(
+        report["documents"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|document| document["byte_length"].is_number())
+    );
+
+    let output_text = stdout(&output);
+    assert!(!output_text.contains("package-secret"));
+    assert!(!output_text.contains("actors-secret"));
+    assert!(!output_text.contains("map-secret"));
+}
+
+#[test]
+fn snapshot_partial_results_and_limits_are_structured() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("root");
+    fs::create_dir(&root).unwrap();
+    fs::create_dir(root.join("data")).unwrap();
+    fs::write(root.join("data/Actors.json"), r#"{"broken":}"#).unwrap();
+    fs::write(root.join("data/Map001.json"), r#"{}"#).unwrap();
+    fs::write(root.join("data/System.json"), r#"{"title":"too large"}"#).unwrap();
+
+    let output = tilewright(&[
+        "snapshot",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-documents",
+        "2",
+        "--max-bytes-per-document",
+        "16",
+        "--max-aggregate-bytes",
+        "64",
+    ]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["completeness"], "partial");
+    assert_eq!(report["loaded_document_count"], 1);
+    assert_eq!(report["diagnostic_count"], 2);
+    assert_eq!(report["limits"]["max_documents"], 2);
+
+    let diagnostics = report["diagnostics"].as_array().unwrap();
+    assert_eq!(
+        diagnostics[0]["path"]["utf8"],
+        PathBuf::from("data").join("Actors.json").to_str().unwrap()
+    );
+    assert_eq!(diagnostics[0]["category"], "invalid_syntax");
+    assert!(diagnostics[0]["byte_range"]["start"].is_number());
+    assert_eq!(
+        diagnostics[1]["path"]["utf8"],
+        PathBuf::from("data").join("System.json").to_str().unwrap()
+    );
+    assert_eq!(diagnostics[1]["category"], "exceeds_document_count_limit");
+}
+
+#[test]
+fn snapshot_distinguishes_parse_and_byte_limit_diagnostics() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("root");
+    fs::create_dir(&root).unwrap();
+    fs::create_dir(root.join("data")).unwrap();
+    fs::write(root.join("data/Actors.json"), b"\xff").unwrap();
+    fs::write(root.join("data/Map001.json"), b"\xef\xbb\xbf{}").unwrap();
+
+    let parse_output = tilewright(&["snapshot", root.to_str().unwrap(), "--format", "json"]);
+    assert!(parse_output.status.success());
+    assert!(stderr(&parse_output).is_empty());
+    let report: Value = serde_json::from_slice(&parse_output.stdout).unwrap();
+    let diagnostics = report["diagnostics"].as_array().unwrap();
+    assert_eq!(diagnostics[0]["category"], "invalid_utf8");
+    assert_eq!(diagnostics[1]["category"], "utf8_bom");
+
+    fs::write(root.join("data/Actors.json"), r#"{"long":true}"#).unwrap();
+    fs::remove_file(root.join("data/Map001.json")).unwrap();
+
+    let document_limit = tilewright(&[
+        "snapshot",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "2",
+        "--max-aggregate-bytes",
+        "64",
+    ]);
+    assert!(document_limit.status.success());
+    let report: Value = serde_json::from_slice(&document_limit.stdout).unwrap();
+    assert_eq!(
+        report["diagnostics"][0]["category"],
+        "exceeds_document_byte_limit"
+    );
+
+    let aggregate_limit = tilewright(&[
+        "snapshot",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "64",
+        "--max-aggregate-bytes",
+        "2",
+    ]);
+    assert!(aggregate_limit.status.success());
+    let report: Value = serde_json::from_slice(&aggregate_limit.stdout).unwrap();
+    assert_eq!(
+        report["diagnostics"][0]["category"],
+        "exceeds_aggregate_byte_limit"
+    );
+}
+
+#[test]
+fn snapshot_rejects_zero_resource_limits() {
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().to_str().unwrap();
+
+    for option in [
+        "--max-documents",
+        "--max-bytes-per-document",
+        "--max-aggregate-bytes",
+    ] {
+        let output = tilewright(&["snapshot", root, option, "0"]);
+        assert_eq!(output.status.code(), Some(2), "option: {option}");
+        assert!(stdout(&output).is_empty(), "option: {option}");
+        assert!(
+            stderr(&output).contains("must be greater than zero"),
+            "option: {option}"
+        );
+    }
+}
+
+#[test]
+fn snapshot_operational_errors_have_human_and_json_forms() {
+    let temp = TempDir::new().unwrap();
+    let missing = temp.path().join("missing\n\x1b[31mdir");
+    let missing_arg = missing.to_str().unwrap();
+
+    let human = tilewright(&["snapshot", missing_arg]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    let human_error = stderr(&human);
+    assert!(human_error.contains("error: failed to open project root"));
+    assert!(!human_error.contains("\x1b[31m"));
+    assert!(human_error.contains("missing\\n\\u{1b}[31mdir"));
+
+    let json = tilewright(&["snapshot", missing_arg, "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert!(
+        report["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("failed to open project root")
+    );
+    assert!(report["error"]["cause"].is_string());
+}
+
+#[cfg(unix)]
+#[test]
+fn snapshot_reports_candidate_symlinks_without_following() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("root");
+    fs::create_dir(&root).unwrap();
+    fs::create_dir(root.join("data")).unwrap();
+    let outside = temp.path().join("outside.json");
+    fs::write(&outside, r#"{"secret":"must-not-be-read"}"#).unwrap();
+    symlink(&outside, root.join("data/Linked.json")).unwrap();
+
+    let output = tilewright(&["snapshot", root.to_str().unwrap(), "--format", "json"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["completeness"], "partial");
+    assert_eq!(report["loaded_document_count"], 0);
+    assert_eq!(
+        report["diagnostics"][0]["category"],
+        "unsupported_entry_kind"
+    );
+    assert!(!stdout(&output).contains("must-not-be-read"));
+}
+
+#[cfg(unix)]
+#[test]
+fn snapshot_escapes_controls_and_documents_root_symlink_limit() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempDir::new().unwrap();
+    let real_root = temp.path().join("real-root");
+    fs::create_dir(&real_root).unwrap();
+    fs::create_dir(real_root.join("data")).unwrap();
+    let controlled_name = "Control\n\x1b[31m.json";
+    fs::write(real_root.join("data").join(controlled_name), r#"{}"#).unwrap();
+
+    let linked_root = temp.path().join("linked-root");
+    symlink(&real_root, &linked_root).unwrap();
+    let output = tilewright(&["snapshot", linked_root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let stdout = stdout(&output);
+    assert!(stdout.contains("Loaded documents: 1"));
+    assert!(!stdout.contains("\x1b[31m"));
+    assert!(!stdout.contains("Control\n.json"));
+    assert!(stdout.contains("Control\\n\\u{1b}[31m.json"));
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn snapshot_json_marks_non_utf8_paths_without_claiming_exact_text() {
+    use std::ffi::OsString;
+    use std::os::unix::ffi::OsStringExt;
+
+    let temp = TempDir::new().unwrap();
+    let root = temp.path().join("root");
+    fs::create_dir(&root).unwrap();
+    fs::create_dir(root.join("data")).unwrap();
+    let filename = OsString::from_vec(b"Plugin-\xff.json".to_vec());
+    fs::write(root.join("data").join(filename), r#"{}"#).unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_tilewright"))
+        .arg("snapshot")
+        .arg(&root)
+        .args(["--format", "json"])
+        .output()
+        .expect("tilewright CLI should run");
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["loaded_document_count"], 1);
+    assert!(report["documents"][0]["path"]["utf8"].is_null());
+    assert!(report["documents"][0]["path"]["display"].is_string());
+}
+
+#[test]
 fn help_lists_inspect_json() {
     let help = tilewright(&["--help"]);
     assert!(help.status.success());
