@@ -27,6 +27,7 @@ remain outside the established scope.
 | Every selected string field is present and string-valued; every selected numeric field is present and integer-valued. | Shape audit | Observed syntax | High across the four fresh projects | Requiredness and editor behavior for missing, duplicate, alternate-kind, or alternate numeric forms remain unknown. |
 | Observed edit and start map IDs are positive and resolve to map-catalog records; observed start coordinates are nonnegative and within the referenced map dimensions. | Shape and cross-file audit | Observed | High across all four projects | This is not evidence that the editor rejects zero, missing, dangling, or out-of-bounds values. |
 | `versionId` changes during several otherwise unrelated saves. | Existing controlled save and map lifecycle records | Observed | High for those workflows | Its generation rule and stable meaning are unknown, so it is excluded from the summary. |
+| Tilewright's merged system-summary implementation matches an independent projection of all seven bounded fields across the four-project corpus. | `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07` | Observed implementation behavior | High for the exact implementation and corpus | Later versions, converted projects, malformed inputs, and editor acceptance remain untested. |
 
 ## Aggregate shape audit
 
@@ -51,6 +52,24 @@ The audit observed:
 No title, currency text, locale value, path, raw document, excerpt, digest, or
 per-project manifest was retained. These observations describe MZ-generated
 states; they do not establish editor validation rules.
+
+## Differential implementation audit
+
+On 2026-08-07, Tilewright commit `f1742a0` was built with Cargo's locked
+dependency graph. For each of the same four authorized MZ 1.10.0 projects, the
+audit invoked `tilewright system --format json` and separately used `jq` 1.8.2
+to project the seven source fields directly from `data/System.json`.
+
+All 28 field comparisons matched: three decoded strings and four nonnegative
+integer scalars in each of four projects. All four CLI results also reported
+schema version 1, exact `data/System.json` identity, complete snapshots, and no
+snapshot diagnostics. The procedure emitted only anonymized pass/fail booleans
+and aggregate counts; it retained no projected value or project path.
+
+This verifies the merged implementation against this local corpus. It does not
+establish behavior for malformed or unavailable documents beyond synthetic
+tests, human-output presentation beyond adapter tests, editor acceptance,
+converted projects, later MZ versions, or broader system semantics.
 
 ## Bounded typed contract
 

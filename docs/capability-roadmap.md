@@ -177,6 +177,11 @@ integer fields, retains raw bytes and unknown settings in the snapshot, and
 does not validate map references or coordinate bounds. Neither acceptance nor
 implementation makes the capability Supported.
 
+An independent differential audit matched all seven projected fields and the
+bounded CLI envelope across the four-project MZ 1.10.0 corpus. This closes the
+initial implementation-verification step without generalizing to later
+versions, malformed inputs, editor validation, or broader system semantics.
+
 ### 6. Project-wide validation
 
 Compose parsers and typed views into distinct validation layers:
@@ -277,7 +282,7 @@ implemented experimentally without interpreting tile or event contents. The
 system summary and its `system` CLI adapter are implemented experimentally
 without interpreting other system settings or validating map relationships.
 Differential verification matched all 196 catalog records and all 196
-selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. The
-new system slice still needs an independent differential implementation audit
-across that corpus before any broader compatibility claim or adjacent typed
-projection is considered.
+selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
+also matched all 28 field comparisons and all four output envelopes for the
+system summary. The next slice must again begin with a bounded evidence question
+and explicit contract rather than expanding adjacent fields speculatively.
