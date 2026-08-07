@@ -170,6 +170,10 @@ The selected-map summary contract is accepted in
 experimentally. Neither acceptance nor implementation makes the capability
 Supported.
 
+The next proposed slice is the bounded `System.json` orientation summary in
+[ADR 0009](decisions/0009-experimental-system-summary.md). Its evidence and
+proposal do not claim that the operation is implemented or supported.
+
 ### 6. Project-wide validation
 
 Compose parsers and typed views into distinct validation layers:
@@ -269,5 +273,5 @@ experimentally. The selected-map summary and its `map` CLI adapter are also
 implemented experimentally without interpreting tile or event contents.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. The
-next typed slice must again begin with evidence and an explicit contract rather
-than expanding these projections speculatively.
+next typed slice begins with the evidence-bounded `System.json` summary proposed
+in ADR 0009 rather than expanding the existing projections speculatively.

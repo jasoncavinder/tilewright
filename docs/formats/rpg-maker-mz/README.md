@@ -27,6 +27,8 @@ the version actually documented or observed.
   first typed `MapInfos.json` projection and its remaining unknowns.
 - [Selected-map summary contract](map-summary.md) records the aggregate
   `MapNNN.json` shape audit and bounds the next read-only typed slice.
+- [System-summary contract](system-summary.md) records the aggregate
+  `System.json` shape audit and proposes a bounded project-orientation slice.
 - [Research ledger](research-ledger.md) contains the claim-level evidence,
   source records, conflicts, and next controlled experiments.
 

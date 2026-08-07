@@ -17,6 +17,7 @@ records and compatibility scope.
 | [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-03 |
 | [`mz-map-catalog-001`](#mz-map-catalog-001-what-is-the-smallest-evidenced-typed-map-catalog) | What is the smallest evidenced typed map catalog? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
 | [`mz-map-summary-001`](#mz-map-summary-001-what-is-the-smallest-useful-selected-map-summary) | What is the smallest useful selected-map summary? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
+| [`mz-system-summary-001`](#mz-system-summary-001-what-is-the-smallest-useful-system-summary) | What is the smallest useful system summary? | Active | Documented and observed for MZ 1.10.0 | 2026-08-07 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
@@ -1651,6 +1652,85 @@ Change only one map's Display Name and dimensions in a disposable authorized
 copy, save and reopen it, and compare the exact persisted fields. A separate
 tileset change can then isolate that reference. Event structure should remain a
 separate investigation before any event fields are typed.
+
+## `mz-system-summary-001`: What is the smallest useful system summary?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only inspection of selected project
+  metadata and stored editor/player map-position scalars.
+- **Scope:** Exact `data/System.json` in four RPG Maker MZ 1.10.0 projects.
+  Complete system settings, validation, mutation, persistence, malformed-input
+  editor behavior, converted projects, and later versions remain outside this
+  investigation.
+- **Last updated:** 2026-08-07
+
+### Evidence ledger
+
+The claim-level ledger, bounded contract, fixture implications, and remaining
+experiments are maintained in
+[`system-summary.md`](system-summary.md#evidence-ledger). The official field
+roles are documented by `MZ-HELP-SYSTEM1-2026-08-07` and the existing
+`MZ-SCRIPTREF-DB-1.0.0` record. Direct shape evidence is recorded as
+`MZ-1.10.0-SYSTEM-SUMMARY-SHAPE-AUDIT-2026-08-07`.
+
+### Evidence record: `MZ-HELP-SYSTEM1-2026-08-07`
+
+- **Kind:** Official documentation.
+- **Version/environment:** RPG Maker MZ English help; page revision and editor
+  version are not stated.
+- **Locator:** “Database — System 1 Settings,”
+  <https://rpgmakerofficial.com/product/MZ_help-en/01_08_12_01.html>.
+- **Accessed/observed:** 2026-08-07.
+- **Summary:** System data contains initial game settings. The page documents
+  the game title, initial party, currency unit, and player/vehicle starting
+  positions, and states that the player starting position can be deleted but a
+  game cannot start without one.
+- **Limits:** The page describes editor concepts, not JSON property names,
+  serialized zero/unset values, numeric bounds, malformed-input behavior, or
+  compatibility guarantees.
+- **Redistribution:** Only a short paraphrase and source locator are retained.
+
+### Evidence record: `MZ-1.10.0-SYSTEM-SUMMARY-SHAPE-AUDIT-2026-08-07`
+
+- **Kind:** Read-only aggregate shape and cross-file audit.
+- **Version/environment:** The four authorized, user-owned MZ 1.10.0 projects
+  recorded by `MZ-1.10.0-FRESH-4-2026-08-01`; `jq` 1.8.2 on arm64 macOS 26.6
+  build 25G72.
+- **Procedure:** Verified the canonical ignored research root, exact regular
+  `data/System.json` files, their sizes, and absence of source symlinks. Queried
+  only decoded root property names, JSON kinds, counts, integer relationships,
+  and anonymized boolean map-reference and coordinate comparisons. No source
+  project was modified, copied, or executed.
+- **Observed:** All four documents have object roots and the same 58 decoded
+  top-level property names. `gameTitle`, `currencyUnit`, and `locale` are
+  present and string-valued. `editMapId`, `startMapId`, `startX`, and `startY`
+  are present and integer-valued. Observed map ID scalars are positive and
+  resolve to map-catalog records; observed starting coordinates are nonnegative
+  and within the referenced map's positive dimensions in all four projects.
+- **Limits:** Decoded duplicate properties were not established absent. The
+  audit does not establish requiredness, editor validation, allowed string
+  grammars, zero/unset serialization, dangling-reference behavior, numeric
+  limits, mutation fidelity, or other-version behavior.
+- **Redistribution:** No project path, title, currency text, locale value, raw
+  document, excerpt, digest, or per-project manifest is retained. Only aggregate
+  derived observations and the non-content-revealing procedure are recorded.
+
+### Implementation implications
+
+The proposed projection may decode only the three selected strings and four
+nonnegative integer scalars while retaining every other property in the raw
+lossless document. It must refuse ambiguous required structure, avoid
+normalizing strings or treating map scalars as stable identifiers, and make no
+validation, mutation, or editor-compatibility claim. The proposed architecture
+is recorded in
+[ADR 0009](../../decisions/0009-experimental-system-summary.md).
+
+### Next experiment
+
+Delete the player starting position in a disposable authorized MZ 1.10.0 copy,
+save and reopen it, and observe only the exact affected `System.json` fields.
+That experiment should precede a catalog-scoped map-reference type or any claim
+about zero and unset semantics.
 
 ## Investigation template
 

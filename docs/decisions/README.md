@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0009: Experimental system summary](0009-experimental-system-summary.md) | Proposed | Add a read-only owned summary for selected `System.json` metadata and map-position scalars. |
 
 ## Accepted decisions
 
