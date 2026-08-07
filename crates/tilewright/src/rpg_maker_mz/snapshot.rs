@@ -21,9 +21,17 @@ use std::path::{Path, PathBuf};
 /// These limits bound the processing of selected candidate documents. They do
 /// not bound the initial inventory traversal, parser semantic complexity,
 /// compatibility, or project validity.
+///
+/// `max_documents` bounds the number of attempted regular candidate documents,
+/// including candidates that fail to open, read, parse, or satisfy byte limits.
+/// Unsupported non-file entries are diagnosed without consuming this budget.
+///
+/// Per-document and aggregate limits permit at most a one-byte probe beyond the
+/// limit to detect overflow. Aggregate exhaustion prevents further candidate
+/// opens or reads.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SnapshotLimits {
-    /// Maximum number of documents to load.
+    /// Maximum number of attempted regular candidate documents.
     pub max_documents: NonZeroUsize,
     /// Maximum bytes to read for a single document.
     pub max_bytes_per_document: NonZeroUsize,
@@ -110,7 +118,6 @@ pub struct ProjectSnapshot {
 }
 
 impl ProjectSnapshot {
-
     /// Returns the inventory of the project directory.
     pub fn inventory(&self) -> &ProjectInventory {
         &self.inventory
@@ -178,8 +185,10 @@ impl Error for SnapshotError {
 /// partial. A fatal error is returned only if the project inventory fails.
 ///
 /// Resource limits are enforced by probing at most one byte beyond the limit.
-/// Concurrent mutation of the project directory during loading is a documented
-/// limitation and may result in an inconsistent snapshot.
+/// Once the aggregate budget is exhausted or its probe has demonstrated overflow,
+/// further candidates are not opened or read. Concurrent mutation of the project
+/// directory during loading is a documented limitation and may result in an
+/// inconsistent snapshot.
 ///
 /// # Errors
 ///
@@ -219,6 +228,16 @@ pub fn load_snapshot(root: &Dir, limits: SnapshotLimits) -> Result<ProjectSnapsh
 
         document_count = document_count.saturating_add(1);
 
+        if aggregate_bytes >= limits.max_aggregate_bytes.get() {
+            diagnostics.insert(
+                entry.path.clone(),
+                DocumentDiagnostic::ExceedsAggregateByteLimit {
+                    limit: limits.max_aggregate_bytes,
+                },
+            );
+            continue;
+        }
+
         let mut options = OpenOptions::new();
         options.read(true);
         options.follow(FollowSymlinks::No);
@@ -232,7 +251,10 @@ pub fn load_snapshot(root: &Dir, limits: SnapshotLimits) -> Result<ProjectSnapsh
         };
 
         let max_read_doc = limits.max_bytes_per_document.get();
-        let remaining_aggregate = limits.max_aggregate_bytes.get().saturating_sub(aggregate_bytes);
+        let remaining_aggregate = limits
+            .max_aggregate_bytes
+            .get()
+            .saturating_sub(aggregate_bytes);
         let limit = std::cmp::min(max_read_doc, remaining_aggregate);
         let read_limit = limit.saturating_add(1);
 
@@ -317,6 +339,17 @@ mod tests {
             max_bytes_per_document: NonZeroUsize::new(1024 * 1024).unwrap(),
             max_aggregate_bytes: NonZeroUsize::new(10 * 1024 * 1024).unwrap(),
         }
+    }
+
+    #[test]
+    fn snapshot_exposes_inventory() {
+        let temp = TempDir::new().unwrap();
+        fs::create_dir(temp.path().join("data")).unwrap();
+        fs::write(temp.path().join("data/Actors.json"), b"[]").unwrap();
+
+        let snapshot = load_snapshot(&open_root(temp.path()), default_limits()).unwrap();
+        assert_eq!(snapshot.completeness(), SnapshotCompleteness::Complete);
+        assert!(!snapshot.inventory().entries.is_empty());
     }
 
     #[test]
@@ -500,6 +533,126 @@ mod tests {
     }
 
     #[test]
+    fn parse_failure_consumes_attempted_document_budget() {
+        let temp = TempDir::new().unwrap();
+        fs::create_dir(temp.path().join("data")).unwrap();
+        fs::write(temp.path().join("data/Map001.json"), b"invalid").unwrap();
+        fs::write(temp.path().join("data/Map002.json"), b"{}").unwrap();
+
+        let limits = SnapshotLimits {
+            max_documents: NonZeroUsize::new(1).unwrap(),
+            max_bytes_per_document: NonZeroUsize::new(100).unwrap(),
+            max_aggregate_bytes: NonZeroUsize::new(100).unwrap(),
+        };
+
+        let snapshot = load_snapshot(&open_root(temp.path()), limits).unwrap();
+        assert_eq!(snapshot.completeness(), SnapshotCompleteness::Partial);
+        assert!(snapshot.documents().is_empty());
+
+        assert!(matches!(
+            snapshot
+                .diagnostics()
+                .get(Path::new("data/Map001.json"))
+                .unwrap(),
+            DocumentDiagnostic::Parse { .. }
+        ));
+
+        assert!(matches!(
+            snapshot
+                .diagnostics()
+                .get(Path::new("data/Map002.json"))
+                .unwrap(),
+            DocumentDiagnostic::ExceedsDocumentCountLimit { .. }
+        ));
+    }
+
+    #[test]
+    fn parse_failure_consumes_aggregate_examined_bytes() {
+        let temp = TempDir::new().unwrap();
+        fs::create_dir(temp.path().join("data")).unwrap();
+        fs::write(temp.path().join("data/Map001.json"), b"invalid").unwrap(); // 7 bytes
+        fs::write(temp.path().join("data/Map002.json"), b"{}").unwrap(); // 2 bytes
+
+        let limits = SnapshotLimits {
+            max_documents: NonZeroUsize::new(2).unwrap(),
+            max_bytes_per_document: NonZeroUsize::new(100).unwrap(),
+            max_aggregate_bytes: NonZeroUsize::new(8).unwrap(),
+        };
+
+        let snapshot = load_snapshot(&open_root(temp.path()), limits).unwrap();
+        assert_eq!(snapshot.completeness(), SnapshotCompleteness::Partial);
+        assert!(snapshot.documents().is_empty());
+
+        assert!(matches!(
+            snapshot
+                .diagnostics()
+                .get(Path::new("data/Map001.json"))
+                .unwrap(),
+            DocumentDiagnostic::Parse { .. }
+        ));
+
+        // Map001 consumed 7 bytes. Remaining aggregate is 1.
+        // Map002 is 2 bytes. It will read 2 bytes (limit is 1, read_limit is 2).
+        // 2 > 1, so it exceeds aggregate byte limit.
+        assert!(matches!(
+            snapshot
+                .diagnostics()
+                .get(Path::new("data/Map002.json"))
+                .unwrap(),
+            DocumentDiagnostic::ExceedsAggregateByteLimit { .. }
+        ));
+    }
+
+    #[test]
+    fn aggregate_exhaustion_does_not_repeatedly_read_later_candidates() {
+        let temp = TempDir::new().unwrap();
+        fs::create_dir(temp.path().join("data")).unwrap();
+        fs::write(temp.path().join("data/Map001.json"), b"12345").unwrap(); // 5 bytes
+
+        // We make Map002 a directory so that if it were opened as a file, it would fail or behave differently,
+        // but wait, if it's a directory, it's caught by `entry.kind != InventoryEntryKind::File`.
+        // Let's just use a file without read permissions to ensure it's not opened.
+        let map2 = temp.path().join("data/Map002.json");
+        fs::write(&map2, b"{}").unwrap();
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&map2).unwrap().permissions();
+            perms.set_mode(0o000);
+            fs::set_permissions(&map2, perms).unwrap();
+        }
+
+        let limits = SnapshotLimits {
+            max_documents: NonZeroUsize::new(2).unwrap(),
+            max_bytes_per_document: NonZeroUsize::new(10).unwrap(),
+            max_aggregate_bytes: NonZeroUsize::new(5).unwrap(),
+        };
+
+        let snapshot = load_snapshot(&open_root(temp.path()), limits).unwrap();
+        assert_eq!(snapshot.completeness(), SnapshotCompleteness::Partial);
+
+        // Map001 consumes 5 bytes. Aggregate is exhausted (5 >= 5).
+        // Map002 should not be opened, so it shouldn't fail with Open/Read error even if it has no permissions.
+        // It should just get ExceedsAggregateByteLimit.
+        assert!(matches!(
+            snapshot
+                .diagnostics()
+                .get(Path::new("data/Map002.json"))
+                .unwrap(),
+            DocumentDiagnostic::ExceedsAggregateByteLimit { .. }
+        ));
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&map2).unwrap().permissions();
+            perms.set_mode(0o644);
+            fs::set_permissions(&map2, perms).unwrap();
+        }
+    }
+
+    #[test]
     fn resource_limits() {
         let temp = TempDir::new().unwrap();
         fs::create_dir(temp.path().join("data")).unwrap();
@@ -596,7 +749,11 @@ mod tests {
 
         let snapshot = load_snapshot(&open_root(temp.path()), limits).unwrap();
         assert_eq!(snapshot.completeness(), SnapshotCompleteness::Complete);
-        assert!(snapshot.documents().contains_key(Path::new("data/Map001.json")));
+        assert!(
+            snapshot
+                .documents()
+                .contains_key(Path::new("data/Map001.json"))
+        );
     }
 
     #[test]
@@ -613,7 +770,11 @@ mod tests {
 
         let snapshot = load_snapshot(&open_root(temp.path()), limits).unwrap();
         assert_eq!(snapshot.completeness(), SnapshotCompleteness::Complete);
-        assert!(snapshot.documents().contains_key(Path::new("data/Map001.json")));
+        assert!(
+            snapshot
+                .documents()
+                .contains_key(Path::new("data/Map001.json"))
+        );
     }
 
     #[cfg(target_os = "linux")]

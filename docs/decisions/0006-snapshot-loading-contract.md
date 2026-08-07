@@ -32,8 +32,11 @@ We will implement an experimental `ProjectSnapshot` loader with the following co
    - Add an explicit caller-supplied limits type covering: max document count, max bytes per document, and max aggregate bytes.
    - Require valid nonzero limits through construction or nonzero field types.
    - Specify deterministic limit behavior in inventory path order.
-   - Every eligible document skipped or refused because of a limit must have a path-specific diagnostic; the result must be Partial, never Complete.
-   - Avoid overflow when reading limit + 1 bytes.
+   - `max_documents` bounds the number of attempted regular candidate documents, including candidates that fail to open, read, parse, or satisfy byte limits. Unsupported non-file entries are diagnosed without consuming this budget.
+   - Per-document and aggregate limits permit at most a one-byte probe beyond the limit to detect overflow.
+   - Once the aggregate budget is exhausted or its probe has demonstrated overflow, further candidates are not opened or read. They receive deterministic path-specific aggregate-limit diagnostics, subject to document-count precedence.
+   - Parse failures and read errors consume the attempted-document budget and the aggregate examined-byte budget for the bytes read.
+   - Avoid overflow when reading limit + 1 bytes by using saturating arithmetic.
 
 4. **Result and Error Semantics:**
    - Return a fatal error only when no coherent snapshot can be established (e.g., inventory failure).
@@ -55,7 +58,7 @@ We will implement an experimental `ProjectSnapshot` loader with the following co
 
 ## Consequences
 
-- The core library now provides a bounded, read-only project snapshot that can be used for inspection and validation.
+- The core library now provides a bounded, read-only project snapshot that can be used for inspection only (validation is not yet implemented).
 - Callers must explicitly provide resource limits, forcing them to consider their environment's constraints.
 - The snapshot is not atomic; concurrent modifications may result in an inconsistent snapshot.
 - The snapshot does not provide typed views or semantic understanding of the loaded documents.
