@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-None currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0007: Experimental map catalog projection](0007-experimental-map-catalog-projection.md) | Proposed | Define a read-only, owned typed projection for map identity, display order, hierarchy, and contextual findings over a raw project snapshot. |
 
 ## Accepted decisions
 

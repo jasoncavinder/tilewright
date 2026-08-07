@@ -73,6 +73,10 @@ impl LosslessJsonDocument {
     pub fn source_bytes(&self) -> &[u8] {
         self.source.as_bytes()
     }
+
+    pub(crate) fn cst_root(&self) -> &CstRootNode {
+        &self.root
+    }
 }
 
 impl fmt::Debug for LosslessJsonDocument {

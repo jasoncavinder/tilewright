@@ -11,8 +11,8 @@ This is an accepted boundary, recorded in
 authoring-data parity target is defined by
 [ADR 0003](decisions/0003-stock-authoring-data-parity.md), and its staged
 development gates are in the [capability roadmap](capability-roadmap.md). The
-details of production project loading, typed views, errors, and writes remain
-open until research and experiments support them.
+details of production project loading, production typed views, errors, and
+writes remain open until research and experiments support them.
 
 ## Workspace shape
 
@@ -110,10 +110,12 @@ The raw-document and typed-view relationship uses the
 CST/raw-storage-plus-typed-view architectural direction accepted in
 [ADR 0004](decisions/0004-lossless-json-representation.md). The first immutable
 `LosslessJsonDocument` implements strict byte-to-syntax representation while
-keeping its provisional CST backend private. Project document identity, typed
-views, ownership and concurrency policy, mutation, and operation-specific
-preservation and refusal contracts remain unresolved or unimplemented. Silent
-data loss is not an acceptable answer.
+keeping its provisional CST backend private. The experimental map catalog is
+the first owned, read-only typed projection over a raw project snapshot; it
+does not expose CST nodes or mutate the snapshot. Production typed-view
+ownership and concurrency policy, mutation, and operation-specific preservation
+and refusal contracts remain unresolved or unimplemented. Silent data loss is
+not an acceptable answer.
 
 ## Public API principles
 

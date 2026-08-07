@@ -6,4 +6,5 @@
 
 pub mod discovery;
 pub mod inventory;
+pub mod map_catalog;
 pub mod snapshot;

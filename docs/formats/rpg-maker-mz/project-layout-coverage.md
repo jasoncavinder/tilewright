@@ -118,16 +118,18 @@ vendor project contents should become fixtures.
 
 ## Implementation-readiness boundary
 
-- **Implemented experimentally:** explicit-root candidate discovery plus
-  capability-relative exact-path inventory, conservative
-  known/extension-candidate/unknown classification, symlink reporting without
-  traversal, and generated path-level tests.
-- **Not ready for a broad compatibility claim:** complete project loading,
-  plugin-aware interpretation, deployment recognition across targets, edited
-  project validation, or lossless writes.
+- **Implemented experimentally:** explicit-root candidate discovery,
+  capability-relative exact-path inventory, bounded raw snapshot loading, and a
+  typed `MapInfos.json` catalog for map ID, name, display order, and parent
+  relationships. These retain unknown entries and raw fields without implying
+  broader semantics.
+- **Not ready for a broad compatibility claim:** production project loading,
+  typed map contents, plugin-aware interpretation, deployment recognition
+  across targets, edited-project validation, or lossless writes.
 - **Fundamentally open-ended:** enumerating every plugin-created, user-created,
   host-created, or future-version path. Tilewright must preserve unknown content
   rather than wait for an impossible exhaustive list.
 
-Compatibility remains **Experimental** for explicit-root candidate discovery and
-capability-relative inventory in [`compatibility.md`](../../compatibility.md).
+Compatibility remains **Experimental** for discovery, inventory, raw snapshot
+loading, and the typed map catalog in
+[`compatibility.md`](../../compatibility.md).

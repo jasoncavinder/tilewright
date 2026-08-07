@@ -14,9 +14,10 @@ of editing unfamiliar JSON blindly. This version range is a development target,
 not a current support claim.
 
 > [!IMPORTANT]
-> Tilewright is at the initial architecture and tooling stage. It does not yet
-> load, validate, or modify RPG Maker projects. Do not use the current binaries
-> on valuable project data expecting those capabilities.
+> Tilewright is experimental. It can load bounded, read-only raw snapshots and
+> project map IDs, names, display order, and parent relationships into a typed
+> catalog. It does not yet provide broader semantic understanding, validation,
+> or modification. Do not rely on it for valuable project workflows.
 
 ## What Tilewright aims to provide
 
@@ -52,7 +53,7 @@ for the distinction between planned and supported behavior.
 
 | Package | Role | Current state |
 | --- | --- | --- |
-| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax representation, and read-only raw project snapshot loader |
+| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, and typed map catalog |
 | [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, and JSON inspection adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 

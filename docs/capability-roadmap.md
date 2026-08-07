@@ -150,6 +150,18 @@ contextual diagnostics, reference behavior, and its own compatibility scope.
 Unknown event commands, extra object keys, and plugin-defined values must remain
 representable rather than becoming unconditional parse failures.
 
+The first proposed slice is the bounded read-only
+[`MapInfos.json` map catalog](formats/rpg-maker-mz/map-catalog.md), with its
+experimental projection contract proposed in
+[ADR 0007](decisions/0007-experimental-map-catalog-projection.md).
+
+**Current status: Experimental.** The core projects a structurally coherent
+loaded map-info document into map IDs, decoded names, display order, and parent
+relationships. It retains raw bytes and unknown fields in the snapshot, refuses
+ambiguous required structure, and reports contextual relationship findings
+without treating them as editor validation. No typed map-content, mutation, or
+persistence behavior is implied.
+
 ### 6. Project-wide validation
 
 Compose parsers and typed views into distinct validation layers:
@@ -243,5 +255,6 @@ expand an implementation merely because adjacent fields look familiar.
 
 Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
-project snapshot loader are implemented experimentally. Typed loading then
-advances through the vertical slices above.
+project snapshot loader are implemented experimentally. The first typed
+map-catalog projection is also implemented experimentally; the next work is its
+CLI adapter and differential verification before expanding typed map content.

@@ -23,6 +23,8 @@ the version actually documented or observed.
 - [Project-layout research coverage](project-layout-coverage.md) distinguishes
   well-characterized standard families from lifecycle, version, deployment,
   conversion, and extension cases that still need evidence.
+- [Map catalog contract](map-catalog.md) defines the evidence boundary for the
+  first typed `MapInfos.json` projection and its remaining unknowns.
 - [Research ledger](research-ledger.md) contains the claim-level evidence,
   source records, conflicts, and next controlled experiments.
 
