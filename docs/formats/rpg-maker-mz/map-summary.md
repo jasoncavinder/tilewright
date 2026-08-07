@@ -93,7 +93,7 @@ catalog-scoped `MapId`, then exposes only:
 - the number of non-null event objects.
 
 The operation requires a structurally coherent map catalog and a matching
-catalog record, refuse IDs outside the evidenced three-digit filename family,
+catalog record, refuses IDs outside the evidenced three-digit filename family,
 and distinguish an absent document from a document unavailable through snapshot
 diagnostics. It refuses missing, duplicate, wrong-kind, or unsupported
 required values rather than silently choose or coerce them.
