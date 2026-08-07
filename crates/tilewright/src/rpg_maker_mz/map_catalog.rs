@@ -615,7 +615,7 @@ fn map_id_from_evidenced_path(path: &Path) -> Option<MapId> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpg_maker_mz::snapshot::{SnapshotLimits, load_snapshot};
+    use crate::rpg_maker_mz::snapshot::{DocumentDiagnostic, SnapshotLimits, load_snapshot};
     use cap_std::fs::Dir;
     use std::fs;
     use std::num::NonZeroUsize;
@@ -736,6 +736,19 @@ mod tests {
                 },
             ),
             (
+                br#"[null,{"id":1,"\u0069d":1,"name":"A","order":1,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::DuplicateField {
+                            index: 1,
+                            field: MapInfoField::Id,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
                 br#"[null,{"id":1,"name":1,"order":1,"parentId":0}]"#,
                 |error| {
                     matches!(
@@ -743,6 +756,45 @@ mod tests {
                         MapCatalogError::UnexpectedFieldKind {
                             index: 1,
                             field: MapInfoField::Name,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":true,"name":"A","order":1,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnexpectedFieldKind {
+                            index: 1,
+                            field: MapInfoField::Id,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":1,"name":"A","order":"1","parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnexpectedFieldKind {
+                            index: 1,
+                            field: MapInfoField::Order,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":1,"name":"A","order":1,"parentId":[]}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnexpectedFieldKind {
+                            index: 1,
+                            field: MapInfoField::ParentId,
                             ..
                         }
                     )
@@ -762,6 +814,97 @@ mod tests {
                 },
             ),
             (
+                br#"[null,{"id":0,"name":"A","order":1,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::Id,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":-1,"name":"A","order":1,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::Id,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":4294967296,"name":"A","order":1,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::Id,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":1,"name":"A","order":0,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::Order,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":1,"name":"A","order":1e0,"parentId":0}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::Order,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":1,"name":"A","order":1,"parentId":-1}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::ParentId,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
+                br#"[null,{"id":1,"name":"A","order":1,"parentId":4294967296}]"#,
+                |error| {
+                    matches!(
+                        error,
+                        MapCatalogError::UnsupportedInteger {
+                            index: 1,
+                            field: MapInfoField::ParentId,
+                            ..
+                        }
+                    )
+                },
+            ),
+            (
                 br#"[null,{"id":2,"name":"A","order":1,"parentId":0}]"#,
                 |error| matches!(error, MapCatalogError::IdIndexMismatch { index: 1, .. }),
             ),
@@ -772,6 +915,62 @@ mod tests {
             let error = map_catalog(&snapshot).unwrap_err();
             assert!(expected(&error), "unexpected error: {error:?}");
         }
+    }
+
+    #[test]
+    fn accepts_exact_u32_boundaries_for_projected_values() {
+        let source =
+            br#"[null,{"id":1,"name":"Boundary","order":4294967295,"parentId":4294967295}]"#;
+        let (_temp, snapshot) = snapshot(source, &[1]);
+
+        let catalog = map_catalog(&snapshot).unwrap();
+        let record = catalog.get(MapId::new(1).unwrap()).unwrap();
+
+        assert_eq!(record.order(), u32::MAX);
+        assert_eq!(record.parent_id(), MapId::new(u32::MAX));
+        assert_eq!(
+            catalog.findings(),
+            &[MapCatalogFinding::MissingParent {
+                map_id: MapId::new(1).unwrap(),
+                parent_id: MapId::new(u32::MAX).unwrap(),
+            }]
+        );
+    }
+
+    #[test]
+    fn expected_map_path_diagnostics_are_not_reclassified_as_absent() {
+        let temp = TempDir::new().unwrap();
+        let data = temp.path().join("data");
+        let map_path = Path::new("data/Map001.json");
+        fs::create_dir(&data).unwrap();
+        fs::write(
+            temp.path().join(MAP_INFOS_PATH),
+            br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        )
+        .unwrap();
+        fs::create_dir(temp.path().join(map_path)).unwrap();
+        let root = Dir::open_ambient_dir(temp.path(), cap_std::ambient_authority()).unwrap();
+        let limits = SnapshotLimits {
+            max_documents: NonZeroUsize::new(4).unwrap(),
+            max_bytes_per_document: NonZeroUsize::new(1024).unwrap(),
+            max_aggregate_bytes: NonZeroUsize::new(4096).unwrap(),
+        };
+
+        let wrong_kind = load_snapshot(&root, limits).unwrap();
+        assert!(matches!(
+            wrong_kind.diagnostics().get(map_path),
+            Some(DocumentDiagnostic::UnsupportedEntryKind { .. })
+        ));
+        assert!(map_catalog(&wrong_kind).unwrap().findings().is_empty());
+
+        fs::remove_dir(temp.path().join(map_path)).unwrap();
+        fs::write(temp.path().join(map_path), b"not json").unwrap();
+        let unavailable = load_snapshot(&root, limits).unwrap();
+        assert!(matches!(
+            unavailable.diagnostics().get(map_path),
+            Some(DocumentDiagnostic::Parse { .. })
+        ));
+        assert!(map_catalog(&unavailable).unwrap().findings().is_empty());
     }
 
     #[test]

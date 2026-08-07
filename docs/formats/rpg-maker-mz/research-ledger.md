@@ -1519,7 +1519,7 @@ The first typed projection may use `id`, `name`, `order`, and `parentId` while
 retaining every other field in the raw lossless document. It must refuse
 ambiguous or malformed required fields, distinguish structural refusal from
 contextual relationship findings, and make no mutation or editor-validation
-claim. Proposed architecture is recorded in
+claim. The accepted architecture is recorded in
 [ADR 0007](../../decisions/0007-experimental-map-catalog-projection.md).
 
 ### Next experiment

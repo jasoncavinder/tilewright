@@ -7,9 +7,10 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover`, `inventory`, and `inspect-json` commands over the core library's experimental RPG Maker MZ
-candidate-discovery, capability-relative project inventory, and strict lossless JSON syntax APIs. It does not
-load, validate, or modify projects.
+`discover`, `inventory`, `snapshot`, and `inspect-json` commands over the core
+library's experimental RPG Maker MZ candidate-discovery, capability-relative
+project inventory and raw snapshot loader, and strict lossless JSON syntax APIs.
+It does not semantically understand, validate, or modify projects.
 
 ## Install from a checkout
 
@@ -53,6 +54,10 @@ cargo run -p tilewright-cli -- discover path/to/project --format json
 cargo run -p tilewright-cli -- inventory path/to/project
 cargo run -p tilewright-cli -- inventory path/to/project --format json
 
+# Load a bounded, read-only raw project snapshot.
+cargo run -p tilewright-cli -- snapshot path/to/project
+cargo run -p tilewright-cli -- snapshot path/to/project --format json
+
 # Inspect a file for strict lossless JSON syntax.
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
 cargo run -p tilewright-cli -- inspect-json path/to/file.json --format json
@@ -63,14 +68,33 @@ Candidate, negative, ambiguous, and non-regular marker findings exit with code
 0 because discovery completed successfully. Operational failures exit with code
 1. Argument errors use `clap`'s standard nonzero exit behavior.
 
+The `snapshot` command reports complete and partial snapshots as successful
+results. Per-document syntax, entry-kind, and resource-limit problems appear as
+structured diagnostics. Its default limits are 1,024 attempted documents,
+16 MiB per document, and 256 MiB across all documents. These are adjustable CLI
+operational safeguards for selected-document processing, not bounds on the
+initial inventory traversal or RPG Maker MZ format or compatibility limits:
+
+```sh
+cargo run -p tilewright-cli -- snapshot path/to/project \
+  --max-documents 256 \
+  --max-bytes-per-document 8388608 \
+  --max-aggregate-bytes 134217728
+```
+
+Snapshot output includes document paths and byte lengths but never document
+contents. Raw syntax loading does not establish project validity, semantic
+understanding, MZ-version compatibility, or round-trip and write support.
+
 JSON paths include an exact `utf8` value when one exists and a lossy `display`
 value for presentation. Callers must not treat `display` as an exact encoding of
 a non-UTF-8 path.
 
-Note: While descendant symlink entries are reported without traversal, the initial
-`open_ambient_dir` acquisition may resolve root or ancestor symlinks and does not
-prove root identity. The `inspect-json` command explicitly opens the provided path
-and makes no project-containment claim.
+Note: While descendant symlink entries are reported without traversal, the
+initial `open_ambient_dir` acquisition used by `inventory` and `snapshot` may
+resolve root or ancestor symlinks and does not prove root identity. The
+`inspect-json` command explicitly opens the provided path and makes no
+project-containment claim.
 
 ## Responsibilities
 
