@@ -25,6 +25,8 @@ the version actually documented or observed.
   conversion, and extension cases that still need evidence.
 - [Map catalog contract](map-catalog.md) defines the evidence boundary for the
   first typed `MapInfos.json` projection and its remaining unknowns.
+- [Selected-map summary contract](map-summary.md) records the aggregate
+  `MapNNN.json` shape audit and bounds the next read-only typed slice.
 - [Research ledger](research-ledger.md) contains the claim-level evidence,
   source records, conflicts, and next controlled experiments.
 

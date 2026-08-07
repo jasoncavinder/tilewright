@@ -16,6 +16,7 @@ records and compatibility scope.
 | [`mz-project-detection-001`](#mz-project-detection-001-what-minimum-evidence-identifies-an-rpg-maker-mz-project-root) | What minimum evidence identifies an RPG Maker MZ project root? | Active | Documented and observed for MZ 1.10.0; later target versions unresolved | 2026-08-01 |
 | [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-03 |
 | [`mz-map-catalog-001`](#mz-map-catalog-001-what-is-the-smallest-evidenced-typed-map-catalog) | What is the smallest evidenced typed map catalog? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
+| [`mz-map-summary-001`](#mz-map-summary-001-what-is-the-smallest-useful-selected-map-summary) | What is the smallest useful selected-map summary? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
@@ -1527,6 +1528,67 @@ claim. The accepted architecture is recorded in
 Test parent deletion or multiple ID holes in a disposable authorized copy when
 one of those behaviors is needed for a compatibility claim. Observe another
 named MZ version at or above 1.10.0 before generalizing the contract.
+
+## `mz-map-summary-001`: What is the smallest useful selected-map summary?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only inspection of one catalog-selected
+  map's basic metadata, dimensions, tileset scalar, and opaque event count.
+- **Scope:** Three-digit `data/MapNNN.json` documents in four RPG Maker MZ
+  1.10.0 projects. Tile semantics, event contents, validation, mutation,
+  persistence, malformed-input editor behavior, and later versions remain
+  outside this investigation.
+- **Last updated:** 2026-08-06
+
+### Evidence ledger
+
+The claim-level ledger, bounded contract candidate, fixture implications, and
+remaining experiments are maintained in
+[`map-summary.md`](map-summary.md#evidence-ledger).
+
+### Evidence record: `MZ-1.10.0-MAP-SUMMARY-SHAPE-AUDIT-2026-08-06`
+
+- **Kind:** Read-only aggregate shape and cross-file audit.
+- **Version/environment:** The four authorized, user-owned MZ 1.10.0 projects
+  recorded by `MZ-1.10.0-FRESH-4-2026-08-01`; `jq` 1.8.2 on arm64 macOS 26.6
+  build 25G72.
+- **Procedure:** Verified the canonical ignored research root, regular map-file
+  types and sizes, and absence of source symlinks. Queried decoded root property
+  names, JSON kinds, counts, integer relationships and ranges, array lengths,
+  event entry kinds and ID/index equality, and map-to-tileset reference
+  existence. The comparison emitted aggregate values only.
+- **Observed:** All 196 map documents have object roots and one shared set of 25
+  decoded top-level property names. `displayName` is always a string and is
+  empty in this fresh-project corpus. Widths and heights are positive integers
+  in ranges 17–200 and 13–200. Positive tileset IDs range from 1 through 4 and
+  all resolve to ID/index-consistent `Tilesets.json` records. Every integer tile
+  array contains exactly six values per map-area cell. Event arrays contain
+  1,555 objects and 290 null slots, no other entry kinds, and every object ID
+  equals its array index.
+- **Limits:** Decoded duplicate properties were not established absent. The
+  audit does not establish editor validation, dimension or tileset limits,
+  tile-layer meaning, event semantics, map mutation fidelity, or other-version
+  behavior.
+- **Redistribution:** No project path, display name, note, event body, tile
+  value, raw document, excerpt, digest, or per-project manifest is retained.
+  Only aggregate derived observations and the safe procedure are recorded.
+
+### Implementation implications
+
+The next typed slice may expose a catalog-selected map's two decoded names,
+evidenced path, positive dimensions, positive tileset scalar, and opaque event
+object count. It must retain every other field in the raw snapshot, refuse
+ambiguous required structure, avoid interpreting tile arrays or event bodies,
+and make no validation or editor-compatibility claim. The proposed architecture
+is recorded in
+[ADR 0008](../../decisions/0008-experimental-selected-map-summary.md).
+
+### Next experiment
+
+Change only one map's Display Name and dimensions in a disposable authorized
+copy, save and reopen it, and compare the exact persisted fields. A separate
+tileset change can then isolate that reference. Event structure should remain a
+separate investigation before any event fields are typed.
 
 ## Investigation template
 

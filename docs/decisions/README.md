@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0008: Experimental selected-map summary](0008-experimental-selected-map-summary.md) | Proposed | Add a read-only owned summary for one catalog-selected map's basic metadata, dimensions, tileset scalar, and opaque event count. |
 
 ## Accepted decisions
 
