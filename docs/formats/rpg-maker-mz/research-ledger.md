@@ -1671,7 +1671,8 @@ experiments are maintained in
 [`system-summary.md`](system-summary.md#evidence-ledger). The official field
 roles are documented by `MZ-HELP-SYSTEM1-2026-08-07` and the existing
 `MZ-SCRIPTREF-DB-1.0.0` record. Direct shape evidence is recorded as
-`MZ-1.10.0-SYSTEM-SUMMARY-SHAPE-AUDIT-2026-08-07`.
+`MZ-1.10.0-SYSTEM-SUMMARY-SHAPE-AUDIT-2026-08-07`; implementation parity is
+recorded as `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07`.
 
 ### Evidence record: `MZ-HELP-SYSTEM1-2026-08-07`
 
@@ -1714,6 +1715,27 @@ roles are documented by `MZ-HELP-SYSTEM1-2026-08-07` and the existing
 - **Redistribution:** No project path, title, currency text, locale value, raw
   document, excerpt, digest, or per-project manifest is retained. Only aggregate
   derived observations and the non-content-revealing procedure are recorded.
+
+### Evidence record: `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07`
+
+- **Kind:** Read-only differential implementation audit.
+- **Version/environment:** Tilewright commit `f1742a0`; the four authorized,
+  user-owned MZ 1.10.0 projects recorded by
+  `MZ-1.10.0-FRESH-4-2026-08-01`; `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** Built the merged CLI with the locked dependency graph. For
+  each source, invoked `tilewright system --format json`, separately projected
+  the seven bounded source fields with `jq`, and compared the projections plus
+  schema version, exact document identity, snapshot completeness, and diagnostic
+  count. No source project was modified, copied, or executed.
+- **Observed:** All 28 field comparisons matched across four projects. All four
+  CLI envelopes reported schema version 1, exact `data/System.json`, complete
+  snapshots, and no snapshot diagnostics.
+- **Limits:** This does not test malformed or unavailable documents beyond
+  synthetic regression tests, human rendering beyond adapter tests, editor
+  acceptance, converted projects, later versions, or unprojected semantics.
+- **Redistribution:** Only four anonymized per-case booleans and aggregate
+  `4/4` and `28/28` counts were emitted and retained. No project path, title,
+  currency text, locale value, raw document, excerpt, or digest is retained.
 
 ### Implementation implications
 
