@@ -1774,7 +1774,30 @@ implications, and remaining experiments are maintained in
 Official behavior is recorded by `MZ-HELP-SYSTEM1-2026-08-07`. Controlled
 editor results are recorded by
 `MZ-1.10.0-PLAYER-START-RELOCATION-2026-08-09` and
-`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`.
+`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`. Implementation parity is
+recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`.
+
+### Evidence record: `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential implementation audit.
+- **Version/environment:** Tilewright commit `01d2c2c`; the four authorized,
+  user-owned MZ 1.10.0 projects; `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** Built the merged CLI with the locked dependency graph, invoked
+  `tilewright validate --format json` for each source, and independently
+  reconstructed the result from the system scalars, indexed map-catalog record,
+  and selected map dimensions. Compared nine bounded envelope and relationship
+  values per case. Verified source trees contained no symbolic links.
+- **Observed:** All four cases and all 36 comparisons matched. Every snapshot
+  was complete with no diagnostics, and every independently reconstructed
+  result was finding-free.
+- **Limits:** Observed sources do not exercise validation findings. Generated
+  tests cover their implementation behavior but do not establish editor
+  acceptance. Later versions, general validity, runtime behavior, mutation, and
+  persistence remain outside this audit.
+- **Redistribution:** Only anonymized case booleans and aggregate `4/4` and
+  `36/36` counts were emitted and retained. No project path, title, map ID,
+  coordinate, dimension, raw document, excerpt, digest, or CLI report is
+  retained.
 
 ### Implementation implications
 
