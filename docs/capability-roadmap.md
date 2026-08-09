@@ -216,6 +216,12 @@ Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.
 
+An independent differential audit matched all nine bounded output and
+relationship comparisons across each of four authorized MZ 1.10.0 projects:
+36 of 36 comparisons matched, all snapshots were complete, and all observed
+states were finding-free. Negative categories remain synthetic implementation
+coverage rather than editor-acceptance evidence.
+
 ### 7. In-memory domain mutation and semantic diffs
 
 Add one bounded mutation at a time. A mutation changes an evidenced domain
