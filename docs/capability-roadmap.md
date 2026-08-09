@@ -177,12 +177,12 @@ integer fields, retains raw bytes and unknown settings in the snapshot, and
 does not validate map references or coordinate bounds. Neither acceptance nor
 implementation makes the capability Supported.
 
-A bounded tileset identity/name catalog is implemented experimentally under the
-proposed [ADR 0012](decisions/0012-experimental-tileset-catalog.md). It leaves
+A bounded tileset identity/name catalog is implemented experimentally under
+accepted [ADR 0012](decisions/0012-experimental-tileset-catalog.md). It leaves
 modes, image slots, tile flags, notes, and unknown fields in the raw snapshot.
 Its evidence covers 24 records and 196 resolving map references across four MZ
 1.10.0 projects, and an independent differential audit matched all 72 bounded
-comparisons. Neither the proposal nor implementation makes the capability
+comparisons. Neither acceptance nor implementation makes the capability
 Supported.
 
 An independent differential audit matched all seven projected fields and the
