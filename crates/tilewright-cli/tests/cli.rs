@@ -1569,9 +1569,10 @@ fn validate_selected_map_projection_error_is_structured() {
     assert_eq!(report["error"]["category"], "map_error");
     assert_eq!(report["error"]["map_error"]["category"], "missing_document");
     assert_eq!(report["error"]["map_error"]["map_id"], 1);
+    let expected_path = PathBuf::from("data").join("Map001.json");
     assert_eq!(
         report["error"]["map_error"]["path"]["utf8"],
-        "data/Map001.json"
+        expected_path.to_str().unwrap()
     );
 }
 
