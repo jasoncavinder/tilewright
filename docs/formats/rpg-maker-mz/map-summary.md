@@ -24,7 +24,7 @@ creation. Later versions and malformed-input editor behavior remain unknown.
 | `displayName` is present and string-valued; all fresh-project values are empty. | Shape audit plus controlled map-creation records | Observed | High for presence and kind in the observed scope | Nonempty editor-authored values and malformed-input behavior were not directly audited here. |
 | `width` and `height` are positive integer-valued numbers; observed ranges are 17–200 and 13–200. | Shape audit | Observed syntax; dimension meaning Inferred | High for observed kinds and ranges; high-confidence interpretation from names and tile-data relationship | Editor limits, zero or negative handling, and other versions remain unknown. |
 | `tilesetId` is a positive integer-valued number from 1 through 4, and every value resolves to a matching `Tilesets.json` record in its project. | Shape audit and independent cross-file comparison | Observed; reference meaning Inferred | High for all 196 documents | Tileset zero, missing references, other identifiers, and editor enforcement remain unknown. |
-| `events` is an array containing only null holes and objects; the corpus contains 1,555 object entries, and every observed object ID equals its array index. | Shape audit plus documented map-event role and controlled event creation | Documented and Observed | High across all 196 documents | Event fields, pages, commands, duplicate IDs, malformed entries, and editor enforcement remain outside this slice. |
+| `events` is an array containing only null holes and objects; the corpus contains 1,555 object entries, and every observed object ID equals its array index. | Shape audit plus the separate [map-event audit](map-events.md) | Documented and Observed | High across all 196 documents | Page bodies, commands, malformed-input editor behavior, and editor enforcement remain outside this slice. |
 | `data` is an integer array whose length equals `width * height * 6` in every audited document. | Shape audit | Observed; layer meaning Unknown | High for the arithmetic relationship in this corpus | Layer ordering, tile encoding, mutation rules, and other-version stability remain unestablished. |
 | Tilewright's selected-map summary matches an independent direct extraction of every bounded field. | `MZ-1.10.0-MAP-SUMMARY-DIFFERENTIAL-2026-08-06` | Observed | High across all 196 summaries in the four-project MZ 1.10.0 corpus | This does not test malformed-input editor behavior, later versions, tile meaning, event meaning, or editor reopen behavior. |
 
@@ -130,7 +130,7 @@ that MZ accepts or rejects malformed projects.
 - Determine whether zero dimensions or tileset ID zero can be produced or
   tolerated before describing them as editor-invalid.
 - Establish tile-layer ordering before exposing typed tile data.
-- Audit event structure separately before exposing event IDs, names, pages, or
-  command counts.
+- Continue the separate [map-event investigation](map-events.md) with controlled
+  editor lifecycle experiments and differential verification.
 - Observe another named MZ version at or above 1.10.0 before generalizing the
   contract.

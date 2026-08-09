@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0011: Experimental selected-map event catalog](0011-experimental-map-event-catalog.md) | Proposed | Add a read-only owned projection of map-scoped event IDs, names, positions, and opaque page counts for one catalog-selected map. |
 
 ## Accepted decisions
 

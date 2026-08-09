@@ -170,6 +170,15 @@ The selected-map summary contract is accepted in
 experimentally. Neither acceptance nor implementation makes the capability
 Supported.
 
+A bounded selected-map event catalog is implemented experimentally under the
+proposed [ADR 0011](decisions/0011-experimental-map-event-catalog.md). It
+projects map-scoped IDs, names, coordinates, and opaque page counts, while page
+bodies, commands, notes, and unknown fields remain in the raw snapshot. Its
+aggregate evidence covers 1,555 events across 196 MZ 1.10.0 map documents.
+An independent differential audit matched all 10,323 bounded comparisons across
+that corpus. Neither the proposal nor implementation makes the capability
+Supported.
+
 The bounded `System.json` orientation summary is accepted in
 [ADR 0009](decisions/0009-experimental-system-summary.md) and implemented
 experimentally. It projects only the seven accepted string and nonnegative
@@ -287,15 +296,19 @@ immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
 experimentally. The selected-map summary and its `map` CLI adapter are also
-implemented experimentally without interpreting tile or event contents. The
-system summary and its `system` CLI adapter are implemented experimentally
-without interpreting other system settings. A first player-start validation
-slice and its `validate` CLI adapter compose those projections experimentally;
-they do not establish general project validity or editor compatibility.
+implemented experimentally without interpreting tile contents. The selected-map
+event catalog and its `events` CLI adapter expose only bounded event identity,
+placement, and opaque page counts. The system summary and its `system` CLI
+adapter are implemented experimentally without interpreting other system
+settings. A first player-start validation slice and its `validate` CLI adapter
+compose those projections experimentally; they do not establish general project
+validity or editor compatibility.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
 system summary. Controlled MZ 1.10.0 experiments also establish same-map start
 relocation and editor recognition/preservation of the exact zero triplet as
-`None`. The next slice must again begin with a bounded evidence question and
-explicit contract rather than expanding adjacent fields speculatively.
+`None`. The next evidence steps are differential verification of the event
+catalog and controlled editor experiments for event creation, movement,
+renaming, page lifecycle, and deletion. Page bodies and commands remain a later
+separate slice.

@@ -27,6 +27,9 @@ the version actually documented or observed.
   first typed `MapInfos.json` projection and its remaining unknowns.
 - [Selected-map summary contract](map-summary.md) records the aggregate
   `MapNNN.json` shape audit and bounds the next read-only typed slice.
+- [Selected-map event catalog contract](map-events.md) records the aggregate
+  event-shape audit and bounds event identity, placement, and opaque page
+  counts without interpreting page bodies or commands.
 - [System-summary contract](system-summary.md) records the aggregate
   `System.json` shape audit and bounds the implemented project-orientation
   slice.
