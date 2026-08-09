@@ -1724,7 +1724,7 @@ findings from editor-validity claims. The proposed architecture is recorded in
 
 - **Kind:** Read-only differential projection and CLI-envelope audit.
 - **Version/environment:** The same four authorized MZ 1.10.0 projects; the
-  local proposed event-catalog implementation on 2026-08-09; Rust 1.97.1 and
+  local experimental event-catalog implementation on 2026-08-09; Rust 1.97.1 and
   `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
 - **Procedure:** Ran the bounded `events --format json` adapter for every
   coherent catalog record. Independently decoded each map-info and map document

@@ -2,7 +2,7 @@
 
 This document defines the evidence boundary for a small read-only projection of
 event identity and placement from one evidenced `data/MapNNN.json` document. It
-is a research result and proposed experimental contract, not a support claim.
+is a research result and accepted experimental contract, not a support claim.
 
 ## Question and scope
 
@@ -92,7 +92,7 @@ placed and edited on a map.
 The help documents editor concepts, not the JSON property names or exact
 serialization rules. Those remain bounded by direct observation.
 
-## Proposed bounded typed contract
+## Accepted bounded typed contract
 
 The experimental slice should accept an existing `ProjectSnapshot` and a
 catalog-scoped `MapId`, then expose:

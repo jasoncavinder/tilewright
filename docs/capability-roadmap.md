@@ -170,13 +170,13 @@ The selected-map summary contract is accepted in
 experimentally. Neither acceptance nor implementation makes the capability
 Supported.
 
-A bounded selected-map event catalog is implemented experimentally under the
-proposed [ADR 0011](decisions/0011-experimental-map-event-catalog.md). It
+A bounded selected-map event catalog is implemented experimentally under
+accepted [ADR 0011](decisions/0011-experimental-map-event-catalog.md). It
 projects map-scoped IDs, names, coordinates, and opaque page counts, while page
 bodies, commands, notes, and unknown fields remain in the raw snapshot. Its
 aggregate evidence covers 1,555 events across 196 MZ 1.10.0 map documents.
 An independent differential audit matched all 10,323 bounded comparisons across
-that corpus. Neither the proposal nor implementation makes the capability
+that corpus. Neither acceptance nor implementation makes the capability
 Supported.
 
 The bounded `System.json` orientation summary is accepted in

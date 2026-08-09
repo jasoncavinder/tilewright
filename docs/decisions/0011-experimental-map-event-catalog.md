@@ -1,6 +1,6 @@
 # ADR 0011: Experimental Selected-Map Event Catalog
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-09
 
 ## Context
