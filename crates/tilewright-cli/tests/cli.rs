@@ -45,6 +45,13 @@ fn write_system_project(temp: &TempDir, system_document: &[u8]) -> PathBuf {
     root
 }
 
+fn write_tileset_project(temp: &TempDir, tileset_document: &[u8]) -> PathBuf {
+    let root = temp.path().join("root");
+    fs::create_dir_all(root.join("data")).unwrap();
+    fs::write(root.join("data/Tilesets.json"), tileset_document).unwrap();
+    root
+}
+
 fn write_validation_project(
     temp: &TempDir,
     system_document: &[u8],
@@ -1027,6 +1034,121 @@ fn map_help_lists_id_format_and_snapshot_limits() {
     assert!(output.contains("--max-documents"));
     assert!(output.contains("--max-bytes-per-document"));
     assert!(output.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn tilesets_help_lists_format_and_snapshot_limits() {
+    let help = tilewright(&["tilesets", "--help"]);
+    assert!(help.status.success());
+    let output = stdout(&help);
+    assert!(output.contains("<PATH>"));
+    assert!(output.contains("--format"));
+    assert!(output.contains("--max-documents"));
+    assert!(output.contains("--max-bytes-per-document"));
+    assert!(output.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn tilesets_reports_names_and_escapes_controls_for_people() {
+    let temp = TempDir::new().unwrap();
+    let root = write_tileset_project(
+        &temp,
+        br#"[null,{"id":1,"name":"Field\n\u001b[31m","mode":1,"note":"do not print","tilesetNames":["secret"],"flags":[1]},null,{"id":3,"name":"Area"}]"#,
+    );
+
+    let output = tilewright(&["tilesets", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output = stdout(&output);
+    assert!(output.contains("Tilesets: 2"));
+    assert!(output.contains("1: Field\\n\\u{1b}[31m"));
+    assert!(output.contains("3: Area"));
+    assert!(!output.contains('\u{1b}'));
+    assert!(!output.contains("do not print"));
+    assert!(!output.contains("secret"));
+}
+
+#[test]
+fn tilesets_emits_deterministic_versioned_json_without_opaque_contents() {
+    let temp = TempDir::new().unwrap();
+    let root = write_tileset_project(
+        &temp,
+        br#"[null,{"id":1,"name":"Field","mode":1,"note":"memo secret","tilesetNames":["asset secret"],"flags":[1]},null,{"id":3,"name":"Area"}]"#,
+    );
+
+    let first = tilewright(&["tilesets", root.to_str().unwrap(), "--format", "json"]);
+    let second = tilewright(&["tilesets", root.to_str().unwrap(), "--format", "json"]);
+
+    assert!(first.status.success());
+    assert!(stderr(&first).is_empty());
+    assert_eq!(first.stdout, second.stdout);
+    let report: Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["snapshot_completeness"], "complete");
+    assert_eq!(report["tileset_count"], 2);
+    assert_eq!(report["tilesets"][0]["id"], 1);
+    assert_eq!(report["tilesets"][0]["name"], "Field");
+    assert_eq!(report["tilesets"][1]["id"], 3);
+    assert_eq!(report["tilesets"][1]["name"], "Area");
+    let output = stdout(&first);
+    assert!(!output.contains("memo secret"));
+    assert!(!output.contains("asset secret"));
+    assert!(!output.contains("flags"));
+}
+
+#[test]
+fn tilesets_projection_errors_have_structured_human_and_json_forms() {
+    let temp = TempDir::new().unwrap();
+    let root = write_tileset_project(&temp, br#"[null,{"id":2,"name":"Wrong"}]"#);
+
+    let human = tilewright(&["tilesets", root.to_str().unwrap()]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    assert!(stderr(&human).contains("entry 1 has decoded ID 2"));
+
+    let json = tilewright(&["tilesets", root.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "id_index_mismatch");
+    assert_eq!(report["error"]["index"], 1);
+    assert_eq!(report["error"]["field"], "id");
+    assert_eq!(report["error"]["decoded_id"], 2);
+}
+
+#[test]
+fn tilesets_forwards_limits_and_reports_unavailable_document() {
+    let temp = TempDir::new().unwrap();
+    let root = write_tileset_project(
+        &temp,
+        br#"[null,{"id":1,"name":"a deliberately long tileset name that exceeds the configured document limit"}]"#,
+    );
+
+    let output = tilewright(&[
+        "tilesets",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "80",
+    ]);
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["limits"]["max_bytes_per_document"], 80);
+    assert_eq!(report["error"]["category"], "unavailable_document");
+    assert!(
+        report["snapshot_diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|diagnostic| {
+                diagnostic["path"]["utf8"] == "data/Tilesets.json"
+                    && diagnostic["category"] == "exceeds_document_byte_limit"
+            })
+    );
 }
 
 #[test]

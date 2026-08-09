@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0012: Experimental tileset catalog](0012-experimental-tileset-catalog.md) | Proposed | Add a read-only owned projection of catalog-scoped tileset IDs and editor-facing names while leaving modes, images, flags, and notes opaque. |
 
 ## Accepted decisions
 

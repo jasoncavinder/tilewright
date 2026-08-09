@@ -17,6 +17,8 @@ An additional experimental projection reports selected `System.json` strings
 and stored map-position scalars without validating their relationships.
 The first experimental contextual validator composes those scalars with the map
 catalog and selected-map dimensions to inspect only the player start.
+An experimental tileset catalog separately exposes positive IDs and decoded
+editor-facing names while leaving tile behavior and assets opaque.
 
 ### Example: Candidate Discovery
 
@@ -156,6 +158,32 @@ The projection refuses ambiguous or malformed required fields. Its contextual
 findings identify relationships that Tilewright cannot reconcile; they do not
 claim that RPG Maker MZ rejects the project. No map mutation or serialization
 API exists.
+
+### Example: Typed Tileset Catalog
+
+The experimental tileset catalog projects only IDs and decoded editor-facing
+names from exact `data/Tilesets.json`. Unknown fields and exact bytes remain in
+the raw snapshot.
+
+```rust
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+use tilewright::rpg_maker_mz::tileset_catalog::tileset_catalog;
+
+fn print_tilesets(snapshot: &ProjectSnapshot) {
+    match tileset_catalog(snapshot) {
+        Ok(catalog) => {
+            for record in catalog.records().values() {
+                println!("{}: {}", record.id(), record.name());
+            }
+        }
+        Err(error) => eprintln!("tileset catalog unavailable: {error}"),
+    }
+}
+```
+
+The projection refuses ambiguous required structure. It does not interpret
+tileset modes, images, flags, notes, or tile behavior; validate map references
+or assets; establish editor compatibility; or expose mutation and serialization.
 
 ### Example: Selected-Map Summary
 

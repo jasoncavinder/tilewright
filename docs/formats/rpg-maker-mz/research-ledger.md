@@ -1654,6 +1654,98 @@ copy, save and reopen it, and compare the exact persisted fields. A separate
 tileset change can then isolate that reference. Event structure should remain a
 separate investigation before any event fields are typed.
 
+## `mz-tileset-catalog-001`: What is the smallest useful tileset catalog?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only resolution of tileset IDs to
+  editor-facing names without interpreting tile behavior or assets.
+- **Scope:** Exact `data/Tilesets.json` in four RPG Maker MZ 1.10.0 projects and
+  the `tilesetId` scalars in 196 map documents. Modes, image slots, flags,
+  notes, lifecycle operations, mutation, persistence, malformed-input editor
+  behavior, and later versions remain outside this investigation.
+- **Last updated:** 2026-08-09
+
+### Evidence ledger
+
+The claim-level ledger, bounded contract, fixture implications, and remaining
+experiments are maintained in
+[`tileset-catalog.md`](tileset-catalog.md#evidence-ledger).
+
+### Evidence record: `MZ-HELP-TILESET-SETTINGS-2026-08-09`
+
+- **Kind:** Official editor documentation.
+- **Source:** *Tileset Settings*, RPG Maker MZ Help,
+  <https://rpgmakerofficial.com/product/MZ_help-en/01_08_10.html>, and *Map
+  Properties*,
+  <https://rpgmakerofficial.com/product/MZ_help-en/01_07_03.html>; accessed
+  2026-08-09.
+- **Documented:** Tilesets combine tile images and behavior settings and can be
+  assigned to maps. The editor-facing Name is distinct from Mode, Images, tile
+  settings, and Notes.
+- **Limits:** The help does not define JSON property names, identifier/index
+  encoding, numeric mode mapping, array lengths, malformed-input behavior, or
+  persistence fidelity.
+
+### Evidence record: `MZ-1.10.0-TILESET-SHAPE-AUDIT-2026-08-09`
+
+- **Kind:** Read-only aggregate shape and cross-file audit.
+- **Version/environment:** The four authorized, user-owned MZ 1.10.0 projects
+  recorded by `MZ-1.10.0-FRESH-4-2026-08-01`; `jq` 1.8.2 on arm64 macOS 26.6
+  build 25G72.
+- **Procedure:** Verified the canonical ignored research root, source
+  containment, and absence of symlinks. Queried only decoded property names,
+  JSON kinds, counts, ID/index equality, array lengths, and map-reference
+  existence. The audit emitted aggregate results only.
+- **Observed:** Each project has a seven-entry array with null at index zero and
+  six object records. All 24 records share keys `flags`, `id`, `mode`, `name`,
+  `note`, and `tilesetNames`; IDs 1 through 6 equal their indexes and names are
+  nonempty strings. Notes are empty strings. Modes use two integer values,
+  image-name arrays contain nine strings, and flag arrays contain 8,192
+  integers. All 196 positive map references, using IDs 1 through 4, resolve to
+  records in their containing project.
+- **Limits:** Decoded duplicate properties were not established absent. The
+  audit does not establish mode mapping, image-slot meaning, flag encoding,
+  allowed lengths, record lifecycle, editor validation, mutation fidelity, or
+  other-version behavior.
+- **Redistribution:** No tileset name, note, asset name, flag, map path, project
+  path, raw document, excerpt, hash, or per-project manifest is retained. Only
+  aggregate derived observations and the safe procedure are recorded.
+
+### Implementation implications
+
+The experimental core projection can expose positive catalog-scoped
+`TilesetId` values and decoded names while retaining every other field in the
+raw snapshot. It must accept null holes, refuse ambiguous required structure,
+and avoid interpreting mode, image slots, flags, notes, or map-reference
+validity. The proposed architecture is recorded in
+[ADR 0012](../../decisions/0012-experimental-tileset-catalog.md).
+
+### Evidence record: `MZ-1.10.0-TILESET-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential projection and CLI-envelope audit.
+- **Version/environment:** The same four authorized MZ 1.10.0 projects; the
+  local proposed tileset-catalog implementation on 2026-08-09; Rust 1.97.1 and
+  `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** Ran `tilesets --format json` once per project and independently
+  decoded exact `Tilesets.json` with `jq`. Compared every record ID and decoded
+  name plus schema version, snapshot completeness, diagnostic counts/lists, and
+  record count. It emitted aggregate counts only.
+- **Observed:** All four projects, 24 records, and 72 individual comparisons
+  matched. Every snapshot was complete and every report had zero diagnostics.
+- **Limits:** This verifies one implementation on four MZ-generated 1.10.0
+  states. It does not establish adjacent-field semantics, record lifecycle,
+  editor validation, mutation or save/reopen fidelity, malformed-input
+  behavior, or later-version compatibility.
+- **Redistribution:** No project path, tileset name, note, asset name, flag, raw
+  document, excerpt, field value, report, hash, or per-project manifest is
+  retained. Only aggregate derived observations and the non-content-revealing
+  procedure are recorded.
+
+### Next experiment
+
+Change one tileset name, toggle one mode, and reassign one map in separate
+disposable MZ 1.10.0 copies, saving and reopening after each action.
+
 ## `mz-system-summary-001`: What is the smallest useful system summary?
 
 - **Status:** Active

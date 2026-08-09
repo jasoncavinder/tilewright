@@ -110,8 +110,8 @@ The raw-document and typed-view relationship uses the
 CST/raw-storage-plus-typed-view architectural direction accepted in
 [ADR 0004](decisions/0004-lossless-json-representation.md). The first immutable
 `LosslessJsonDocument` implements strict byte-to-syntax representation while
-keeping its provisional CST backend private. The experimental map catalog,
-selected-map summary, and system summary are the first owned, read-only typed
+keeping its provisional CST backend private. The experimental map and tileset
+catalogs, selected-map summary, and system summary are owned, read-only typed
 projections over a raw project snapshot; they do not expose CST nodes or mutate
 the snapshot. The experimental player-start validator composes those owned
 projections without adding filesystem I/O or a second representation layer.

@@ -11,3 +11,4 @@ pub mod map_summary;
 pub mod player_start_validation;
 pub mod snapshot;
 pub mod system_summary;
+pub mod tileset_catalog;
