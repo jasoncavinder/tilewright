@@ -57,7 +57,7 @@ unknown and plugin-defined content. The following details remain open:
 - How should stale-document or stale-node detection be handled?
 - What constitutes a stable project or resource identifier? ADR 0007
   introduces an experimental positive `MapId` scoped to map-catalog records,
-  not a stable project-wide identity scheme. Proposed ADR 0012 similarly
+  not a stable project-wide identity scheme. ADR 0012 similarly
   introduces a `TilesetId` scoped to one catalog. ADR 0009 deliberately retains
   system map fields as unvalidated `u32` scalars.
 - How should event-command parameter arrays be typed incrementally?
@@ -65,7 +65,7 @@ unknown and plugin-defined content. The following details remain open:
   diagnostics be represented?
   [ADR 0010](decisions/0010-experimental-player-start-validation.md) establishes
   one severity-free contextual finding slice without settling the general
-  design. Proposed
+  design.
   [ADR 0013](decisions/0013-experimental-map-tileset-validation.md) follows the
   same distinction between structural errors and contextual findings for one
   project-wide reference check.

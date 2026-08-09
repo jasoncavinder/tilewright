@@ -2,7 +2,7 @@
 
 This document defines the evidence boundary for checking whether cataloged maps'
 positive `tilesetId` values resolve to records in exact `data/Tilesets.json`.
-It is a research result and proposed experimental contract, not a support claim.
+It is a research result and accepted experimental contract, not a support claim.
 
 ## Question and scope
 
@@ -68,7 +68,7 @@ to maps.
 
 The help documents editor concepts, not JSON property names or enforcement.
 
-## Proposed bounded validation contract
+## Accepted bounded validation contract
 
 The operation should accept an existing `ProjectSnapshot`, require coherent map
 and tileset catalogs, summarize each cataloged map in ascending ID order, and

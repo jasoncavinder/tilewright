@@ -2,7 +2,7 @@
 
 This document defines the evidence boundary for a small read-only projection of
 tileset identity and editor-facing names from exact `data/Tilesets.json`. It is
-a research result and proposed experimental contract, not a support claim.
+a research result and accepted experimental contract, not a support claim.
 
 ## Question and scope
 
@@ -86,7 +86,7 @@ Properties* help page documents selection of a tileset for a map.
 
 The help documents concepts, not JSON property names or exact serialization.
 
-## Proposed bounded typed contract
+## Accepted bounded typed contract
 
 The experimental slice should accept an existing `ProjectSnapshot` and project
 exact `data/Tilesets.json` into positive catalog-scoped IDs and decoded names,

@@ -1,6 +1,6 @@
 # ADR 0013: Experimental Map-Tileset Reference Validation
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-09
 
 ## Context
