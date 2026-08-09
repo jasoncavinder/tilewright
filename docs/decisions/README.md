@@ -5,9 +5,7 @@ implementation context has changed.
 
 ## Proposed decisions
 
-| ADR | Status | Summary |
-| --- | --- | --- |
-| [0013: Experimental map-tileset reference validation](0013-experimental-map-tileset-validation.md) | Proposed | Compose map summaries and the tileset catalog into deterministic missing-reference findings without implying general validity. |
+No decisions are currently proposed.
 
 ## Accepted decisions
 
@@ -24,6 +22,7 @@ implementation context has changed.
 | [0009: Experimental system summary](0009-experimental-system-summary.md) | Accepted | Add a read-only owned summary for selected `System.json` metadata and map-position scalars. |
 | [0010: Experimental player-start validation](0010-experimental-player-start-validation.md) | Accepted | Compose the bounded system, catalog, and selected-map projections into deterministic player-start findings without implying general project validity. |
 | [0012: Experimental tileset catalog](0012-experimental-tileset-catalog.md) | Accepted | Add a read-only owned projection of catalog-scoped tileset IDs and editor-facing names while leaving modes, images, flags, and notes opaque. |
+| [0013: Experimental map-tileset reference validation](0013-experimental-map-tileset-validation.md) | Accepted | Compose map summaries and the tileset catalog into deterministic missing-reference findings without implying general validity. |
 
 ## Adding or changing a decision
 

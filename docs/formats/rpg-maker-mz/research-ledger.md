@@ -1719,14 +1719,14 @@ The experimental core projection can expose positive catalog-scoped
 `TilesetId` values and decoded names while retaining every other field in the
 raw snapshot. It must accept null holes, refuse ambiguous required structure,
 and avoid interpreting mode, image slots, flags, notes, or map-reference
-validity. The proposed architecture is recorded in
+validity. The accepted architecture is recorded in
 [ADR 0012](../../decisions/0012-experimental-tileset-catalog.md).
 
 ### Evidence record: `MZ-1.10.0-TILESET-DIFFERENTIAL-2026-08-09`
 
 - **Kind:** Read-only differential projection and CLI-envelope audit.
 - **Version/environment:** The same four authorized MZ 1.10.0 projects; the
-  local proposed tileset-catalog implementation on 2026-08-09; Rust 1.97.1 and
+  local experimental tileset-catalog implementation on 2026-08-09; Rust 1.97.1 and
   `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
 - **Procedure:** Ran `tilesets --format json` once per project and independently
   decoded exact `Tilesets.json` with `jq`. Compared every record ID and decoded
@@ -1934,7 +1934,7 @@ summary, and the tileset catalog. It reports a deterministic finding for a
 positive reference that has no catalog record. Structural prerequisite
 failures remain errors. Findings do not claim general editor rejection,
 validity, compatibility, asset existence, tile behavior, or write safety. The
-proposed architecture is recorded in
+accepted architecture is recorded in
 [ADR 0013](../../decisions/0013-experimental-map-tileset-validation.md).
 
 ### Next experiment

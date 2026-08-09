@@ -65,7 +65,7 @@ unknown and plugin-defined content. The following details remain open:
   diagnostics be represented?
   [ADR 0010](decisions/0010-experimental-player-start-validation.md) establishes
   one severity-free contextual finding slice without settling the general
-  design. Proposed
+  design.
   [ADR 0013](decisions/0013-experimental-map-tileset-validation.md) follows the
   same distinction between structural errors and contextual findings for one
   project-wide reference check.

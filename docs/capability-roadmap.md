@@ -215,7 +215,7 @@ Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.
 
-A second bounded slice is implemented under proposed
+A second bounded slice is implemented under accepted
 [ADR 0013](decisions/0013-experimental-map-tileset-validation.md). It composes
 the map and tileset catalogs with every selected-map summary and reports only
 positive tileset references with no catalog record. Structural prerequisites
