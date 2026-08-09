@@ -30,6 +30,9 @@ the version actually documented or observed.
 - [System-summary contract](system-summary.md) records the aggregate
   `System.json` shape audit and bounds the implemented project-orientation
   slice.
+- [Player-start validation contract](player-start-validation.md) records
+  controlled relocation and unset-state observations and bounds the first
+  contextual cross-file validation slice.
 - [Research ledger](research-ledger.md) contains the claim-level evidence,
   source records, conflicts, and next controlled experiments.
 

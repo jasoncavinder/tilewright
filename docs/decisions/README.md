@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0010: Experimental player-start validation](0010-experimental-player-start-validation.md) | Proposed | Compose the bounded system, catalog, and selected-map projections into deterministic player-start findings without implying general project validity. |
 
 ## Accepted decisions
 

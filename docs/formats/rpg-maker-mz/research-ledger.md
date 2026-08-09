@@ -18,6 +18,7 @@ records and compatibility scope.
 | [`mz-map-catalog-001`](#mz-map-catalog-001-what-is-the-smallest-evidenced-typed-map-catalog) | What is the smallest evidenced typed map catalog? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
 | [`mz-map-summary-001`](#mz-map-summary-001-what-is-the-smallest-useful-selected-map-summary) | What is the smallest useful selected-map summary? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
 | [`mz-system-summary-001`](#mz-system-summary-001-what-is-the-smallest-useful-system-summary) | What is the smallest useful system summary? | Active | Documented and observed for MZ 1.10.0 | 2026-08-07 |
+| [`mz-player-start-validation-001`](#mz-player-start-validation-001-what-player-start-relationships-can-be-validated) | What player-start relationships can be validated? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-09 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
@@ -1749,10 +1750,48 @@ is recorded in
 
 ### Next experiment
 
-Delete the player starting position in a disposable authorized MZ 1.10.0 copy,
-save and reopen it, and observe only the exact affected `System.json` fields.
-That experiment should precede a catalog-scoped map-reference type or any claim
-about zero and unset semantics.
+Use the editor's Delete gesture on the player-start icon and compare the
+generated state with the exact zero triplet that MZ 1.10.0 has now been observed
+to recognize and preserve as `None`. Complete the prepared mixed-zero state
+experiment before interpreting zero map IDs with nonzero coordinates.
+
+## `mz-player-start-validation-001`: What player-start relationships can be validated?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only contextual validation of the stored
+  player starting position and its map relationships.
+- **Scope:** Exact player-start scalars from `data/System.json`, the coherent
+  `MapInfos.json` catalog, and the selected `MapNNN.json` dimensions in RPG
+  Maker MZ 1.10.0. General project validity, later versions, mutation,
+  persistence, passability, events, and vehicle starts remain outside scope.
+- **Last updated:** 2026-08-09
+
+### Evidence ledger
+
+The claim-level ledger, controlled procedures, bounded contract, fixture
+implications, and remaining experiments are maintained in
+[`player-start-validation.md`](player-start-validation.md#evidence-ledger).
+Official behavior is recorded by `MZ-HELP-SYSTEM1-2026-08-07`. Controlled
+editor results are recorded by
+`MZ-1.10.0-PLAYER-START-RELOCATION-2026-08-09` and
+`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`.
+
+### Implementation implications
+
+The proposed experimental operation composes existing owned projections. It
+can report the observed zero triplet, an unevidenced zero-map/mixed-coordinate
+state, a missing positive catalog record, and coordinates outside positive map
+dimensions. Structural projection failures remain errors. Findings do not
+claim general editor rejection, validity, compatibility, or write safety. The
+proposed architecture is recorded in
+[ADR 0010](../../decisions/0010-experimental-player-start-validation.md).
+
+### Next experiment
+
+Complete the editor Delete and mixed-zero experiments, then test exact map
+coordinate boundaries and a dangling positive start-map ID in separate owned
+copies. Repeat the bounded observations on another named version at or above
+1.10.0 before broadening compatibility scope.
 
 ## Investigation template
 

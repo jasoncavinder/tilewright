@@ -45,6 +45,22 @@ fn write_system_project(temp: &TempDir, system_document: &[u8]) -> PathBuf {
     root
 }
 
+fn write_validation_project(
+    temp: &TempDir,
+    system_document: &[u8],
+    map_infos: Option<&[u8]>,
+    map_document: Option<&[u8]>,
+) -> PathBuf {
+    let root = write_system_project(temp, system_document);
+    if let Some(map_infos) = map_infos {
+        fs::write(root.join("data/MapInfos.json"), map_infos).unwrap();
+    }
+    if let Some(map_document) = map_document {
+        fs::write(root.join("data/Map001.json"), map_document).unwrap();
+    }
+    root
+}
+
 #[test]
 fn help_and_version_are_available() {
     let help = tilewright(&["--help"]);
@@ -1382,6 +1398,215 @@ fn system_operational_errors_preserve_stream_separation() {
     assert!(stderr(&json).is_empty());
     let report: Value = serde_json::from_slice(&json.stdout).unwrap();
     assert!(report["error"]["message"].is_string());
+}
+
+#[test]
+fn validate_help_lists_scope_format_and_resource_limits() {
+    let help = tilewright(&["--help"]);
+    assert!(help.status.success());
+    assert!(stdout(&help).contains("validate"));
+
+    let validate_help = tilewright(&["validate", "--help"]);
+    assert!(validate_help.status.success());
+    let out = stdout(&validate_help);
+    assert!(out.contains("player start"));
+    assert!(out.contains("--format"));
+    assert!(out.contains("--max-documents"));
+    assert!(out.contains("--max-bytes-per-document"));
+    assert!(out.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn validate_reports_a_clear_player_start_for_people() {
+    let temp = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":9,"startY":7}"#,
+        Some(br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#),
+        Some(
+            br#"{"displayName":"One","width":10,"height":8,"tilesetId":1,"events":[]}"#,
+        ),
+    );
+
+    let output = tilewright(&["validate", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output = stdout(&output);
+    assert!(output.contains("Validation for"));
+    assert!(output.contains("Scope: player start"));
+    assert!(output.contains("Player start: map 1 at (9, 7)"));
+    assert!(output.contains("Findings: 0"));
+    assert!(output.contains("No player-start findings."));
+}
+
+#[test]
+fn validate_keeps_unrelated_snapshot_diagnostics_separate() {
+    let temp = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":9,"startY":7}"#,
+        Some(br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#),
+        Some(
+            br#"{"displayName":"One","width":10,"height":8,"tilesetId":1,"events":[]}"#,
+        ),
+    );
+    fs::write(root.join("data/Actors.json"), b"not json").unwrap();
+
+    let output = tilewright(&["validate", root.to_str().unwrap(), "--format", "json"]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["snapshot_completeness"], "partial");
+    assert_eq!(report["snapshot_diagnostic_count"], 1);
+    assert_eq!(report["validation"]["finding_free"], true);
+    assert_eq!(
+        report["snapshot_diagnostics"][0]["category"],
+        "invalid_syntax"
+    );
+}
+
+#[test]
+fn validate_emits_versioned_json_for_each_contextual_finding() {
+    type FindingCase<'a> = (&'a [u8], Option<&'a [u8]>, Option<&'a [u8]>, &'a str);
+
+    let cases: &[FindingCase<'_>] = &[
+        (
+            br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":0,"startX":0,"startY":0}"#,
+            None,
+            None,
+            "missing_player_start",
+        ),
+        (
+            br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":0,"startX":2,"startY":3}"#,
+            None,
+            None,
+            "zero_map_id_with_coordinates",
+        ),
+        (
+            br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":2,"startX":0,"startY":0}"#,
+            Some(br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#),
+            None,
+            "missing_map_record",
+        ),
+        (
+            br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":10,"startY":8}"#,
+            Some(br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#),
+            Some(
+                br#"{"displayName":"One","width":10,"height":8,"tilesetId":1,"events":[]}"#,
+            ),
+            "out_of_bounds",
+        ),
+    ];
+
+    for (system, map_infos, map, expected_category) in cases {
+        let temp = TempDir::new().unwrap();
+        let root = write_validation_project(&temp, system, *map_infos, *map);
+        let output = tilewright(&["validate", root.to_str().unwrap(), "--format", "json"]);
+
+        assert!(
+            output.status.success(),
+            "unexpected failure: {}",
+            stderr(&output)
+        );
+        assert!(stderr(&output).is_empty());
+        let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(report["schema_version"], 1);
+        assert_eq!(report["validation"]["scope"], "player_start");
+        assert_eq!(report["validation"]["finding_free"], false);
+        assert_eq!(report["validation"]["finding_count"], 1);
+        assert_eq!(
+            report["validation"]["findings"][0]["category"],
+            *expected_category
+        );
+    }
+}
+
+#[test]
+fn validate_structural_and_operational_errors_preserve_stream_separation() {
+    let malformed = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &malformed,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":0,"startY":0}"#,
+        Some(br#"{}"#),
+        None,
+    );
+    let json = tilewright(&["validate", root.to_str().unwrap(), "--format", "json"]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "catalog_error");
+    assert_eq!(
+        report["error"]["catalog_error"]["category"],
+        "unexpected_root_kind"
+    );
+
+    let temp = TempDir::new().unwrap();
+    let missing = temp.path().join("missing\n\u{1b}[31mdir");
+    let human = tilewright(&["validate", missing.to_str().unwrap()]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    assert!(!stderr(&human).contains('\u{1b}'));
+    assert!(stderr(&human).contains("missing\\n\\u{1b}[31mdir"));
+}
+
+#[test]
+fn validate_selected_map_projection_error_is_structured() {
+    let temp = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":0,"startY":0}"#,
+        Some(br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#),
+        None,
+    );
+
+    let output = tilewright(&["validate", root.to_str().unwrap(), "--format", "json"]);
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "map_error");
+    assert_eq!(report["error"]["map_error"]["category"], "missing_document");
+    assert_eq!(report["error"]["map_error"]["map_id"], 1);
+    assert_eq!(
+        report["error"]["map_error"]["path"]["utf8"],
+        "data/Map001.json"
+    );
+}
+
+#[test]
+fn validate_forwards_limits_and_reports_unavailable_system_document() {
+    let temp = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &temp,
+        br#"{"gameTitle":"A deliberately long title","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":0,"startX":0,"startY":0}"#,
+        None,
+        None,
+    );
+
+    let output = tilewright(&[
+        "validate",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "80",
+    ]);
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["limits"]["max_bytes_per_document"], 80);
+    assert_eq!(report["error"]["category"], "system_error");
+    assert_eq!(
+        report["error"]["system_error"]["category"],
+        "unavailable_document"
+    );
+    assert_eq!(
+        report["snapshot_diagnostics"][0]["category"],
+        "exceeds_document_byte_limit"
+    );
 }
 
 #[test]

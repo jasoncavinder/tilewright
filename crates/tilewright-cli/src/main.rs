@@ -20,6 +20,9 @@ use tilewright::rpg_maker_mz::map_catalog::{
     JsonValueKind, MapCatalog, MapCatalogError, MapCatalogFinding, MapId, MapInfoField, map_catalog,
 };
 use tilewright::rpg_maker_mz::map_summary::{MapSummary, MapSummaryError, map_summary};
+use tilewright::rpg_maker_mz::player_start_validation::{
+    PlayerStartFinding, PlayerStartValidation, PlayerStartValidationError, validate_player_start,
+};
 use tilewright::rpg_maker_mz::snapshot::{
     DocumentDiagnostic, ProjectSnapshot, SnapshotCompleteness, SnapshotLimits, load_snapshot,
 };
@@ -144,6 +147,16 @@ enum Command {
     },
     /// Summarize selected experimental RPG Maker MZ system settings.
     System {
+        /// RPG Maker MZ project directory to inspect.
+        path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        #[command(flatten)]
+        limits: SnapshotLimitArgs,
+    },
+    /// Run experimental contextual validation of the player start.
+    Validate {
         /// RPG Maker MZ project directory to inspect.
         path: PathBuf,
         /// Output intended for a person or a script.
@@ -585,6 +598,86 @@ enum SystemSummaryErrorCategory {
 }
 
 #[derive(Debug, Serialize)]
+struct ValidationReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostic_count: usize,
+    validation: PlayerStartValidationDetail,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+}
+
+#[derive(Debug, Serialize)]
+struct PlayerStartValidationDetail {
+    scope: ValidationScope,
+    finding_free: bool,
+    start_map_id: u32,
+    start_x: u32,
+    start_y: u32,
+    finding_count: usize,
+    findings: Vec<PlayerStartFindingReport>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum ValidationScope {
+    PlayerStart,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case", tag = "category")]
+enum PlayerStartFindingReport {
+    MissingPlayerStart,
+    ZeroMapIdWithCoordinates {
+        start_x: u32,
+        start_y: u32,
+    },
+    MissingMapRecord {
+        map_id: u32,
+    },
+    OutOfBounds {
+        map_id: u32,
+        start_x: u32,
+        start_y: u32,
+        width: u32,
+        height: u32,
+    },
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct ValidationErrorReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+    error: PlayerStartValidationErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct PlayerStartValidationErrorDetail {
+    category: PlayerStartValidationErrorCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    system_error: Option<SystemSummaryErrorDetail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    catalog_error: Option<MapCatalogErrorDetail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    map_error: Option<MapSummaryErrorDetail>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum PlayerStartValidationErrorCategory {
+    SystemError,
+    CatalogError,
+    MapError,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum MapCatalogErrorCategory {
     MissingDocument,
@@ -1020,6 +1113,125 @@ impl SystemSummaryErrorDetail {
     }
 }
 
+impl ValidationReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        validation: &PlayerStartValidation,
+        limits: SnapshotLimits,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostic_count: snapshot.diagnostics().len(),
+            validation: PlayerStartValidationDetail {
+                scope: ValidationScope::PlayerStart,
+                finding_free: validation.is_finding_free(),
+                start_map_id: validation.start_map_id(),
+                start_x: validation.start_x(),
+                start_y: validation.start_y(),
+                finding_count: validation.findings().len(),
+                findings: validation
+                    .findings()
+                    .iter()
+                    .map(PlayerStartFindingReport::new)
+                    .collect(),
+            },
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+        }
+    }
+}
+
+impl PlayerStartFindingReport {
+    fn new(finding: &PlayerStartFinding) -> Self {
+        match finding {
+            PlayerStartFinding::MissingPlayerStart => Self::MissingPlayerStart,
+            PlayerStartFinding::ZeroMapIdWithCoordinates {
+                start_x, start_y, ..
+            } => Self::ZeroMapIdWithCoordinates {
+                start_x: *start_x,
+                start_y: *start_y,
+            },
+            PlayerStartFinding::MissingMapRecord { map_id, .. } => Self::MissingMapRecord {
+                map_id: map_id.get(),
+            },
+            PlayerStartFinding::OutOfBounds {
+                map_id,
+                start_x,
+                start_y,
+                width,
+                height,
+                ..
+            } => Self::OutOfBounds {
+                map_id: map_id.get(),
+                start_x: *start_x,
+                start_y: *start_y,
+                width: *width,
+                height: *height,
+            },
+            _ => Self::Unrecognized,
+        }
+    }
+}
+
+impl ValidationErrorReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        limits: SnapshotLimits,
+        error: &PlayerStartValidationError,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+            error: PlayerStartValidationErrorDetail::new(error),
+        }
+    }
+}
+
+impl PlayerStartValidationErrorDetail {
+    fn new(error: &PlayerStartValidationError) -> Self {
+        let mut detail = Self {
+            category: PlayerStartValidationErrorCategory::Unrecognized,
+            message: error.to_string(),
+            system_error: None,
+            catalog_error: None,
+            map_error: None,
+        };
+
+        match error {
+            PlayerStartValidationError::System { source, .. } => {
+                detail.category = PlayerStartValidationErrorCategory::SystemError;
+                detail.system_error = Some(SystemSummaryErrorDetail::new(source));
+            }
+            PlayerStartValidationError::Catalog { source, .. } => {
+                detail.category = PlayerStartValidationErrorCategory::CatalogError;
+                detail.catalog_error = Some(MapCatalogErrorDetail::new(source));
+            }
+            PlayerStartValidationError::Map { source, .. } => {
+                detail.category = PlayerStartValidationErrorCategory::MapError;
+                detail.map_error = Some(MapSummaryErrorDetail::new(source));
+            }
+            _ => {}
+        }
+
+        detail
+    }
+}
+
 impl MapSummaryErrorDetail {
     fn new(error: &MapSummaryError) -> Self {
         let mut detail = Self {
@@ -1351,6 +1563,11 @@ fn main() -> ExitCode {
             format,
             limits,
         } => run_system(&path, format, limits.limits()),
+        Command::Validate {
+            path,
+            format,
+            limits,
+        } => run_validate(&path, format, limits.limits()),
         Command::InspectJson {
             path,
             format,
@@ -1537,6 +1754,53 @@ fn run_system(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> Exit
         Err(error) => {
             let report = SystemErrorReport::new(path, &snapshot, limits, &error);
             write_system_error_report(&report, format)
+        }
+    }
+}
+
+fn run_validate(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    let snapshot = match load_snapshot(&root_dir, limits) {
+        Ok(snapshot) => snapshot,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match validate_player_start(&snapshot) {
+        Ok(validation) => {
+            let report = ValidationReport::new(path, &snapshot, &validation, limits);
+            let write_result = match format {
+                OutputFormat::Human => write_human_validation_report(io::stdout().lock(), &report),
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let report = ValidationErrorReport::new(path, &snapshot, limits, &error);
+            write_validation_error_report(&report, format)
         }
     }
 }
@@ -1788,6 +2052,18 @@ fn write_selected_map_error_report(
 fn write_system_error_report(report: &SystemErrorReport, format: OutputFormat) -> ExitCode {
     let write_result = match format {
         OutputFormat::Human => write_human_system_error(io::stderr().lock(), report),
+        OutputFormat::Json => write_json(io::stdout().lock(), report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
+    }
+}
+
+fn write_validation_error_report(report: &ValidationErrorReport, format: OutputFormat) -> ExitCode {
+    let write_result = match format {
+        OutputFormat::Human => write_human_validation_error(io::stderr().lock(), report),
         OutputFormat::Json => write_json(io::stdout().lock(), report),
     };
 
@@ -2121,6 +2397,88 @@ fn write_human_system_report(mut writer: impl Write, report: &SystemReport) -> i
     )
 }
 
+fn write_human_validation_report(
+    mut writer: impl Write,
+    report: &ValidationReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Validation for {}:",
+        escape_controls(&report.root.display)
+    )?;
+    writeln!(writer, "  Scope: player start")?;
+    writeln!(
+        writer,
+        "  Player start: map {} at ({}, {})",
+        report.validation.start_map_id, report.validation.start_x, report.validation.start_y
+    )?;
+    writeln!(writer, "  Findings: {}", report.validation.finding_count)?;
+    writeln!(
+        writer,
+        "  Snapshot completeness: {}",
+        report.snapshot_completeness.name()
+    )?;
+    writeln!(
+        writer,
+        "  Snapshot diagnostics: {}",
+        report.snapshot_diagnostic_count
+    )?;
+    writeln!(
+        writer,
+        "  Limits: {} documents, {} bytes/document, {} aggregate bytes",
+        report.limits.max_documents,
+        report.limits.max_bytes_per_document,
+        report.limits.max_aggregate_bytes
+    )?;
+
+    if report.validation.findings.is_empty() {
+        writeln!(writer, "  No player-start findings.")?;
+    } else {
+        writeln!(writer, "Player-start findings:")?;
+        for finding in &report.validation.findings {
+            write_human_player_start_finding(&mut writer, finding)?;
+        }
+    }
+
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_player_start_finding(
+    writer: &mut impl Write,
+    finding: &PlayerStartFindingReport,
+) -> io::Result<()> {
+    match finding {
+        PlayerStartFindingReport::MissingPlayerStart => writeln!(
+            writer,
+            "  - player starting position is unset; RPG Maker MZ cannot start the game without it"
+        ),
+        PlayerStartFindingReport::ZeroMapIdWithCoordinates { start_x, start_y } => writeln!(
+            writer,
+            "  - map ID 0 has unevidenced coordinates ({start_x}, {start_y})"
+        ),
+        PlayerStartFindingReport::MissingMapRecord { map_id } => {
+            writeln!(writer, "  - map {map_id} has no map-catalog record")
+        }
+        PlayerStartFindingReport::OutOfBounds {
+            map_id,
+            start_x,
+            start_y,
+            width,
+            height,
+        } => writeln!(
+            writer,
+            "  - ({start_x}, {start_y}) is outside map {map_id} dimensions {width} x {height}"
+        ),
+        PlayerStartFindingReport::Unrecognized => {
+            writeln!(writer, "  - unrecognized experimental player-start finding")
+        }
+    }
+}
+
 fn write_human_map_finding(writer: &mut impl Write, finding: &MapFindingReport) -> io::Result<()> {
     match finding {
         MapFindingReport::MissingParent { map_id, parent_id } => {
@@ -2237,6 +2595,23 @@ fn write_human_selected_map_error(
 }
 
 fn write_human_system_error(mut writer: impl Write, report: &SystemErrorReport) -> io::Result<()> {
+    writeln!(
+        writer,
+        "error: {} for {}",
+        escape_controls(&report.error.message),
+        escape_controls(&report.root.display)
+    )?;
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_validation_error(
+    mut writer: impl Write,
+    report: &ValidationErrorReport,
+) -> io::Result<()> {
     writeln!(
         writer,
         "error: {} for {}",

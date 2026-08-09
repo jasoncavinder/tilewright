@@ -18,9 +18,9 @@ not a current support claim.
 > into bounded, read-only raw snapshots, then project map IDs, names, display
 > order, and parent relationships into a typed catalog. It can also summarize
 > one catalog-selected map's basic metadata and opaque event count, and selected
-> project-level system settings. It does not yet provide broader semantic
-> understanding, validation, or modification. Do not rely on it for valuable
-> project workflows.
+> project-level system settings. Its first contextual validator checks only the
+> stored player start. It does not yet provide broader semantic understanding,
+> project validity, or modification. Do not rely on it for valuable workflows.
 
 ## What Tilewright aims to provide
 
@@ -56,8 +56,8 @@ for the distinction between planned and supported behavior.
 
 | Package | Role | Current state |
 | --- | --- | --- |
-| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, typed map catalog, selected-map summary, and system summary |
-| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, typed map catalog, selected-map summary, system summary, and JSON inspection adapter |
+| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, typed map catalog, selected-map and system summaries, and player-start validation |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, typed projections, player-start validation, and JSON inspection adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 
 The dependency direction is inward:
@@ -115,6 +115,7 @@ cargo run -p tilewright-cli -- snapshot path/to/project
 cargo run -p tilewright-cli -- maps path/to/project
 cargo run -p tilewright-cli -- map path/to/project 1
 cargo run -p tilewright-cli -- system path/to/project
+cargo run -p tilewright-cli -- validate path/to/project
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
 ```
 
@@ -131,6 +132,7 @@ tilewright snapshot path/to/project
 tilewright maps path/to/project
 tilewright map path/to/project 1
 tilewright system path/to/project
+tilewright validate path/to/project
 tilewright inspect-json path/to/file.json
 ```
 
@@ -140,11 +142,12 @@ for update and uninstall details.
 
 The CLI currently exposes experimental candidate discovery, project inventory,
 bounded raw snapshot loading, typed map-catalog inspection, selected-map
-summaries, selected system-setting summaries, and strict lossless JSON syntax
-inspection. The typed commands are narrow structural projections, not general
-project understanding or validation. No command establishes project or
-MZ-version compatibility, round-trip behavior, or write support. Contributors
-should use the full verification process described in
+summaries, selected system-setting summaries, bounded player-start validation,
+and strict lossless JSON syntax inspection. The validation command covers only
+the stored player start; it does not establish general project validity or
+editor compatibility. No command establishes MZ-version compatibility,
+round-trip behavior, or write support. Contributors should use the full
+verification process described in
 [CONTRIBUTING.md](CONTRIBUTING.md#verification).
 
 ## License
