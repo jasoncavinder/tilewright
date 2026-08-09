@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0013: Experimental map-tileset reference validation](0013-experimental-map-tileset-validation.md) | Proposed | Compose map summaries and the tileset catalog into deterministic missing-reference findings without implying general validity. |
 
 ## Accepted decisions
 

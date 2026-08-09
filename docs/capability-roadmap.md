@@ -215,6 +215,14 @@ Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.
 
+A second bounded slice is implemented under proposed
+[ADR 0013](decisions/0013-experimental-map-tileset-validation.md). It composes
+the map and tileset catalogs with every selected-map summary and reports only
+positive tileset references with no catalog record. Structural prerequisites
+remain errors, and finding-free output is not a general validity claim. An
+independent differential audit matched all 196 references and all 24 bounded
+CLI-envelope comparisons in the four-project MZ 1.10.0 corpus.
+
 ### 7. In-memory domain mutation and semantic diffs
 
 Add one bounded mutation at a time. A mutation changes an evidenced domain
@@ -300,13 +308,14 @@ assets. The selected-map summary and its `map` CLI adapter are implemented
 experimentally without interpreting tile or event contents. The system summary
 and its `system` CLI adapter are implemented experimentally without interpreting
 other system settings. A first player-start validation slice and its `validate`
-CLI adapter compose those projections experimentally; they do not establish
+CLI adapter compose those projections experimentally. A separate
+`validate-tilesets` slice checks map-to-tileset references. Neither establishes
 general project validity or editor compatibility.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
 system summary. Controlled MZ 1.10.0 experiments also establish same-map start
 relocation and editor recognition/preservation of the exact zero triplet as
-`None`. The next tileset step is independent differential verification, followed
-by controlled name, mode, and map-assignment experiments before expanding the
-contract or adding cross-file validation.
+`None`. The next tileset research uses controlled name, mode, and
+map-assignment experiments before expanding the catalog or validation
+contracts.

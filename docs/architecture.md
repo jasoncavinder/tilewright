@@ -113,8 +113,9 @@ CST/raw-storage-plus-typed-view architectural direction accepted in
 keeping its provisional CST backend private. The experimental map and tileset
 catalogs, selected-map summary, and system summary are owned, read-only typed
 projections over a raw project snapshot; they do not expose CST nodes or mutate
-the snapshot. The experimental player-start validator composes those owned
-projections without adding filesystem I/O or a second representation layer.
+the snapshot. The experimental player-start and map-to-tileset validators
+compose those owned projections without adding filesystem I/O or a second
+representation layer.
 Production typed-view ownership and concurrency policy, mutation, and
 operation-specific preservation and refusal contracts remain unresolved or
 unimplemented. Silent data loss is not an acceptable answer.
