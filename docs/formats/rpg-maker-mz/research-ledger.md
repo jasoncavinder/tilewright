@@ -1778,12 +1778,12 @@ editor results are recorded by
 
 ### Implementation implications
 
-The proposed experimental operation composes existing owned projections. It
+The implemented experimental operation composes existing owned projections. It
 can report the observed zero triplet, an unevidenced zero-map/mixed-coordinate
 state, a missing positive catalog record, and coordinates outside positive map
 dimensions. Structural projection failures remain errors. Findings do not
 claim general editor rejection, validity, compatibility, or write safety. The
-proposed architecture is recorded in
+accepted architecture is recorded in
 [ADR 0010](../../decisions/0010-experimental-player-start-validation.md).
 
 ### Next experiment

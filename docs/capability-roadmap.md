@@ -198,7 +198,7 @@ with the editor, outside Tilewright's support, internally inconsistent, or
 merely advisory. Exact public severity and diagnostic types remain an API
 decision.
 
-**Current status: Experimental first slice.** The player-start contract proposed
+**Current status: Experimental first slice.** The player-start contract accepted
 in [ADR 0010](decisions/0010-experimental-player-start-validation.md) composes
 the system summary, coherent map catalog, and selected-map dimensions. It
 reports only the evidenced zero triplet, an unevidenced mixed-zero state, a

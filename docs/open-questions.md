@@ -62,7 +62,7 @@ unknown and plugin-defined content. The following details remain open:
 - How should event-command parameter arrays be typed incrementally?
 - How should validation findings, severities, source locations, and related
   diagnostics be represented?
-  [ADR 0010](decisions/0010-experimental-player-start-validation.md) proposes
+  [ADR 0010](decisions/0010-experimental-player-start-validation.md) establishes
   one severity-free contextual finding slice without settling the general
   design.
 - Which error library, if any, is appropriate for the core?

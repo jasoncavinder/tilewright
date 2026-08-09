@@ -5,9 +5,7 @@ implementation context has changed.
 
 ## Proposed decisions
 
-| ADR | Status | Summary |
-| --- | --- | --- |
-| [0010: Experimental player-start validation](0010-experimental-player-start-validation.md) | Proposed | Compose the bounded system, catalog, and selected-map projections into deterministic player-start findings without implying general project validity. |
+No decisions are currently proposed.
 
 ## Accepted decisions
 
@@ -22,6 +20,7 @@ implementation context has changed.
 | [0007: Experimental map catalog projection](0007-experimental-map-catalog-projection.md) | Accepted | Adopt a read-only, owned typed projection for map identity, display order, hierarchy, and contextual findings over a raw project snapshot. |
 | [0008: Experimental selected-map summary](0008-experimental-selected-map-summary.md) | Accepted | Adopt a read-only owned summary for one catalog-selected map's basic metadata, dimensions, tileset scalar, and opaque event count. |
 | [0009: Experimental system summary](0009-experimental-system-summary.md) | Accepted | Add a read-only owned summary for selected `System.json` metadata and map-position scalars. |
+| [0010: Experimental player-start validation](0010-experimental-player-start-validation.md) | Accepted | Compose the bounded system, catalog, and selected-map projections into deterministic player-start findings without implying general project validity. |
 
 ## Adding or changing a decision
 

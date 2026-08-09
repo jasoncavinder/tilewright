@@ -1,6 +1,6 @@
 # ADR 0010: Experimental Player-Start Validation
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-09
 
 ## Context
