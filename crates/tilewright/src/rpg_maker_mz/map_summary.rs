@@ -3,7 +3,7 @@
 //! Experimental, read-only summary of one selected RPG Maker MZ map.
 
 use crate::rpg_maker_mz::map_catalog::{
-    JsonValueKind, MapCatalogError, MapId, evidenced_map_document_path, map_catalog,
+    JsonValueKind, MapCatalog, MapCatalogError, MapId, evidenced_map_document_path, map_catalog,
 };
 use crate::rpg_maker_mz::snapshot::ProjectSnapshot;
 use jsonc_parser::cst::{CstNode, CstObject};
@@ -62,6 +62,10 @@ impl MapSummary {
     /// summary does not validate that the referenced tileset exists.
     pub fn tileset_id(&self) -> u32 {
         self.tileset_id.get()
+    }
+
+    pub(crate) fn tileset_id_nonzero(&self) -> NonZeroU32 {
+        self.tileset_id
     }
 
     /// Returns the number of non-null object entries in the `events` array.
@@ -310,6 +314,14 @@ pub fn map_summary(
     map_id: MapId,
 ) -> Result<MapSummary, MapSummaryError> {
     let catalog = map_catalog(snapshot).map_err(|source| MapSummaryError::Catalog { source })?;
+    map_summary_from_catalog(snapshot, &catalog, map_id)
+}
+
+pub(crate) fn map_summary_from_catalog(
+    snapshot: &ProjectSnapshot,
+    catalog: &MapCatalog,
+    map_id: MapId,
+) -> Result<MapSummary, MapSummaryError> {
     let record = catalog
         .get(map_id)
         .ok_or(MapSummaryError::UnknownMapId { map_id })?;

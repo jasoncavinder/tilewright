@@ -36,6 +36,8 @@ the version actually documented or observed.
 - [Tileset catalog contract](tileset-catalog.md) records the aggregate
   `Tilesets.json` identity/name audit while leaving modes, image slots, flags,
   and notes opaque.
+- [Map-to-tileset validation contract](map-tileset-validation.md) bounds the
+  project-wide missing-reference check without claiming general validity.
 - [Research ledger](research-ledger.md) contains the claim-level evidence,
   source records, conflicts, and next controlled experiments.
 

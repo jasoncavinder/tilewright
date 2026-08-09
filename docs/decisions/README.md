@@ -8,6 +8,7 @@ implementation context has changed.
 | ADR | Status | Summary |
 | --- | --- | --- |
 | [0012: Experimental tileset catalog](0012-experimental-tileset-catalog.md) | Proposed | Add a read-only owned projection of catalog-scoped tileset IDs and editor-facing names while leaving modes, images, flags, and notes opaque. |
+| [0013: Experimental map-tileset reference validation](0013-experimental-map-tileset-validation.md) | Proposed | Compose map summaries and the tileset catalog into deterministic missing-reference findings without implying general validity. |
 
 ## Accepted decisions
 

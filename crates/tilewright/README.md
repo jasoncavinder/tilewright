@@ -19,6 +19,9 @@ The first experimental contextual validator composes those scalars with the map
 catalog and selected-map dimensions to inspect only the player start.
 An experimental tileset catalog separately exposes positive IDs and decoded
 editor-facing names while leaving tile behavior and assets opaque.
+A second contextual validator checks every cataloged map's positive tileset ID
+against that catalog without interpreting tileset behavior or claiming general
+project validity.
 
 ### Example: Candidate Discovery
 
@@ -184,6 +187,32 @@ fn print_tilesets(snapshot: &ProjectSnapshot) {
 The projection refuses ambiguous required structure. It does not interpret
 tileset modes, images, flags, notes, or tile behavior; validate map references
 or assets; establish editor compatibility; or expose mutation and serialization.
+
+### Example: Map-to-Tileset Reference Validation
+
+This experimental operation composes the existing projections. Structural
+prerequisite failures are errors; unresolved references are findings.
+
+```rust
+use tilewright::rpg_maker_mz::map_tileset_validation::validate_map_tilesets;
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+
+fn check_map_tilesets(snapshot: &ProjectSnapshot) {
+    match validate_map_tilesets(snapshot) {
+        Ok(validation) => {
+            println!("checked {} maps", validation.map_count());
+            for finding in validation.findings() {
+                println!("map-to-tileset finding: {finding}");
+            }
+        }
+        Err(error) => eprintln!("validation unavailable: {error}"),
+    }
+}
+```
+
+A finding-free result covers only this bounded reference relationship. It does
+not establish editor acceptance, asset existence, tile behavior, runtime
+success, compatibility, mutation safety, or write support.
 
 ### Example: Selected-Map Summary
 

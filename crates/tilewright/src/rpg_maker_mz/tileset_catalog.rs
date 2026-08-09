@@ -27,6 +27,10 @@ impl TilesetId {
     pub fn get(self) -> u32 {
         self.0.get()
     }
+
+    pub(crate) fn from_nonzero(value: NonZeroU32) -> Self {
+        Self(value)
+    }
 }
 
 impl fmt::Display for TilesetId {

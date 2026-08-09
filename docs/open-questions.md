@@ -65,7 +65,10 @@ unknown and plugin-defined content. The following details remain open:
   diagnostics be represented?
   [ADR 0010](decisions/0010-experimental-player-start-validation.md) establishes
   one severity-free contextual finding slice without settling the general
-  design.
+  design. Proposed
+  [ADR 0013](decisions/0013-experimental-map-tileset-validation.md) follows the
+  same distinction between structural errors and contextual findings for one
+  project-wide reference check.
 - Which error library, if any, is appropriate for the core?
 - How should semantic project diffs be represented?
 - Should BOM-prefixed input be rejected permanently or preserved by a separate

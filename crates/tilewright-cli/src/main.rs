@@ -20,6 +20,9 @@ use tilewright::rpg_maker_mz::map_catalog::{
     JsonValueKind, MapCatalog, MapCatalogError, MapCatalogFinding, MapId, MapInfoField, map_catalog,
 };
 use tilewright::rpg_maker_mz::map_summary::{MapSummary, MapSummaryError, map_summary};
+use tilewright::rpg_maker_mz::map_tileset_validation::{
+    MapTilesetFinding, MapTilesetValidation, MapTilesetValidationError, validate_map_tilesets,
+};
 use tilewright::rpg_maker_mz::player_start_validation::{
     PlayerStartFinding, PlayerStartValidation, PlayerStartValidationError, validate_player_start,
 };
@@ -170,6 +173,16 @@ enum Command {
     },
     /// Run experimental contextual validation of the player start.
     Validate {
+        /// RPG Maker MZ project directory to inspect.
+        path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        #[command(flatten)]
+        limits: SnapshotLimitArgs,
+    },
+    /// Validate experimental map-to-tileset references.
+    ValidateTilesets {
         /// RPG Maker MZ project directory to inspect.
         path: PathBuf,
         /// Output intended for a person or a script.
@@ -746,6 +759,72 @@ struct PlayerStartValidationErrorDetail {
 enum PlayerStartValidationErrorCategory {
     SystemError,
     CatalogError,
+    MapError,
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct MapTilesetValidationReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostic_count: usize,
+    validation: MapTilesetValidationDetail,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+}
+
+#[derive(Debug, Serialize)]
+struct MapTilesetValidationDetail {
+    scope: MapTilesetValidationScope,
+    finding_free: bool,
+    map_count: usize,
+    finding_count: usize,
+    findings: Vec<MapTilesetFindingReport>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum MapTilesetValidationScope {
+    MapTilesetReferences,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case", tag = "category")]
+enum MapTilesetFindingReport {
+    MissingTileset { map_id: u32, tileset_id: u32 },
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct MapTilesetValidationErrorReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+    error: MapTilesetValidationErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct MapTilesetValidationErrorDetail {
+    category: MapTilesetValidationErrorCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    map_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    map_catalog_error: Option<MapCatalogErrorDetail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tileset_catalog_error: Option<TilesetCatalogErrorDetail>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    map_error: Option<MapSummaryErrorDetail>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum MapTilesetValidationErrorCategory {
+    MapCatalogError,
+    TilesetCatalogError,
     MapError,
     Unrecognized,
 }
@@ -1336,6 +1415,107 @@ impl PlayerStartValidationErrorDetail {
     }
 }
 
+impl MapTilesetValidationReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        validation: &MapTilesetValidation,
+        limits: SnapshotLimits,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostic_count: snapshot.diagnostics().len(),
+            validation: MapTilesetValidationDetail {
+                scope: MapTilesetValidationScope::MapTilesetReferences,
+                finding_free: validation.is_finding_free(),
+                map_count: validation.map_count(),
+                finding_count: validation.findings().len(),
+                findings: validation
+                    .findings()
+                    .iter()
+                    .map(MapTilesetFindingReport::new)
+                    .collect(),
+            },
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+        }
+    }
+}
+
+impl MapTilesetFindingReport {
+    fn new(finding: &MapTilesetFinding) -> Self {
+        match finding {
+            MapTilesetFinding::MissingTileset {
+                map_id, tileset_id, ..
+            } => Self::MissingTileset {
+                map_id: map_id.get(),
+                tileset_id: tileset_id.get(),
+            },
+            _ => Self::Unrecognized,
+        }
+    }
+}
+
+impl MapTilesetValidationErrorReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        limits: SnapshotLimits,
+        error: &MapTilesetValidationError,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+            error: MapTilesetValidationErrorDetail::new(error),
+        }
+    }
+}
+
+impl MapTilesetValidationErrorDetail {
+    fn new(error: &MapTilesetValidationError) -> Self {
+        let mut detail = Self {
+            category: MapTilesetValidationErrorCategory::Unrecognized,
+            message: error.to_string(),
+            map_id: None,
+            map_catalog_error: None,
+            tileset_catalog_error: None,
+            map_error: None,
+        };
+
+        match error {
+            MapTilesetValidationError::MapCatalog { source, .. } => {
+                detail.category = MapTilesetValidationErrorCategory::MapCatalogError;
+                detail.map_catalog_error = Some(MapCatalogErrorDetail::new(source));
+            }
+            MapTilesetValidationError::TilesetCatalog { source, .. } => {
+                detail.category = MapTilesetValidationErrorCategory::TilesetCatalogError;
+                detail.tileset_catalog_error = Some(TilesetCatalogErrorDetail::new(source));
+            }
+            MapTilesetValidationError::Map { map_id, source, .. } => {
+                detail.category = MapTilesetValidationErrorCategory::MapError;
+                detail.map_id = Some(map_id.get());
+                detail.map_error = Some(MapSummaryErrorDetail::new(source));
+            }
+            _ => {}
+        }
+
+        detail
+    }
+}
+
 impl MapSummaryErrorDetail {
     fn new(error: &MapSummaryError) -> Self {
         let mut detail = Self {
@@ -1813,6 +1993,11 @@ fn main() -> ExitCode {
             format,
             limits,
         } => run_validate(&path, format, limits.limits()),
+        Command::ValidateTilesets {
+            path,
+            format,
+            limits,
+        } => run_validate_tilesets(&path, format, limits.limits()),
         Command::InspectJson {
             path,
             format,
@@ -2097,6 +2282,55 @@ fn run_validate(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> Ex
     }
 }
 
+fn run_validate_tilesets(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    let snapshot = match load_snapshot(&root_dir, limits) {
+        Ok(snapshot) => snapshot,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match validate_map_tilesets(&snapshot) {
+        Ok(validation) => {
+            let report = MapTilesetValidationReport::new(path, &snapshot, &validation, limits);
+            let write_result = match format {
+                OutputFormat::Human => {
+                    write_human_map_tileset_validation_report(io::stdout().lock(), &report)
+                }
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let report = MapTilesetValidationErrorReport::new(path, &snapshot, limits, &error);
+            write_map_tileset_validation_error_report(&report, format)
+        }
+    }
+}
+
 fn run_discover(path: &Path, format: OutputFormat) -> ExitCode {
     match discover_candidate(path) {
         Ok(discovery) => {
@@ -2368,6 +2602,23 @@ fn write_system_error_report(report: &SystemErrorReport, format: OutputFormat) -
 fn write_validation_error_report(report: &ValidationErrorReport, format: OutputFormat) -> ExitCode {
     let write_result = match format {
         OutputFormat::Human => write_human_validation_error(io::stderr().lock(), report),
+        OutputFormat::Json => write_json(io::stdout().lock(), report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
+    }
+}
+
+fn write_map_tileset_validation_error_report(
+    report: &MapTilesetValidationErrorReport,
+    format: OutputFormat,
+) -> ExitCode {
+    let write_result = match format {
+        OutputFormat::Human => {
+            write_human_map_tileset_validation_error(io::stderr().lock(), report)
+        }
         OutputFormat::Json => write_json(io::stdout().lock(), report),
     };
 
@@ -2797,6 +3048,60 @@ fn write_human_validation_report(
     )
 }
 
+fn write_human_map_tileset_validation_report(
+    mut writer: impl Write,
+    report: &MapTilesetValidationReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Map-to-tileset validation for {}:",
+        escape_controls(&report.root.display)
+    )?;
+    writeln!(writer, "  Maps checked: {}", report.validation.map_count)?;
+    writeln!(writer, "  Findings: {}", report.validation.finding_count)?;
+    writeln!(
+        writer,
+        "  Snapshot completeness: {}",
+        report.snapshot_completeness.name()
+    )?;
+    writeln!(
+        writer,
+        "  Snapshot diagnostics: {}",
+        report.snapshot_diagnostic_count
+    )?;
+    writeln!(
+        writer,
+        "  Limits: {} documents, {} bytes/document, {} aggregate bytes",
+        report.limits.max_documents,
+        report.limits.max_bytes_per_document,
+        report.limits.max_aggregate_bytes
+    )?;
+
+    if report.validation.findings.is_empty() {
+        writeln!(writer, "  No map-to-tileset findings.")?;
+    } else {
+        writeln!(writer, "Map-to-tileset findings:")?;
+        for finding in &report.validation.findings {
+            match finding {
+                MapTilesetFindingReport::MissingTileset { map_id, tileset_id } => writeln!(
+                    writer,
+                    "  - map {map_id} refers to missing tileset {tileset_id}"
+                )?,
+                MapTilesetFindingReport::Unrecognized => writeln!(
+                    writer,
+                    "  - unrecognized experimental map-to-tileset finding"
+                )?,
+            }
+        }
+    }
+
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
 fn write_human_player_start_finding(
     writer: &mut impl Write,
     finding: &PlayerStartFindingReport,
@@ -2978,6 +3283,23 @@ fn write_human_system_error(mut writer: impl Write, report: &SystemErrorReport) 
 fn write_human_validation_error(
     mut writer: impl Write,
     report: &ValidationErrorReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "error: {} for {}",
+        escape_controls(&report.error.message),
+        escape_controls(&report.root.display)
+    )?;
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_map_tileset_validation_error(
+    mut writer: impl Write,
+    report: &MapTilesetValidationErrorReport,
 ) -> io::Result<()> {
     writeln!(
         writer,
