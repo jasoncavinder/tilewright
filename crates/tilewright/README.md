@@ -10,11 +10,13 @@ experimental candidate discovery, experimental capability-relative project
 inventory, an experimental immutable strict-JSON syntax representation, and an
 experimental read-only raw project snapshot loader. Its first typed projection
 can inspect map IDs, names, display order, and parent relationships. It does not
-yet provide broader understanding, validation, or write support. A second
+yet provide broader understanding, general project validity, or write support. A second
 experimental projection can summarize one catalog-selected map's display name,
 dimensions, tileset ID scalar, and opaque event count.
 An additional experimental projection reports selected `System.json` strings
 and stored map-position scalars without validating their relationships.
+The first experimental contextual validator composes those scalars with the map
+catalog and selected-map dimensions to inspect only the player start.
 
 ### Example: Candidate Discovery
 
@@ -220,6 +222,33 @@ The map ID and coordinate values are nonnegative scalars, not validated map
 references. The operation does not interpret other system settings, compare
 titles across files, establish editor compatibility, or expose mutation and
 serialization.
+
+### Example: Player-Start Validation
+
+The experimental validator composes existing projections over one snapshot. It
+returns contextual findings separately from structural projection errors.
+
+```rust
+use tilewright::rpg_maker_mz::player_start_validation::validate_player_start;
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+
+fn print_player_start_findings(snapshot: &ProjectSnapshot) {
+    match validate_player_start(snapshot) {
+        Ok(validation) => {
+            for finding in validation.findings() {
+                println!("player-start finding: {finding}");
+            }
+        }
+        Err(error) => eprintln!("player start could not be validated: {error}"),
+    }
+}
+```
+
+The operation recognizes the observed exact zero triplet, reports a missing
+positive catalog record, and checks coordinates against selected-map
+dimensions. A finding-free report is not general project validity or editor
+compatibility. The operation does not inspect passability, events, vehicles, or
+write behavior.
 
 ## Responsibilities
 

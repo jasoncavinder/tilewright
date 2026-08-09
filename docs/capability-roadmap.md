@@ -198,6 +198,15 @@ with the editor, outside Tilewright's support, internally inconsistent, or
 merely advisory. Exact public severity and diagnostic types remain an API
 decision.
 
+**Current status: Experimental first slice.** The player-start contract accepted
+in [ADR 0010](decisions/0010-experimental-player-start-validation.md) composes
+the system summary, coherent map catalog, and selected-map dimensions. It
+reports only the evidenced zero triplet, an unevidenced mixed-zero state, a
+missing positive catalog record, and coordinates outside the map rectangle.
+Structural projection failures remain errors. A finding-free result is not a
+general project-validity or compatibility claim, and the general severity and
+diagnostic model remains open.
+
 ### 7. In-memory domain mutation and semantic diffs
 
 Add one bounded mutation at a time. A mutation changes an evidenced domain
@@ -280,9 +289,13 @@ map-catalog projection and its `maps` CLI adapter are also implemented
 experimentally. The selected-map summary and its `map` CLI adapter are also
 implemented experimentally without interpreting tile or event contents. The
 system summary and its `system` CLI adapter are implemented experimentally
-without interpreting other system settings or validating map relationships.
+without interpreting other system settings. A first player-start validation
+slice and its `validate` CLI adapter compose those projections experimentally;
+they do not establish general project validity or editor compatibility.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
-system summary. The next slice must again begin with a bounded evidence question
-and explicit contract rather than expanding adjacent fields speculatively.
+system summary. Controlled MZ 1.10.0 experiments also establish same-map start
+relocation and editor recognition/preservation of the exact zero triplet as
+`None`. The next slice must again begin with a bounded evidence question and
+explicit contract rather than expanding adjacent fields speculatively.

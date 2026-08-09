@@ -7,12 +7,13 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover`, `inventory`, `snapshot`, `maps`, `map`, `system`, and `inspect-json`
+`discover`, `inventory`, `snapshot`, `maps`, `map`, `system`, `validate`, and
+`inspect-json`
 commands over the core library's experimental RPG Maker MZ
 candidate-discovery, capability-relative project inventory, raw snapshot
-loader, typed map catalog, selected-map summary, system summary, and strict
-lossless JSON syntax APIs. It does not provide general project understanding,
-editor validation, or modification.
+loader, typed map catalog, selected-map summary, system summary, player-start
+validation, and strict lossless JSON syntax APIs. It does not provide general
+project understanding, project validity, editor compatibility, or modification.
 
 ## Install from a checkout
 
@@ -71,6 +72,10 @@ cargo run -p tilewright-cli -- map path/to/project 1 --format json
 # Summarize selected project-level system settings.
 cargo run -p tilewright-cli -- system path/to/project
 cargo run -p tilewright-cli -- system path/to/project --format json
+
+# Validate the stored player start against its catalog and map dimensions.
+cargo run -p tilewright-cli -- validate path/to/project
+cargo run -p tilewright-cli -- validate path/to/project --format json
 
 # Inspect a file for strict lossless JSON syntax.
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
@@ -147,15 +152,28 @@ compare titles across files, validate editor compatibility, or establish
 mutation, round-trip, and write support. The snapshot resource-limit options
 are available on `system`.
 
+The `validate` command loads the same bounded snapshot and delegates the
+player-start check to the core library. It reports the observed exact unset
+triplet, a zero map ID with unevidenced nonzero coordinates, a missing positive
+catalog record, and coordinates outside the selected map dimensions. Findings
+are completed validation results and exit with code 0. Acquisition, loading,
+and structural system, catalog, or selected-map failures exit with code 1.
+
+A finding-free result means only that this bounded player-start check found no
+issue. It does not establish project validity, MZ-version compatibility,
+passability, event placement, or runtime success. The command does not emit raw
+documents or unprojected fields, and the snapshot resource-limit options are
+available on `validate`.
+
 JSON paths include an exact `utf8` value when one exists and a lossy `display`
 value for presentation. Callers must not treat `display` as an exact encoding of
 a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the
 initial `open_ambient_dir` acquisition used by `inventory`, `snapshot`, `maps`,
-`map`, and `system` may resolve root or ancestor symlinks and does not prove
-root identity. The `inspect-json` command explicitly opens the provided path
-and makes no project-containment claim.
+`map`, `system`, and `validate` may resolve root or ancestor symlinks and does
+not prove root identity. The `inspect-json` command explicitly opens the
+provided path and makes no project-containment claim.
 
 ## Responsibilities
 

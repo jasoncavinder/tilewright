@@ -25,8 +25,10 @@ CST/raw-storage-plus-typed-view architectural direction accepted in
 `LosslessJsonDocument` retains accepted source bytes exactly and exposes no
 mutation surface. The experimental map catalog, selected-map summary, and
 system summary copy bounded typed values from retained CSTs without changing
-raw bytes. Production typed-view ownership and operation-specific preservation
-or refusal contracts remain unresolved or unimplemented.
+raw bytes. The experimental player-start validator reads those projections and
+also leaves every raw document unchanged. Production typed-view ownership and
+operation-specific preservation or refusal contracts remain unresolved or
+unimplemented.
 
 ## Evidence limits writes
 
