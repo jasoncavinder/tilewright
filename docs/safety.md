@@ -23,12 +23,13 @@ The requirement to avoid silent loss is established. The mechanism uses the
 CST/raw-storage-plus-typed-view architectural direction accepted in
 [ADR 0004](decisions/0004-lossless-json-representation.md). The first immutable
 `LosslessJsonDocument` retains accepted source bytes exactly and exposes no
-mutation surface. The experimental map catalog, selected-map summary, and
-system summary copy bounded typed values from retained CSTs without changing
-raw bytes. The experimental player-start validator reads those projections and
-also leaves every raw document unchanged. Production typed-view ownership and
-operation-specific preservation or refusal contracts remain unresolved or
-unimplemented.
+mutation surface. The experimental map catalog, selected-map summary,
+selected-map event catalog, and system summary copy bounded typed values from
+retained CSTs without changing raw bytes. Event pages, commands, notes, and
+unknown fields remain in the raw snapshot. The experimental player-start
+validator reads those projections and also leaves every raw document unchanged.
+Production typed-view ownership and operation-specific preservation or refusal
+contracts remain unresolved or unimplemented.
 
 ## Evidence limits writes
 

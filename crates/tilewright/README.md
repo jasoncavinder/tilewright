@@ -13,6 +13,8 @@ can inspect map IDs, names, display order, and parent relationships. It does not
 yet provide broader understanding, general project validity, or write support. A second
 experimental projection can summarize one catalog-selected map's display name,
 dimensions, tileset ID scalar, and opaque event count.
+Another experimental projection can list that selected map's map-scoped event
+IDs, names, coordinates, and opaque page counts while retaining event bodies.
 An additional experimental projection reports selected `System.json` strings
 and stored map-position scalars without validating their relationships.
 The first experimental contextual validator composes those scalars with the map
@@ -192,6 +194,40 @@ The operation requires a coherent map catalog and a matching document in the
 evidenced three-digit filename family. It does not validate tileset references,
 interpret events or tile layers, establish editor compatibility, or expose
 mutation and serialization.
+
+### Example: Selected-Map Event Catalog
+
+The experimental event catalog reads bounded event identity and placement from
+one catalog-selected map while keeping event pages and commands opaque.
+
+```rust
+use tilewright::rpg_maker_mz::map_catalog::MapId;
+use tilewright::rpg_maker_mz::map_events::map_event_catalog;
+use tilewright::rpg_maker_mz::snapshot::ProjectSnapshot;
+
+fn print_events(snapshot: &ProjectSnapshot, map_id: MapId) {
+    match map_event_catalog(snapshot, map_id) {
+        Ok(catalog) => {
+            for event in catalog.records().values() {
+                println!(
+                    "{}: {} at ({}, {}), {} pages",
+                    event.id(),
+                    event.name(),
+                    event.x(),
+                    event.y(),
+                    event.page_count()
+                );
+            }
+        }
+        Err(error) => eprintln!("event catalog unavailable: {error}"),
+    }
+}
+```
+
+The identifier is scoped to its containing map. Coordinate findings compare
+stored values with map dimensions without claiming editor invalidity. The
+operation does not expose notes or page bodies, interpret commands, establish
+editor compatibility, or provide mutation and serialization.
 
 ### Example: System Summary
 
