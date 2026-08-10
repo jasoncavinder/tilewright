@@ -145,7 +145,7 @@ the existing system-summary, map-catalog, and selected-map projections. It:
 
 The current implementation cannot reach those relationship checks when a
 coordinate is negative because the system summary still projects coordinates
-as `u32`. Proposed
+as `u32`. Accepted
 [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) corrects
 that evidence conflict by using signed stored coordinates and applying the same
 rectangular out-of-bounds relationship to negative values.

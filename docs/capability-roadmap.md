@@ -185,7 +185,7 @@ experimentally. It projects only the seven accepted string and nonnegative
 integer fields, retains raw bytes and unknown settings in the snapshot, and
 does not validate map references or coordinate bounds. A controlled MZ 1.10.0
 save preserved negative player-start coordinates, exposing a known gap in that
-unsigned contract. Proposed
+unsigned contract. Accepted
 [ADR 0014](decisions/0014-signed-player-start-coordinates.md) defines the
 correction. Neither acceptance nor implementation makes the capability
 Supported.
@@ -340,7 +340,7 @@ system summary. Controlled MZ 1.10.0 experiments also establish same-map start
 relocation, Delete-generated zero-triplet serialization, and preservation of
 mixed-zero, exact-boundary, dangling-map, negative-coordinate, and upper
 out-of-bounds states. The negative case returns the system and player-start
-contracts to the contract stage under proposed ADR 0014. Independent
+contracts to the contract stage under accepted ADR 0014. Independent
 differential verification also matched the bounded tileset and event
 projections and the map-to-tileset validation relationship against the
 four-project corpus. A controlled tileset rename changed only the name field;

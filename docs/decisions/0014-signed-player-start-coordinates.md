@@ -1,6 +1,6 @@
 # ADR 0014: Signed Player-Start Coordinates
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-09
 - **Supersedes in part:**
   [ADR 0009](0009-experimental-system-summary.md) and
@@ -27,8 +27,8 @@ evidence and retain their existing zero and positive-reference behavior.
 
 ## Decision
 
-If accepted, the experimental system-summary and player-start contracts will
-change as follows:
+The experimental system-summary and player-start contracts will change as
+follows:
 
 1. `editMapId` and `startMapId` remain stored `u32` scalars. Their zero,
    dangling, and catalog-reference semantics remain separate validation

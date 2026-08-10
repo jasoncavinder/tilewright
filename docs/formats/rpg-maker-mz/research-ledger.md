@@ -1994,7 +1994,7 @@ validation, mutation, or editor-compatibility claim. The accepted architecture
 is recorded in
 [ADR 0009](../../decisions/0009-experimental-system-summary.md). The negative
 coordinate observation contradicts the implemented unsigned-coordinate bound;
-proposed [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md)
+accepted [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md)
 defines the correction.
 
 ### Next experiment

@@ -133,7 +133,7 @@ zero triplet and does not change this projection contract.
 
 This implemented unsigned-coordinate contract now has a known evidence gap:
 it rejects the directly observed saved `-1, -1` coordinate state before
-contextual validation can run. Proposed
+contextual validation can run. Accepted
 [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) defines a
 signed-coordinate correction. Until that proposal is accepted and implemented,
 negative stored coordinates remain outside Tilewright's system-summary
