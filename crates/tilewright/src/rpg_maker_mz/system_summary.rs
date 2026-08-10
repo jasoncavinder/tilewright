@@ -20,8 +20,8 @@ pub struct SystemSummary {
     locale: String,
     edit_map_id: u32,
     start_map_id: u32,
-    start_x: u32,
-    start_y: u32,
+    start_x: i64,
+    start_y: i64,
 }
 
 impl SystemSummary {
@@ -61,13 +61,13 @@ impl SystemSummary {
         self.start_map_id
     }
 
-    /// Returns the stored nonnegative player-start X-coordinate scalar.
-    pub fn start_x(&self) -> u32 {
+    /// Returns the stored signed player-start X-coordinate scalar.
+    pub fn start_x(&self) -> i64 {
         self.start_x
     }
 
-    /// Returns the stored nonnegative player-start Y-coordinate scalar.
-    pub fn start_y(&self) -> u32 {
+    /// Returns the stored signed player-start Y-coordinate scalar.
+    pub fn start_y(&self) -> i64 {
         self.start_y
     }
 }
@@ -147,7 +147,7 @@ pub enum SystemSummaryError {
         field: SystemSummaryField,
         actual: JsonValueKind,
     },
-    /// A required number is not a supported nonnegative unsigned integer.
+    /// A required number is outside its field-specific integer contract.
     #[non_exhaustive]
     UnsupportedInteger {
         path: PathBuf,
@@ -200,8 +200,9 @@ impl fmt::Display for SystemSummaryError {
             ),
             Self::UnsupportedInteger { path, field, .. } => write!(
                 formatter,
-                "system document {} field {field} is not a supported nonnegative unsigned integer",
-                path.display()
+                "system document {} field {field} is not {}",
+                path.display(),
+                expected_integer_description(*field)
             ),
             Self::InvalidString { path, field, .. } => write!(
                 formatter,
@@ -217,9 +218,10 @@ impl std::error::Error for SystemSummaryError {}
 /// Projects selected `data/System.json` fields into a bounded read-only summary.
 ///
 /// This function reads only lossless documents and diagnostics already present
-/// in `snapshot`. Strings are decoded without normalization, while numeric map
-/// and coordinate values remain nonnegative `u32` scalars. Unknown fields and
-/// exact source bytes remain untouched in the raw snapshot.
+/// in `snapshot`. Strings are decoded without normalization. Map IDs remain
+/// nonnegative `u32` scalars, while player-start coordinates are signed `i64`
+/// scalars. Unknown fields and exact source bytes remain untouched in the raw
+/// snapshot.
 ///
 /// The result does not require a map catalog, validate map references or
 /// coordinate bounds, interpret party members or `versionId`, compare titles
@@ -259,10 +261,10 @@ pub fn system_summary(snapshot: &ProjectSnapshot) -> Result<SystemSummary, Syste
     let game_title = required_string(&object, &path, SystemSummaryField::GameTitle)?;
     let currency_unit = required_string(&object, &path, SystemSummaryField::CurrencyUnit)?;
     let locale = required_string(&object, &path, SystemSummaryField::Locale)?;
-    let edit_map_id = required_integer(&object, &path, SystemSummaryField::EditMapId)?;
-    let start_map_id = required_integer(&object, &path, SystemSummaryField::StartMapId)?;
-    let start_x = required_integer(&object, &path, SystemSummaryField::StartX)?;
-    let start_y = required_integer(&object, &path, SystemSummaryField::StartY)?;
+    let edit_map_id = required_map_id(&object, &path, SystemSummaryField::EditMapId)?;
+    let start_map_id = required_map_id(&object, &path, SystemSummaryField::StartMapId)?;
+    let start_x = required_coordinate(&object, &path, SystemSummaryField::StartX)?;
+    let start_y = required_coordinate(&object, &path, SystemSummaryField::StartY)?;
 
     Ok(SystemSummary {
         document_path: path,
@@ -307,11 +309,31 @@ fn required_node(
         })
 }
 
-fn required_integer(
+fn required_map_id(
     object: &CstObject,
     path: &Path,
     field: SystemSummaryField,
 ) -> Result<u32, SystemSummaryError> {
+    required_number_text(object, path, field)?
+        .parse::<u32>()
+        .map_err(|_| unsupported_integer(path, field))
+}
+
+fn required_coordinate(
+    object: &CstObject,
+    path: &Path,
+    field: SystemSummaryField,
+) -> Result<i64, SystemSummaryError> {
+    required_number_text(object, path, field)?
+        .parse::<i64>()
+        .map_err(|_| unsupported_integer(path, field))
+}
+
+fn required_number_text(
+    object: &CstObject,
+    path: &Path,
+    field: SystemSummaryField,
+) -> Result<String, SystemSummaryError> {
     let node = required_node(object, path, field)?;
     let number = node
         .as_number_lit()
@@ -320,13 +342,26 @@ fn required_integer(
             field,
             actual: json_kind(&node),
         })?;
-    number
-        .to_string()
-        .parse::<u32>()
-        .map_err(|_| SystemSummaryError::UnsupportedInteger {
-            path: path.to_owned(),
-            field,
-        })
+    Ok(number.to_string())
+}
+
+fn unsupported_integer(path: &Path, field: SystemSummaryField) -> SystemSummaryError {
+    SystemSummaryError::UnsupportedInteger {
+        path: path.to_owned(),
+        field,
+    }
+}
+
+fn expected_integer_description(field: SystemSummaryField) -> &'static str {
+    match field {
+        SystemSummaryField::EditMapId | SystemSummaryField::StartMapId => {
+            "a supported nonnegative unsigned integer"
+        }
+        SystemSummaryField::StartX | SystemSummaryField::StartY => "a supported signed integer",
+        SystemSummaryField::GameTitle
+        | SystemSummaryField::CurrencyUnit
+        | SystemSummaryField::Locale => "an integer field",
+    }
 }
 
 fn required_string(
@@ -450,15 +485,15 @@ mod tests {
     }
 
     #[test]
-    fn accepts_empty_escaped_unicode_and_unsigned_boundaries() {
+    fn accepts_strings_unsigned_map_ids_and_signed_coordinate_boundaries() {
         let source = complete_source(&[
             ("gameTitle", "\"\""),
             ("currencyUnit", r#""line\nunit""#),
             ("locale", r#""日本語""#),
             ("editMapId", "0"),
             ("startMapId", &u32::MAX.to_string()),
-            ("startX", "0"),
-            ("startY", &u32::MAX.to_string()),
+            ("startX", &i64::MIN.to_string()),
+            ("startY", &i64::MAX.to_string()),
         ]);
         let (_temp, snapshot) = load_test_snapshot(Some(&source));
 
@@ -469,8 +504,8 @@ mod tests {
         assert_eq!(summary.locale(), "日本語");
         assert_eq!(summary.edit_map_id(), 0);
         assert_eq!(summary.start_map_id(), u32::MAX);
-        assert_eq!(summary.start_x(), 0);
-        assert_eq!(summary.start_y(), u32::MAX);
+        assert_eq!(summary.start_x(), i64::MIN);
+        assert_eq!(summary.start_y(), i64::MAX);
     }
 
     #[test]
@@ -568,7 +603,8 @@ mod tests {
             ("editMapId", "-1", SystemSummaryField::EditMapId),
             ("startMapId", "1.0", SystemSummaryField::StartMapId),
             ("startX", "1e0", SystemSummaryField::StartX),
-            ("startY", "4294967296", SystemSummaryField::StartY),
+            ("startX", "-9223372036854775809", SystemSummaryField::StartX),
+            ("startY", "9223372036854775808", SystemSummaryField::StartY),
         ];
 
         for (name, value, expected_field) in cases {

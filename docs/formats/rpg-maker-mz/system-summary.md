@@ -31,6 +31,7 @@ the established scope.
 | Observed edit and start map IDs are positive and resolve to map-catalog records; observed start coordinates are nonnegative and within the referenced map dimensions. | Shape and cross-file audit | Observed | High across all four projects | This is not evidence that the editor rejects zero, missing, dangling, or out-of-bounds values. |
 | `versionId` changes during several otherwise unrelated saves. | Existing controlled save and map lifecycle records | Observed | High for those workflows | Its generation rule and stable meaning are unknown, so it is excluded from the summary. |
 | Tilewright's merged system-summary implementation matches an independent projection of all seven bounded fields across the four-project corpus. | `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07` | Observed implementation behavior | High for the exact implementation and corpus | Later versions, converted projects, malformed inputs, and editor acceptance remain untested. |
+| Tilewright's signed-coordinate implementation reproduces all six retained controlled triplets and emits schema version 2. | `MZ-1.10.0-SIGNED-PLAYER-START-DIFFERENTIAL-2026-08-09` | Observed implementation behavior | High for the exact implementation and controlled cases | This does not broaden editor-validity, runtime, or version claims. |
 
 ## Aggregate shape audit
 
@@ -73,6 +74,20 @@ This verifies the merged implementation against this local corpus. It does not
 establish behavior for malformed or unavailable documents beyond synthetic
 tests, human-output presentation beyond adapter tests, editor acceptance,
 converted projects, later MZ versions, or broader system semantics.
+
+## Signed-coordinate differential audit
+
+On 2026-08-09, the signed-coordinate implementation based on `13bec1b` was run
+read-only against the retained Delete case and five-case tolerance matrix. A
+separate `jq` projection supplied each stored triplet. Tilewright reproduced all
+six triplets exactly, including `-1, -1`, and every `system` and `validate` JSON
+report emitted schema version 2. All six expected finding-category arrays also
+matched. Only per-case pass/fail results and the aggregate `6/6` result were
+retained; no project content or path was retained in tracked material.
+
+This verifies the correction against the controlled evidence. It does not
+establish semantic validity, runtime behavior, broader numeric limits, or
+later-version compatibility.
 
 ## Controlled player-start tolerance observations
 
@@ -120,24 +135,17 @@ exact `data/System.json`. It exposes:
 
 - the exact project-relative document path;
 - decoded game-title, currency-unit, and locale strings;
-- the nonnegative editor-map ID scalar; and
-- the nonnegative player-start map ID, X, and Y scalars.
+- the nonnegative editor-map ID scalar;
+- the nonnegative player-start map ID scalar; and
+- the signed player-start X and Y scalars.
 
 The projection refuses an absent or unavailable document, a non-object root,
-and missing, duplicate, wrong-kind, undecodable, negative, fractional, or
-out-of-`u32` required values. Strings remain unnormalized and may be empty.
-Numeric map fields remain `u32` scalars rather than catalog-scoped `MapId`
-values because the summary reports stored values without contextual validation.
-The separate player-start validation recognizes only the directly observed
-zero triplet and does not change this projection contract.
-
-This implemented unsigned-coordinate contract now has a known evidence gap:
-it rejects the directly observed saved `-1, -1` coordinate state before
-contextual validation can run. Proposed
-[ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) defines a
-signed-coordinate correction. Until that proposal is accepted and implemented,
-negative stored coordinates remain outside Tilewright's system-summary
-capability even though MZ 1.10.0 was observed to preserve one such state.
+and missing, duplicate, wrong-kind, undecodable, fractional, exponent-form, or
+field-range-exceeding required values. Strings remain unnormalized and may be
+empty. Numeric map fields remain `u32` scalars rather than catalog-scoped
+`MapId` values, while coordinates use the `i64` representation bound accepted
+in [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md). These
+types report stored values without contextual validation.
 
 Unknown properties and all exact source bytes remain in the untouched raw
 snapshot. The operation does not parse party members or other system settings,
@@ -150,11 +158,12 @@ version, or expose mutation and serialization.
 Tests can generate minimal strict JSON in temporary project trees. No vendor
 project is needed. The fixture matrix should cover:
 
-- all seven selected fields with zero and positive numeric boundaries;
+- all seven selected fields with unsigned map-ID and signed-coordinate
+  boundaries;
 - empty, escaped, Unicode, and ordinary strings;
 - unknown top-level and nested fields retained in the raw document;
-- missing, duplicate decoded, wrong-kind, negative, fractional, and overflow
-  values for every required field family;
+- missing, duplicate decoded, wrong-kind, fractional, exponent-form, and
+  field-specific overflow values;
 - missing, unavailable, and non-file `System.json` cases; and
 - proof that party members, `versionId`, map catalogs, and unrelated settings
   are not required or interpreted.
