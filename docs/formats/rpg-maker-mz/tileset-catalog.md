@@ -11,10 +11,11 @@ What is the smallest tileset projection that lets callers resolve the positive
 flags, image slots, modes, or notes?
 
 Direct observations cover 24 tileset records in four user-owned projects
-created by RPG Maker MZ 1.10.0 and 196 map references. Official MZ help
-separately documents tilesets, their editor-facing names, modes, images, tile
-settings, and assignment to maps. Later versions, record lifecycle, malformed
-input, and editor persistence remain unknown.
+created by RPG Maker MZ 1.10.0, 196 map references, and one controlled rename in
+a disposable copy. Official MZ help separately documents tilesets, their
+editor-facing names, modes, images, tile settings, and assignment to maps.
+Later versions, record lifecycle, malformed input, and persistence for fields
+other than the controlled name remain unknown.
 
 ## Evidence ledger
 
@@ -25,6 +26,7 @@ input, and editor persistence remain unknown.
 | Every observed record has exactly `flags`, `id`, `mode`, `name`, `note`, and `tilesetNames`; IDs are positive integers equal to array indexes and names are nonempty strings. | Shape audit | Observed | High across 24 records | Plugins or later versions may add fields; decoded duplicate keys were not established absent. |
 | Every audited map's positive `tilesetId` resolves to an ID/index-consistent record in its project's tileset array. | Shape audit and 196-map cross-file comparison | Observed; reference meaning Documented and Inferred | High in the audited scope | Missing-reference editor behavior and tileset changes remain unknown. |
 | Observed `mode` values are integers 0 or 1, `tilesetNames` has nine strings, and `flags` has 8,192 integers. | Shape audit | Observed syntax only | High in the audited scope | Numeric mode mapping, slot meaning, flag encoding, allowed lengths, and mutation rules remain unestablished. |
+| Renaming one tileset in MZ 1.10.0 changed only that record's `name` within `Tilesets.json`; ID, mode, note, images, flags, and array structure remained fixed. | `MZ-1.10.0-TILESET-NAME-2026-08-09` | Observed controlled persistence | High for one rename and version | Allowed strings, normalization, duplicate names, record lifecycle, mutation APIs, and later versions remain unknown. |
 | Tilewright's tileset catalog matches an independent direct extraction of every bounded record and CLI-envelope field. | `MZ-1.10.0-TILESET-DIFFERENTIAL-2026-08-09` | Observed | High across all four projects and 24 records | This does not test editor mutation, malformed input, adjacent fields, or later versions. |
 
 ## Aggregate shape audit
@@ -69,6 +71,27 @@ data. It does not establish mode, image-slot, flag, note, lifecycle, editor
 validation, mutation, persistence, or later-version behavior. No project path,
 tileset name, note, asset name, flag, raw document, excerpt, field value, report,
 hash, or per-project manifest was retained.
+
+## Controlled name observation
+
+### `MZ-1.10.0-TILESET-NAME-2026-08-09`
+
+- **Kind:** Controlled editor rename.
+- **Version/environment:** RPG Maker MZ 1.10.0 on arm64 macOS 26.6 build
+  25G72; unique disposable copy of the authorized Basic project.
+- **Procedure:** Renamed exactly one existing tileset through Database →
+  Tilesets, saved, closed, and compared only changed decoded property names,
+  record identity, structural equality, and string lengths with the immutable
+  baseline.
+- **Observed:** Only record 1's decoded `name` changed within `Tilesets.json`.
+  Its ID, mode, note, image-name array, flag array, surrounding records, and
+  array length remained equal. The same editor save changed only unrelated
+  `versionId` in `System.json`.
+- **Limits:** This establishes one name-field persistence action, not allowed
+  contents, normalization, uniqueness, mutation safety, record lifecycle, or
+  behavior in later versions.
+- **Redistribution:** No name, asset string, note, flag, raw excerpt, path,
+  digest, screenshot, or project-specific value is retained.
 
 ## Official documentation
 
@@ -116,8 +139,6 @@ that MZ accepts or rejects malformed states.
 
 ## Remaining unknowns and next experiments
 
-- Change only one tileset name and confirm the exact persisted field after save
-  and reopen.
 - Toggle one tileset mode and establish the numeric mapping without inferring it
   from stock names.
 - Change one map's selected tileset and confirm the cross-file identifier

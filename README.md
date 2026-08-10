@@ -150,7 +150,6 @@ for update and uninstall details.
 
 The CLI currently exposes experimental candidate discovery, project inventory,
 bounded raw snapshot loading, typed map-catalog inspection, selected-map
-summaries, tileset identity/name catalogs, selected system-setting summaries,
 summaries, tileset identity/name catalogs, selected-map event catalogs,
 selected system-setting summaries, bounded player-start and map-to-tileset
 validation, and strict lossless JSON syntax inspection. The tileset command
