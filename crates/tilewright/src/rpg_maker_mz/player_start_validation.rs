@@ -13,8 +13,8 @@ use std::fmt;
 #[non_exhaustive]
 pub struct PlayerStartValidation {
     start_map_id: u32,
-    start_x: u32,
-    start_y: u32,
+    start_x: i64,
+    start_y: i64,
     findings: Vec<PlayerStartFinding>,
 }
 
@@ -24,13 +24,13 @@ impl PlayerStartValidation {
         self.start_map_id
     }
 
-    /// Returns the stored nonnegative starting X-coordinate scalar.
-    pub fn start_x(&self) -> u32 {
+    /// Returns the stored signed starting X-coordinate scalar.
+    pub fn start_x(&self) -> i64 {
         self.start_x
     }
 
-    /// Returns the stored nonnegative starting Y-coordinate scalar.
-    pub fn start_y(&self) -> u32 {
+    /// Returns the stored signed starting Y-coordinate scalar.
+    pub fn start_y(&self) -> i64 {
         self.start_y
     }
 
@@ -61,10 +61,10 @@ pub enum PlayerStartFinding {
     MissingPlayerStart,
     /// The map ID is zero while one or both stored coordinates are nonzero.
     ///
-    /// This state is reported without interpreting it as set or unset because
-    /// it has not been observed in the editor.
+    /// MZ 1.10.0 was observed to preserve this ambiguous state. It is reported
+    /// without interpreting it as set, unset, valid, or runnable.
     #[non_exhaustive]
-    ZeroMapIdWithCoordinates { start_x: u32, start_y: u32 },
+    ZeroMapIdWithCoordinates { start_x: i64, start_y: i64 },
     /// The positive starting-map ID has no record in the coherent map catalog.
     #[non_exhaustive]
     MissingMapRecord { map_id: MapId },
@@ -72,8 +72,8 @@ pub enum PlayerStartFinding {
     #[non_exhaustive]
     OutOfBounds {
         map_id: MapId,
-        start_x: u32,
-        start_y: u32,
+        start_x: i64,
+        start_y: i64,
         width: u32,
         height: u32,
     },
@@ -89,7 +89,7 @@ impl fmt::Display for PlayerStartFinding {
                 start_x, start_y, ..
             } => write!(
                 formatter,
-                "player start has map ID 0 with unevidenced coordinates ({start_x}, {start_y})"
+                "player start has map ID 0 with ambiguous stored coordinates ({start_x}, {start_y})"
             ),
             Self::MissingMapRecord { map_id, .. } => write!(
                 formatter,
@@ -156,13 +156,14 @@ impl std::error::Error for PlayerStartValidationError {
 /// This pure operation composes [`system_summary`], [`map_catalog`], and
 /// [`map_summary`] over `snapshot`. It recognizes the directly observed
 /// `startMapId = 0`, `startX = 0`, `startY = 0` unset triplet, reports an
-/// absent positive map-catalog reference, and checks zero-based coordinates
-/// against the selected map's positive width and height.
+/// absent positive map-catalog reference, and checks signed zero-based
+/// coordinates against the selected map's positive width and height.
 ///
 /// It does not perform filesystem I/O, mutate the snapshot, establish that MZ
 /// accepts every finding-free state, validate passability or event placement,
 /// inspect vehicle starts, assign severities, or persist changes. A zero map ID
-/// with nonzero coordinates is reported as unevidenced rather than interpreted.
+/// with nonzero coordinates is reported as an editor-preserved ambiguous state
+/// rather than interpreted.
 ///
 /// # Errors
 ///
@@ -208,7 +209,11 @@ pub fn validate_player_start(
 
     let map = map_summary(snapshot, map_id)
         .map_err(|source| PlayerStartValidationError::Map { source })?;
-    if start_x >= map.width() || start_y >= map.height() {
+    if start_x < 0
+        || start_y < 0
+        || start_x >= i64::from(map.width())
+        || start_y >= i64::from(map.height())
+    {
         findings.push(PlayerStartFinding::OutOfBounds {
             map_id,
             start_x,
@@ -263,7 +268,7 @@ mod tests {
         (temp, snapshot)
     }
 
-    fn system(start_map_id: u32, start_x: u32, start_y: u32) -> Vec<u8> {
+    fn system(start_map_id: u32, start_x: i64, start_y: i64) -> Vec<u8> {
         format!(
             r#"{{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":{start_map_id},"startX":{start_x},"startY":{start_y},"unknown":true}}"#
         )
@@ -306,19 +311,18 @@ mod tests {
     }
 
     #[test]
-    fn reports_zero_map_with_nonzero_coordinates_without_interpreting_it() {
-        let system = system(0, 2, 3);
-        let (_temp, snapshot) = snapshot(&system, None, None);
+    fn reports_signed_zero_map_coordinates_without_interpreting_them() {
+        for (start_x, start_y) in [(2, 3), (-1, -2)] {
+            let system = system(0, start_x, start_y);
+            let (_temp, snapshot) = snapshot(&system, None, None);
 
-        let report = validate_player_start(&snapshot).unwrap();
+            let report = validate_player_start(&snapshot).unwrap();
 
-        assert_eq!(
-            report.findings(),
-            &[PlayerStartFinding::ZeroMapIdWithCoordinates {
-                start_x: 2,
-                start_y: 3,
-            }]
-        );
+            assert_eq!(
+                report.findings(),
+                &[PlayerStartFinding::ZeroMapIdWithCoordinates { start_x, start_y }]
+            );
+        }
     }
 
     #[test]
@@ -338,7 +342,7 @@ mod tests {
 
     #[test]
     fn reports_each_coordinate_boundary_as_out_of_bounds() {
-        for (start_x, start_y) in [(10, 0), (0, 8), (u32::MAX, u32::MAX)] {
+        for (start_x, start_y) in [(-1, 0), (0, -1), (10, 0), (0, 8), (i64::MAX, i64::MAX)] {
             let system = system(1, start_x, start_y);
             let (_temp, snapshot) = snapshot(&system, Some(MAP_INFOS), Some(MAP));
 
@@ -353,6 +357,10 @@ mod tests {
                     width: 10,
                     height: 8,
                 }]
+            );
+            assert_eq!(
+                snapshot.documents()[Path::new("data/System.json")].source_bytes(),
+                system
             );
         }
     }

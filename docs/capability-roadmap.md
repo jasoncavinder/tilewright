@@ -181,14 +181,12 @@ Supported.
 
 The bounded `System.json` orientation summary is accepted in
 [ADR 0009](decisions/0009-experimental-system-summary.md) and implemented
-experimentally. It projects only the seven accepted string and nonnegative
-integer fields, retains raw bytes and unknown settings in the snapshot, and
-does not validate map references or coordinate bounds. A controlled MZ 1.10.0
-save preserved negative player-start coordinates, exposing a known gap in that
-unsigned contract. Accepted
-[ADR 0014](decisions/0014-signed-player-start-coordinates.md) defines the
-correction. Neither acceptance nor implementation makes the capability
-Supported.
+experimentally. It projects only the seven accepted string and integer fields,
+using nonnegative map-ID scalars and signed player-start coordinates. It retains
+raw bytes and unknown settings in the snapshot and does not validate map
+references or coordinate bounds. The evidence-driven correction is accepted in
+[ADR 0014](decisions/0014-signed-player-start-coordinates.md). Neither
+acceptance nor implementation makes the capability Supported.
 
 A bounded tileset identity/name catalog is implemented experimentally under
 accepted [ADR 0012](decisions/0012-experimental-tileset-catalog.md). It leaves
@@ -223,8 +221,8 @@ decision.
 in [ADR 0010](decisions/0010-experimental-player-start-validation.md) composes
 the system summary, coherent map catalog, and selected-map dimensions. It
 reports only the evidenced zero triplet, a distinct zero-map/mixed-coordinate
-state, a missing positive catalog record, and coordinates outside the map
-rectangle.
+state, a missing positive catalog record, and signed coordinates outside the
+map rectangle.
 Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.

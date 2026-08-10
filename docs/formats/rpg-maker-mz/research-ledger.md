@@ -1984,18 +1984,35 @@ and `MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09`.
 - **Redistribution:** Only controlled triplets, map dimensions, changed
   property names, and equality results are retained.
 
+### Evidence record: `MZ-1.10.0-SIGNED-PLAYER-START-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential implementation audit.
+- **Version/environment:** Signed-coordinate implementation based on Tilewright
+  `13bec1b`; the six retained controlled MZ 1.10.0 cases; `jq` 1.8.2 on the
+  recorded arm64 macOS environment.
+- **Procedure:** Independently projected each stored player-start triplet with
+  `jq`, invoked the versioned JSON `system` and `validate` commands, and
+  compared stored scalars, schema version, and ordered finding categories.
+- **Observed:** All six cases matched. Every report used schema version 2, and
+  the expected finding arrays covered unset, mixed-zero, finding-free boundary,
+  dangling-map, negative, and upper out-of-bounds states.
+- **Limits:** This verifies implementation behavior, not editor validity,
+  runtime success, broader numeric limits, or later-version behavior.
+- **Redistribution:** Only per-case pass/fail results and aggregate `6/6` were
+  retained. No project path, raw document, excerpt, digest, or CLI report is
+  retained in tracked material.
+
 ### Implementation implications
 
-The implemented experimental projection decodes only the three selected strings
-and four nonnegative integer scalars while retaining every other property in the
-raw lossless document. It refuses ambiguous required structure, avoids
-normalizing strings or treating map scalars as stable identifiers, and makes no
-validation, mutation, or editor-compatibility claim. The accepted architecture
-is recorded in
-[ADR 0009](../../decisions/0009-experimental-system-summary.md). The negative
-coordinate observation contradicts the implemented unsigned-coordinate bound;
-accepted [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md)
-defines the correction.
+The implemented experimental projection decodes only the three selected
+strings, two nonnegative map-ID scalars, and two signed coordinate scalars while
+retaining every other property in the raw lossless document. It refuses
+ambiguous required structure, avoids normalizing strings or treating map
+scalars as stable identifiers, and makes no validation, mutation, or
+editor-compatibility claim. The original architecture is recorded in
+[ADR 0009](../../decisions/0009-experimental-system-summary.md); the
+evidence-driven signed-coordinate correction is recorded in accepted
+[ADR 0014](../../decisions/0014-signed-player-start-coordinates.md).
 
 ### Next experiment
 
@@ -2026,7 +2043,8 @@ editor results are recorded by
 `MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`, with deletion and edge-state
 tolerance recorded by `MZ-1.10.0-PLAYER-START-DELETE-2026-08-09` and
 `MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09`. Implementation parity is
-recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`.
+recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09` and the signed
+correction by `MZ-1.10.0-SIGNED-PLAYER-START-DIFFERENTIAL-2026-08-09`.
 
 ### Evidence record: `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`
 
@@ -2053,14 +2071,13 @@ recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`.
 ### Implementation implications
 
 The implemented experimental operation composes existing owned projections. It
-can report the observed zero triplet, a zero-map/mixed-coordinate state, a
-missing positive catalog record, and nonnegative coordinates outside positive
-map dimensions. Structural projection failures remain errors. It currently
-cannot report the observed negative-coordinate state because the system summary
-rejects it first. Findings do not claim general editor rejection, validity,
-compatibility, or write safety. Accepted
+can report the observed zero triplet, an ambiguous zero-map/mixed-coordinate
+state, a missing positive catalog record, and signed coordinates outside
+positive map dimensions. Structural projection failures remain errors.
+Findings do not claim general editor rejection, validity, compatibility, or
+write safety. Accepted
 [ADR 0010](../../decisions/0010-experimental-player-start-validation.md) defines
-the original operation; proposed
+the original operation; accepted
 [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) defines the
 evidence-driven correction.
 

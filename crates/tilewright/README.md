@@ -311,10 +311,10 @@ fn print_system_summary(snapshot: &ProjectSnapshot) {
 }
 ```
 
-The map ID and coordinate values are nonnegative scalars, not validated map
-references. The operation does not interpret other system settings, compare
-titles across files, establish editor compatibility, or expose mutation and
-serialization.
+The map IDs are nonnegative scalars and the player-start coordinates are signed
+scalars; neither is a validated map reference or position. The operation does
+not interpret other system settings, compare titles across files, establish
+editor compatibility, or expose mutation and serialization.
 
 ### Example: Player-Start Validation
 
@@ -337,11 +337,11 @@ fn print_player_start_findings(snapshot: &ProjectSnapshot) {
 }
 ```
 
-The operation recognizes the observed exact zero triplet, reports a missing
-positive catalog record, and checks coordinates against selected-map
-dimensions. A finding-free report is not general project validity or editor
-compatibility. The operation does not inspect passability, events, vehicles, or
-write behavior.
+The operation recognizes the observed exact zero triplet, reports an ambiguous
+zero-map/mixed-coordinate state or a missing positive catalog record, and
+checks signed coordinates against selected-map dimensions. A finding-free
+report is not general project validity or editor compatibility. The operation
+does not inspect passability, events, vehicles, or write behavior.
 
 ## Responsibilities
 
