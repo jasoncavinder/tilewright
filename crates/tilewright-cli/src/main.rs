@@ -38,7 +38,7 @@ use tilewright::rpg_maker_mz::tileset_catalog::{
     TilesetCatalog, TilesetCatalogError, TilesetField, tileset_catalog,
 };
 
-const OUTPUT_SCHEMA_VERSION: u8 = 1;
+const OUTPUT_SCHEMA_VERSION: u8 = 2;
 
 fn parse_max_bytes(s: &str) -> Result<usize, String> {
     let val: usize = s.parse().map_err(|_| "must be a valid positive integer")?;
@@ -761,8 +761,8 @@ struct SystemDetail {
     locale: String,
     edit_map_id: u32,
     start_map_id: u32,
-    start_x: u32,
-    start_y: u32,
+    start_x: i64,
+    start_y: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -817,8 +817,8 @@ struct PlayerStartValidationDetail {
     scope: ValidationScope,
     finding_free: bool,
     start_map_id: u32,
-    start_x: u32,
-    start_y: u32,
+    start_x: i64,
+    start_y: i64,
     finding_count: usize,
     findings: Vec<PlayerStartFindingReport>,
 }
@@ -834,16 +834,16 @@ enum ValidationScope {
 enum PlayerStartFindingReport {
     MissingPlayerStart,
     ZeroMapIdWithCoordinates {
-        start_x: u32,
-        start_y: u32,
+        start_x: i64,
+        start_y: i64,
     },
     MissingMapRecord {
         map_id: u32,
     },
     OutOfBounds {
         map_id: u32,
-        start_x: u32,
-        start_y: u32,
+        start_x: i64,
+        start_y: i64,
         width: u32,
         height: u32,
     },
@@ -3734,7 +3734,7 @@ fn write_human_player_start_finding(
         ),
         PlayerStartFindingReport::ZeroMapIdWithCoordinates { start_x, start_y } => writeln!(
             writer,
-            "  - map ID 0 has unevidenced coordinates ({start_x}, {start_y})"
+            "  - map ID 0 has ambiguous stored coordinates ({start_x}, {start_y})"
         ),
         PlayerStartFindingReport::MissingMapRecord { map_id } => {
             writeln!(writer, "  - map {map_id} has no map-catalog record")

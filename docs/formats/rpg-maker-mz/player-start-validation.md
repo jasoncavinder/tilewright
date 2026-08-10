@@ -30,6 +30,7 @@ behavior remain outside this contract.
 | A signed coordinate below zero or a nonnegative coordinate at or beyond a selected map's positive width or height is outside that map's zero-origin rectangular index range. | Relocation observation, typed map dimensions, and `MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09` | Inferred relationship over observed stored values | High as arithmetic contextual validation | Editor validity, passability, and runtime behavior remain unknown. |
 | MZ 1.10.0 saved prepared mixed-zero, exact-boundary, dangling-map, negative-coordinate, and upper-out-of-bounds start states without normalizing the triplets. | `MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09` | Observed persistence tolerance | High for the five exact states and version | Persistence does not establish whether the states are semantically set, unset, valid, or runnable. |
 | Tilewright's merged player-start validator matches an independent reconstruction of the bounded relationship across the four-project MZ 1.10.0 corpus. | `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09` | Observed implementation behavior | High for the exact implementation and corpus | All observed source states were finding-free; synthetic tests cover negative categories, while editor behavior for those states remains unknown. |
+| Tilewright's signed-coordinate implementation reproduces all six retained controlled triplets and expected finding-category arrays with schema version 2. | `MZ-1.10.0-SIGNED-PLAYER-START-DIFFERENTIAL-2026-08-09` | Observed implementation behavior | High for the exact implementation and controlled cases | This does not establish semantic validity, runtime behavior, or later-version compatibility. |
 
 ## Controlled editor observations
 
@@ -131,24 +132,44 @@ behavior remain outside this contract.
   coordinate, dimension, raw document, excerpt, digest, or CLI report is
   retained.
 
+### `MZ-1.10.0-SIGNED-PLAYER-START-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential implementation audit.
+- **Version/environment:** Signed-coordinate implementation based on Tilewright
+  `13bec1b`; the six retained controlled MZ 1.10.0 cases; `jq` 1.8.2 on the
+  recorded arm64 macOS environment.
+- **Procedure:** Independently projected each stored player-start triplet with
+  `jq`, invoked `tilewright system --format json` and
+  `tilewright validate --format json`, and compared the three scalars, global
+  schema version, and ordered finding-category array.
+- **Observed:** All six triplets matched exactly. Every report used schema
+  version 2. Delete produced `missing_player_start`; mixed zero produced
+  `zero_map_id_with_coordinates`; the exact upper in-bounds case was
+  finding-free; the dangling map produced `missing_map_record`; and negative
+  plus exact upper out-of-bounds cases produced `out_of_bounds`.
+- **Limits:** This verifies implementation behavior, not editor validity,
+  runtime success, broader numeric limits, or later-version behavior.
+- **Redistribution:** Only per-case pass/fail results and aggregate `6/6` were
+  retained. No project path, raw document, excerpt, digest, or CLI report is
+  retained in tracked material.
+
 ## Bounded validation contract
 
 The experimental operation accepts an existing `ProjectSnapshot` and composes
 the existing system-summary, map-catalog, and selected-map projections. It:
 
 - reports the exact zero triplet as a missing player start;
-- reports a zero map ID with nonzero coordinates as unevidenced, without
-  deciding whether it is set or unset;
+- reports a zero map ID with nonzero signed coordinates as an editor-preserved
+  ambiguous state without deciding whether it is set or unset;
 - reports a positive map ID missing from a coherent catalog;
-- checks a catalog-selected map using `x < width` and `y < height`; and
+- checks a catalog-selected map using `0 <= x < width` and
+  `0 <= y < height`; and
 - preserves all raw documents and unknown fields without filesystem I/O.
 
-The current implementation cannot reach those relationship checks when a
-coordinate is negative because the system summary still projects coordinates
-as `u32`. Proposed
-[ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) corrects
-that evidence conflict by using signed stored coordinates and applying the same
-rectangular out-of-bounds relationship to negative values.
+The signed-coordinate correction accepted in
+[ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) allows the
+same rectangular out-of-bounds relationship to report observed negative stored
+values.
 
 An unavailable structural projection is an operation error, not a contextual
 finding. Findings have no public severity and do not generally claim editor
@@ -162,6 +183,7 @@ Tests generate minimal strict JSON in temporary project trees. No vendor
 project is needed. The matrix covers the exact unset triplet, a zero map ID
 with nonzero coordinates, a missing positive catalog record, each rectangular
 boundary, positive in-bounds coordinates, structural projection errors,
+negative and upper out-of-bounds coordinates, signed mixed-zero states,
 raw-byte preservation, deterministic findings, and separate snapshot
 diagnostics.
 
