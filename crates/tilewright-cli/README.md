@@ -7,14 +7,14 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover`, `inventory`, `snapshot`, `maps`, `tilesets`, `map`, `system`,
-`validate`, `validate-tilesets`, and `inspect-json` commands over the core
-library's experimental RPG Maker MZ
-candidate-discovery, capability-relative project inventory, raw snapshot
-loader, typed map and tileset catalogs, selected-map summary, system summary,
-player-start and map-to-tileset validation, and strict lossless JSON syntax
-APIs. It does not provide general project understanding, project validity,
-editor compatibility, or modification.
+`discover`, `inventory`, `snapshot`, `maps`, `tilesets`, `map`, `events`,
+`system`, `validate`, `validate-tilesets`, and `inspect-json` commands over the
+core library's
+experimental RPG Maker MZ candidate-discovery, capability-relative project
+inventory, raw snapshot loader, typed map, tileset, and selected-map event
+catalogs, selected-map and system summaries, player-start and map-to-tileset
+validation, and strict lossless JSON syntax APIs. It does not provide general
+project understanding, project validity, editor compatibility, or modification.
 
 ## Install from a checkout
 
@@ -73,6 +73,10 @@ cargo run -p tilewright-cli -- tilesets path/to/project --format json
 # Summarize one catalog-selected map.
 cargo run -p tilewright-cli -- map path/to/project 1
 cargo run -p tilewright-cli -- map path/to/project 1 --format json
+
+# List bounded events on one catalog-selected map.
+cargo run -p tilewright-cli -- events path/to/project 1
+cargo run -p tilewright-cli -- events path/to/project 1 --format json
 
 # Summarize selected project-level system settings.
 cargo run -p tilewright-cli -- system path/to/project
@@ -157,6 +161,18 @@ options shown above are available on both `maps` and `map`. Neither command
 validates editor compatibility, provides stable project-wide resource identity,
 or establishes mutation, round-trip, or write support.
 
+The `events` command requires the same coherent map catalog and evidenced map
+document, then reports map-scoped event IDs, decoded names, nonnegative
+coordinates, and opaque page counts in ID order. Coordinates outside the map's
+dimensions are successful contextual findings, not claims that MZ rejects the
+state. Structural event errors exit with code 1.
+
+The command does not emit notes, raw page bodies, commands, or unprojected
+fields. Event IDs are scoped to the selected map, and page counts do not imply
+page or command understanding. The snapshot resource-limit options are
+available on `events`. The command does not establish editor compatibility,
+runtime behavior, mutation, round-trip, or write support.
+
 The `system` command loads the same bounded snapshot and delegates projection
 to the core library. It reports the decoded game title, currency unit, locale,
 stored editor-map scalar, and player-start map/X/Y scalars from exact
@@ -204,10 +220,10 @@ a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the
 initial `open_ambient_dir` acquisition used by `inventory`, `snapshot`, `maps`,
-`tilesets`, `map`, `system`, `validate`, and `validate-tilesets` may resolve root
-or ancestor symlinks and does not prove root identity. The `inspect-json`
-command explicitly opens the provided path and makes no project-containment
-claim.
+`tilesets`, `map`, `events`, `system`, `validate`, and `validate-tilesets` may
+resolve root or ancestor symlinks and does not prove root identity. The
+`inspect-json` command explicitly opens the provided path and makes no
+project-containment claim.
 
 ## Responsibilities
 

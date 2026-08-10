@@ -19,6 +19,10 @@ use tilewright::rpg_maker_mz::inventory::{
 use tilewright::rpg_maker_mz::map_catalog::{
     JsonValueKind, MapCatalog, MapCatalogError, MapCatalogFinding, MapId, MapInfoField, map_catalog,
 };
+use tilewright::rpg_maker_mz::map_events::{
+    MapEventCatalog, MapEventCatalogError, MapEventField, MapEventFinding, MapEventMapField,
+    map_event_catalog,
+};
 use tilewright::rpg_maker_mz::map_summary::{MapSummary, MapSummaryError, map_summary};
 use tilewright::rpg_maker_mz::map_tileset_validation::{
     MapTilesetFinding, MapTilesetValidation, MapTilesetValidationError, validate_map_tilesets,
@@ -155,6 +159,19 @@ enum Command {
         /// Positive map ID from the project's map catalog.
         #[arg(value_parser = parse_map_id)]
         id: MapId,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        #[command(flatten)]
+        limits: SnapshotLimitArgs,
+    },
+    /// List bounded events on one catalog-selected RPG Maker MZ map.
+    Events {
+        /// RPG Maker MZ project directory to inspect.
+        path: PathBuf,
+        /// Positive map ID from the project's map catalog.
+        #[arg(value_parser = parse_map_id)]
+        map_id: MapId,
         /// Output intended for a person or a script.
         #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
         format: OutputFormat,
@@ -586,6 +603,107 @@ struct SelectedMapErrorReport {
     limits: SnapshotLimitsReport,
     snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
     error: MapSummaryErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct MapEventsReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostic_count: usize,
+    map: MapEventsMapDetail,
+    event_count: usize,
+    finding_count: usize,
+    events: Vec<MapEventDetail>,
+    findings: Vec<MapEventFindingReport>,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+}
+
+#[derive(Debug, Serialize)]
+struct MapEventsMapDetail {
+    id: u32,
+    catalog_name: String,
+    document_path: PathReport,
+    width: u32,
+    height: u32,
+}
+
+#[derive(Debug, Serialize)]
+struct MapEventDetail {
+    id: u32,
+    name: String,
+    x: u32,
+    y: u32,
+    page_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case", tag = "category")]
+enum MapEventFindingReport {
+    CoordinatesOutsideMap {
+        event_id: u32,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    },
+    Unrecognized,
+}
+
+#[derive(Debug, Serialize)]
+struct MapEventsErrorReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+    error: MapEventsErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct MapEventsErrorDetail {
+    category: MapEventsErrorCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    map_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    path: Option<PathReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    index: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    field: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    actual_kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    decoded_id: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    catalog_error: Option<MapCatalogErrorDetail>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum MapEventsErrorCategory {
+    CatalogError,
+    UnknownMapId,
+    UnevidencedDocumentPath,
+    MissingDocument,
+    UnavailableDocument,
+    UnexpectedRootKind,
+    MissingMapField,
+    DuplicateMapField,
+    UnexpectedMapFieldKind,
+    UnsupportedMapInteger,
+    UnexpectedEventEntryKind,
+    ReservedEventIndex,
+    EventIndexOutOfRange,
+    MissingEventField,
+    DuplicateEventField,
+    UnexpectedEventFieldKind,
+    UnsupportedEventInteger,
+    InvalidEventString,
+    IdIndexMismatch,
+    Unrecognized,
 }
 
 #[derive(Debug, Serialize)]
@@ -1177,6 +1295,348 @@ impl SelectedMapErrorReport {
                 .collect(),
             error: MapSummaryErrorDetail::new(error),
         }
+    }
+}
+
+impl MapEventsReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        catalog: &MapEventCatalog,
+        limits: SnapshotLimits,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostic_count: snapshot.diagnostics().len(),
+            map: MapEventsMapDetail {
+                id: catalog.map_id().get(),
+                catalog_name: catalog.catalog_name().to_owned(),
+                document_path: PathReport::new(catalog.document_path()),
+                width: catalog.width(),
+                height: catalog.height(),
+            },
+            event_count: catalog.records().len(),
+            finding_count: catalog.findings().len(),
+            events: catalog
+                .records()
+                .values()
+                .map(|event| MapEventDetail {
+                    id: event.id().get(),
+                    name: event.name().to_owned(),
+                    x: event.x(),
+                    y: event.y(),
+                    page_count: event.page_count(),
+                })
+                .collect(),
+            findings: catalog
+                .findings()
+                .iter()
+                .map(MapEventFindingReport::new)
+                .collect(),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+        }
+    }
+}
+
+impl MapEventFindingReport {
+    fn new(finding: &MapEventFinding) -> Self {
+        match finding {
+            MapEventFinding::CoordinatesOutsideMap {
+                event_id,
+                x,
+                y,
+                width,
+                height,
+                ..
+            } => Self::CoordinatesOutsideMap {
+                event_id: event_id.get(),
+                x: *x,
+                y: *y,
+                width: *width,
+                height: *height,
+            },
+            _ => Self::Unrecognized,
+        }
+    }
+}
+
+impl MapEventsErrorReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        limits: SnapshotLimits,
+        error: &MapEventCatalogError,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+            error: MapEventsErrorDetail::new(error),
+        }
+    }
+}
+
+impl MapEventsErrorDetail {
+    fn new(error: &MapEventCatalogError) -> Self {
+        let mut detail = Self {
+            category: MapEventsErrorCategory::Unrecognized,
+            message: error.to_string(),
+            map_id: None,
+            path: None,
+            index: None,
+            field: None,
+            actual_kind: None,
+            decoded_id: None,
+            catalog_error: None,
+        };
+
+        match error {
+            MapEventCatalogError::Catalog { source, .. } => {
+                detail.category = MapEventsErrorCategory::CatalogError;
+                detail.catalog_error = Some(MapCatalogErrorDetail::new(source));
+            }
+            MapEventCatalogError::UnknownMapId { map_id, .. } => {
+                detail.category = MapEventsErrorCategory::UnknownMapId;
+                detail.map_id = Some(map_id.get());
+            }
+            MapEventCatalogError::UnevidencedDocumentPath { map_id, .. } => {
+                detail.category = MapEventsErrorCategory::UnevidencedDocumentPath;
+                detail.map_id = Some(map_id.get());
+            }
+            MapEventCatalogError::MissingDocument { map_id, path, .. } => {
+                detail.category = MapEventsErrorCategory::MissingDocument;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+            }
+            MapEventCatalogError::UnavailableDocument { map_id, path, .. } => {
+                detail.category = MapEventsErrorCategory::UnavailableDocument;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+            }
+            MapEventCatalogError::UnexpectedRootKind {
+                map_id,
+                path,
+                actual,
+                ..
+            } => {
+                detail.category = MapEventsErrorCategory::UnexpectedRootKind;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.actual_kind = Some(json_value_kind_name(*actual));
+            }
+            MapEventCatalogError::MissingMapField {
+                map_id,
+                path,
+                field,
+                ..
+            } => detail.set_map_field(
+                MapEventsErrorCategory::MissingMapField,
+                *map_id,
+                path,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::DuplicateMapField {
+                map_id,
+                path,
+                field,
+                ..
+            } => detail.set_map_field(
+                MapEventsErrorCategory::DuplicateMapField,
+                *map_id,
+                path,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::UnexpectedMapFieldKind {
+                map_id,
+                path,
+                field,
+                actual,
+                ..
+            } => detail.set_map_field(
+                MapEventsErrorCategory::UnexpectedMapFieldKind,
+                *map_id,
+                path,
+                *field,
+                Some(*actual),
+            ),
+            MapEventCatalogError::UnsupportedMapInteger {
+                map_id,
+                path,
+                field,
+                ..
+            } => detail.set_map_field(
+                MapEventsErrorCategory::UnsupportedMapInteger,
+                *map_id,
+                path,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::UnexpectedEventEntryKind {
+                map_id,
+                path,
+                index,
+                actual,
+                ..
+            } => {
+                detail.category = MapEventsErrorCategory::UnexpectedEventEntryKind;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.index = Some(*index);
+                detail.actual_kind = Some(json_value_kind_name(*actual));
+            }
+            MapEventCatalogError::ReservedEventIndex { map_id, path, .. } => {
+                detail.category = MapEventsErrorCategory::ReservedEventIndex;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.index = Some(0);
+            }
+            MapEventCatalogError::EventIndexOutOfRange {
+                map_id,
+                path,
+                index,
+                ..
+            } => {
+                detail.category = MapEventsErrorCategory::EventIndexOutOfRange;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.index = Some(*index);
+            }
+            MapEventCatalogError::MissingEventField {
+                map_id,
+                path,
+                index,
+                field,
+                ..
+            } => detail.set_event_field(
+                MapEventsErrorCategory::MissingEventField,
+                *map_id,
+                path,
+                *index,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::DuplicateEventField {
+                map_id,
+                path,
+                index,
+                field,
+                ..
+            } => detail.set_event_field(
+                MapEventsErrorCategory::DuplicateEventField,
+                *map_id,
+                path,
+                *index,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::UnexpectedEventFieldKind {
+                map_id,
+                path,
+                index,
+                field,
+                actual,
+                ..
+            } => detail.set_event_field(
+                MapEventsErrorCategory::UnexpectedEventFieldKind,
+                *map_id,
+                path,
+                *index,
+                *field,
+                Some(*actual),
+            ),
+            MapEventCatalogError::UnsupportedEventInteger {
+                map_id,
+                path,
+                index,
+                field,
+                ..
+            } => detail.set_event_field(
+                MapEventsErrorCategory::UnsupportedEventInteger,
+                *map_id,
+                path,
+                *index,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::InvalidEventString {
+                map_id,
+                path,
+                index,
+                field,
+                ..
+            } => detail.set_event_field(
+                MapEventsErrorCategory::InvalidEventString,
+                *map_id,
+                path,
+                *index,
+                *field,
+                None,
+            ),
+            MapEventCatalogError::IdIndexMismatch {
+                map_id,
+                path,
+                index,
+                decoded_id,
+                ..
+            } => {
+                detail.category = MapEventsErrorCategory::IdIndexMismatch;
+                detail.map_id = Some(map_id.get());
+                detail.path = Some(PathReport::new(path));
+                detail.index = Some(*index);
+                detail.field = Some(MapEventField::Id.to_string());
+                detail.decoded_id = Some(decoded_id.get());
+            }
+            _ => {}
+        }
+
+        detail
+    }
+
+    fn set_map_field(
+        &mut self,
+        category: MapEventsErrorCategory,
+        map_id: MapId,
+        path: &Path,
+        field: MapEventMapField,
+        actual: Option<JsonValueKind>,
+    ) {
+        self.category = category;
+        self.map_id = Some(map_id.get());
+        self.path = Some(PathReport::new(path));
+        self.field = Some(field.to_string());
+        self.actual_kind = actual.map(json_value_kind_name);
+    }
+
+    fn set_event_field(
+        &mut self,
+        category: MapEventsErrorCategory,
+        map_id: MapId,
+        path: &Path,
+        index: usize,
+        field: MapEventField,
+        actual: Option<JsonValueKind>,
+    ) {
+        self.category = category;
+        self.map_id = Some(map_id.get());
+        self.path = Some(PathReport::new(path));
+        self.index = Some(index);
+        self.field = Some(field.to_string());
+        self.actual_kind = actual.map(json_value_kind_name);
     }
 }
 
@@ -1983,6 +2443,12 @@ fn main() -> ExitCode {
             format,
             limits,
         } => run_map(&path, id, format, limits.limits()),
+        Command::Events {
+            path,
+            map_id,
+            format,
+            limits,
+        } => run_events(&path, map_id, format, limits.limits()),
         Command::System {
             path,
             format,
@@ -2184,6 +2650,58 @@ fn run_map(path: &Path, map_id: MapId, format: OutputFormat, limits: SnapshotLim
         Err(error) => {
             let report = SelectedMapErrorReport::new(path, &snapshot, limits, &error);
             write_selected_map_error_report(&report, format)
+        }
+    }
+}
+
+fn run_events(
+    path: &Path,
+    map_id: MapId,
+    format: OutputFormat,
+    limits: SnapshotLimits,
+) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    let snapshot = match load_snapshot(&root_dir, limits) {
+        Ok(snapshot) => snapshot,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match map_event_catalog(&snapshot, map_id) {
+        Ok(catalog) => {
+            let report = MapEventsReport::new(path, &snapshot, &catalog, limits);
+            let write_result = match format {
+                OutputFormat::Human => write_human_map_events_report(io::stdout().lock(), &report),
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let report = MapEventsErrorReport::new(path, &snapshot, limits, &error);
+            write_map_events_error_report(&report, format)
         }
     }
 }
@@ -2587,6 +3105,18 @@ fn write_selected_map_error_report(
     }
 }
 
+fn write_map_events_error_report(report: &MapEventsErrorReport, format: OutputFormat) -> ExitCode {
+    let write_result = match format {
+        OutputFormat::Human => write_human_map_events_error(io::stderr().lock(), report),
+        OutputFormat::Json => write_json(io::stdout().lock(), report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
+    }
+}
+
 fn write_system_error_report(report: &SystemErrorReport, format: OutputFormat) -> ExitCode {
     let write_result = match format {
         OutputFormat::Human => write_human_system_error(io::stderr().lock(), report),
@@ -2942,6 +3472,97 @@ fn write_human_selected_map_report(
     )
 }
 
+fn write_human_map_events_report(
+    mut writer: impl Write,
+    report: &MapEventsReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Events on map {} ({}) for {}:",
+        report.map.id,
+        escape_controls(&report.map.catalog_name),
+        escape_controls(&report.root.display)
+    )?;
+    writeln!(
+        writer,
+        "  Document: {}",
+        escape_controls(&report.map.document_path.display)
+    )?;
+    writeln!(
+        writer,
+        "  Map size: {} x {}",
+        report.map.width, report.map.height
+    )?;
+    writeln!(writer, "  Events: {}", report.event_count)?;
+    writeln!(writer, "  Findings: {}", report.finding_count)?;
+    writeln!(
+        writer,
+        "  Snapshot completeness: {}",
+        report.snapshot_completeness.name()
+    )?;
+    writeln!(
+        writer,
+        "  Snapshot diagnostics: {}",
+        report.snapshot_diagnostic_count
+    )?;
+    writeln!(
+        writer,
+        "  Limits: {} documents, {} bytes/document, {} aggregate bytes",
+        report.limits.max_documents,
+        report.limits.max_bytes_per_document,
+        report.limits.max_aggregate_bytes
+    )?;
+
+    if report.events.is_empty() {
+        writeln!(writer, "  (no events)")?;
+    } else {
+        writeln!(writer, "Event catalog:")?;
+        for event in &report.events {
+            writeln!(
+                writer,
+                "  - {}: {} at ({}, {}) ({} {})",
+                event.id,
+                escape_controls(&event.name),
+                event.x,
+                event.y,
+                event.page_count,
+                if event.page_count == 1 {
+                    "page"
+                } else {
+                    "pages"
+                }
+            )?;
+        }
+    }
+
+    if !report.findings.is_empty() {
+        writeln!(writer, "Event findings:")?;
+        for finding in &report.findings {
+            match finding {
+                MapEventFindingReport::CoordinatesOutsideMap {
+                    event_id,
+                    x,
+                    y,
+                    width,
+                    height,
+                } => writeln!(
+                    writer,
+                    "  - event {event_id} coordinate ({x}, {y}) is outside map size {width} x {height}"
+                )?,
+                MapEventFindingReport::Unrecognized => {
+                    writeln!(writer, "  - unrecognized event finding")?
+                }
+            }
+        }
+    }
+
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
 fn write_human_system_report(mut writer: impl Write, report: &SystemReport) -> io::Result<()> {
     writeln!(
         writer,
@@ -3252,6 +3873,23 @@ fn write_human_tilesets_error(
 fn write_human_selected_map_error(
     mut writer: impl Write,
     report: &SelectedMapErrorReport,
+) -> io::Result<()> {
+    writeln!(
+        writer,
+        "error: {} for {}",
+        escape_controls(&report.error.message),
+        escape_controls(&report.root.display)
+    )?;
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_map_events_error(
+    mut writer: impl Write,
+    report: &MapEventsErrorReport,
 ) -> io::Result<()> {
     writeln!(
         writer,
