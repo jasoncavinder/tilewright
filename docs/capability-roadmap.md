@@ -170,6 +170,15 @@ The selected-map summary contract is accepted in
 experimentally. Neither acceptance nor implementation makes the capability
 Supported.
 
+A bounded selected-map event catalog is implemented experimentally under
+accepted [ADR 0011](decisions/0011-experimental-map-event-catalog.md). It
+projects map-scoped IDs, names, coordinates, and opaque page counts, while page
+bodies, commands, notes, and unknown fields remain in the raw snapshot. Its
+aggregate evidence covers 1,555 events across 196 MZ 1.10.0 map documents.
+An independent differential audit matched all 10,323 bounded comparisons across
+that corpus. Neither acceptance nor implementation makes the capability
+Supported.
+
 The bounded `System.json` orientation summary is accepted in
 [ADR 0009](decisions/0009-experimental-system-summary.md) and implemented
 experimentally. It projects only the seven accepted string and nonnegative
@@ -214,6 +223,12 @@ missing positive catalog record, and coordinates outside the map rectangle.
 Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.
+
+An independent differential audit matched all nine bounded output and
+relationship comparisons across each of four authorized MZ 1.10.0 projects:
+36 of 36 comparisons matched, all snapshots were complete, and all observed
+states were finding-free. Negative categories remain synthetic implementation
+coverage rather than editor-acceptance evidence.
 
 ### 7. In-memory domain mutation and semantic diffs
 
@@ -297,16 +312,20 @@ map-catalog projection and its `maps` CLI adapter are also implemented
 experimentally. A tileset identity/name projection and its `tilesets` CLI
 adapter begin the database-table stage without interpreting tile behavior or
 assets. The selected-map summary and its `map` CLI adapter are implemented
-experimentally without interpreting tile or event contents. The system summary
-and its `system` CLI adapter are implemented experimentally without interpreting
-other system settings. A first player-start validation slice and its `validate`
-CLI adapter compose those projections experimentally; they do not establish
-general project validity or editor compatibility.
+experimentally without interpreting tile contents. The selected-map event
+catalog and its `events` CLI adapter expose only bounded event identity,
+placement, and opaque page counts. The system summary and its `system` CLI
+adapter are implemented experimentally without interpreting other system
+settings. A first player-start validation slice and its `validate` CLI adapter
+compose those projections experimentally; they do not establish general project
+validity or editor compatibility.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
 system summary. Controlled MZ 1.10.0 experiments also establish same-map start
 relocation and editor recognition/preservation of the exact zero triplet as
-`None`. The next tileset step is independent differential verification, followed
-by controlled name, mode, and map-assignment experiments before expanding the
-contract or adding cross-file validation.
+`None`. Independent differential verification also matched the bounded tileset
+and event projections against the four-project corpus. The next evidence steps
+are controlled tileset name, mode, and map-assignment experiments plus event
+creation, movement, renaming, page lifecycle, and deletion. Tile behavior,
+event page bodies, and commands remain later separate slices.

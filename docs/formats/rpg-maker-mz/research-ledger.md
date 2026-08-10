@@ -1746,6 +1746,103 @@ validity. The proposed architecture is recorded in
 Change one tileset name, toggle one mode, and reassign one map in separate
 disposable MZ 1.10.0 copies, saving and reopening after each action.
 
+## `mz-map-events-001`: What is the smallest useful map-event catalog?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only listing of map-scoped event IDs,
+  editor names, stored coordinates, and opaque page counts for one selected
+  map.
+- **Scope:** Event objects in 196 three-digit map documents from four RPG Maker
+  MZ 1.10.0 projects. Page bodies, commands, mutation, persistence,
+  malformed-input editor behavior, and later versions remain outside this
+  investigation.
+- **Last updated:** 2026-08-09
+
+### Evidence ledger
+
+The claim-level ledger, bounded contract, fixture implications, and remaining
+experiments are maintained in [`map-events.md`](map-events.md#evidence-ledger).
+
+### Evidence record: `MZ-HELP-MAP-EVENT-SETTINGS-2026-08-09`
+
+- **Kind:** Official editor documentation.
+- **Source:** *Map Event Settings*, RPG Maker MZ Help,
+  <https://rpgmakerofficial.com/product/MZ_help-en/01_09_03.html>, and *Events*,
+  <https://rpgmakerofficial.com/product/MZ_help-en/01_09.html>; accessed
+  2026-08-09.
+- **Documented:** Map events have IDs unique within each map and automatically
+  assigned in creation order, editor-facing names and memos, numbered pages,
+  and placement on a map.
+- **Limits:** The help does not define JSON property names, serialization,
+  numeric bounds, malformed-input behavior, or persistence fidelity.
+
+### Evidence record: `MZ-1.10.0-MAP-EVENT-SHAPE-AUDIT-2026-08-09`
+
+- **Kind:** Read-only aggregate shape and relationship audit.
+- **Version/environment:** The four authorized, user-owned MZ 1.10.0 projects
+  recorded by `MZ-1.10.0-FRESH-4-2026-08-01`; `jq` 1.8.2 on arm64 macOS 26.6
+  build 25G72.
+- **Procedure:** Verified the canonical ignored research root, source
+  containment, and absence of symlinks. Queried only decoded event and page
+  property names, JSON kinds, counts, integer relationships and ranges, page
+  array lengths, and coordinate bounds. The audit emitted aggregate results
+  only.
+- **Observed:** The 196 maps contain 1,555 event objects and 1,576 page objects.
+  Every event shares the decoded key set `id`, `name`, `note`, `pages`, `x`, and
+  `y`. IDs are positive integers from 1 through 67, equal their array indexes,
+  and are unique within each map. Names are nonempty strings. Coordinates are
+  nonnegative integers and within map dimensions, with `x` from 0 through 183
+  and `y` from 0 through 176. Page arrays are nonempty and contain one through
+  three object entries. Every event array has null at index zero and contains
+  only null holes or objects.
+- **Limits:** Decoded duplicate properties were not established absent. The
+  audit does not establish plugin behavior, editor validation, event-ID
+  allocation after deletion, empty-page behavior, page or command semantics,
+  mutation fidelity, or other-version behavior.
+- **Redistribution:** No event name, note, page content, command, project path,
+  raw document, excerpt, hash, or per-project manifest is retained. Only
+  aggregate derived observations and the safe procedure are recorded.
+
+### Implementation implications
+
+The experimental core projection can expose a positive `MapEventId` scoped to
+one selected map, decoded name, nonnegative coordinates, and opaque page count.
+It must retain all event notes, page bodies, commands, and unknown fields in the
+raw snapshot; refuse ambiguous required structure; and distinguish coordinate
+findings from editor-validity claims. The proposed architecture is recorded in
+[ADR 0011](../../decisions/0011-experimental-map-event-catalog.md).
+
+### Evidence record: `MZ-1.10.0-MAP-EVENT-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential projection and CLI-envelope audit.
+- **Version/environment:** The same four authorized MZ 1.10.0 projects; the
+  local experimental event-catalog implementation on 2026-08-09; Rust 1.97.1
+  and `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** Ran the bounded `events --format json` adapter for every
+  coherent catalog record. Independently decoded each map-info and map document
+  with `jq`, then compared map ID, catalog name, exact evidenced path,
+  dimensions, every event ID/name/X/Y/page count, coordinate findings, counts,
+  schema version, snapshot completeness, and diagnostic envelope. It emitted
+  aggregate counts only.
+- **Observed:** All 196 selected maps, 1,555 events, and 10,323 individual
+  comparisons matched. Every snapshot was complete, every report had zero
+  snapshot diagnostics, and both derived coordinate-finding lists were empty.
+- **Limits:** This verifies one implementation on four MZ-generated 1.10.0
+  states. It does not establish editor validation, mutation or save/reopen
+  fidelity, malformed-input behavior, page or command semantics, runtime
+  behavior, or later-version compatibility.
+- **Redistribution:** No project path, event name, note, page body, command, raw
+  document, excerpt, field value, report, hash, or per-project manifest is
+  retained. Only aggregate derived observations and the non-content-revealing
+  procedure are recorded.
+
+### Next experiment
+
+Create, move, rename, add a page to, and delete one event in separate disposable
+MZ 1.10.0 copies, saving and reopening after each action. Use those results to
+check the current read-only contract before considering page-body semantics or
+mutation.
+
 ## `mz-system-summary-001`: What is the smallest useful system summary?
 
 - **Status:** Active
@@ -1866,7 +1963,30 @@ implications, and remaining experiments are maintained in
 Official behavior is recorded by `MZ-HELP-SYSTEM1-2026-08-07`. Controlled
 editor results are recorded by
 `MZ-1.10.0-PLAYER-START-RELOCATION-2026-08-09` and
-`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`.
+`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`. Implementation parity is
+recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`.
+
+### Evidence record: `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential implementation audit.
+- **Version/environment:** Tilewright commit `01d2c2c`; the four authorized,
+  user-owned MZ 1.10.0 projects; `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
+- **Procedure:** Built the merged CLI with the locked dependency graph, invoked
+  `tilewright validate --format json` for each source, and independently
+  reconstructed the result from the system scalars, indexed map-catalog record,
+  and selected map dimensions. Compared nine bounded envelope and relationship
+  values per case. Verified source trees contained no symbolic links.
+- **Observed:** All four cases and all 36 comparisons matched. Every snapshot
+  was complete with no diagnostics, and every independently reconstructed
+  result was finding-free.
+- **Limits:** Observed sources do not exercise validation findings. Generated
+  tests cover their implementation behavior but do not establish editor
+  acceptance. Later versions, general validity, runtime behavior, mutation, and
+  persistence remain outside this audit.
+- **Redistribution:** Only anonymized case booleans and aggregate `4/4` and
+  `36/36` counts were emitted and retained. No project path, title, map ID,
+  coordinate, dimension, raw document, excerpt, digest, or CLI report is
+  retained.
 
 ### Implementation implications
 

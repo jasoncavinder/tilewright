@@ -7,6 +7,7 @@
 pub mod discovery;
 pub mod inventory;
 pub mod map_catalog;
+pub mod map_events;
 pub mod map_summary;
 pub mod player_start_validation;
 pub mod snapshot;
