@@ -7,14 +7,13 @@
 ## Status
 
 This crate is experimental. It provides help and version output plus read-only
-`discover`, `inventory`, `snapshot`, `maps`, `map`, `events`, `system`,
-`validate`, and `inspect-json`
-commands over the core library's experimental RPG Maker MZ
-candidate-discovery, capability-relative project inventory, raw snapshot
-loader, typed map catalog, selected-map summary and event catalog, system
-summary, player-start validation, and strict lossless JSON syntax APIs. It does
-not provide general project understanding, project validity, editor
-compatibility, or modification.
+`discover`, `inventory`, `snapshot`, `maps`, `tilesets`, `map`, `events`,
+`system`, `validate`, and `inspect-json` commands over the core library's
+experimental RPG Maker MZ candidate-discovery, capability-relative project
+inventory, raw snapshot loader, typed map, tileset, and selected-map event
+catalogs, selected-map and system summaries, player-start validation, and
+strict lossless JSON syntax APIs. It does not provide general project
+understanding, project validity, editor compatibility, or modification.
 
 ## Install from a checkout
 
@@ -65,6 +64,10 @@ cargo run -p tilewright-cli -- snapshot path/to/project --format json
 # List the typed map catalog in editor display order.
 cargo run -p tilewright-cli -- maps path/to/project
 cargo run -p tilewright-cli -- maps path/to/project --format json
+
+# List tileset IDs and editor-facing names.
+cargo run -p tilewright-cli -- tilesets path/to/project
+cargo run -p tilewright-cli -- tilesets path/to/project --format json
 
 # Summarize one catalog-selected map.
 cargo run -p tilewright-cli -- map path/to/project 1
@@ -128,6 +131,16 @@ available on `maps`. The command does not interpret map contents or events,
 validate editor compatibility, provide stable project-wide resource identities,
 or establish mutation, round-trip, and write support.
 
+The `tilesets` command loads the same bounded snapshot and reports positive
+tileset IDs and decoded editor-facing names in ID order. Missing, unavailable,
+or structurally ambiguous `data/Tilesets.json` prevents projection and exits
+with code 1. Unrelated snapshot diagnostics remain separate.
+
+The command does not emit or interpret modes, image names, tile flags, notes, or
+unknown fields. It does not validate map references, assets, tile behavior,
+editor compatibility, mutation, round trips, or writes. The snapshot
+resource-limit options are available on `tilesets`.
+
 The `map` command loads the same bounded snapshot and delegates selection and
 projection to the core library. It requires a coherent map catalog and matching
 positive ID, then reports the catalog and display names, exact evidenced
@@ -188,9 +201,9 @@ a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the
 initial `open_ambient_dir` acquisition used by `inventory`, `snapshot`, `maps`,
-`map`, `events`, `system`, and `validate` may resolve root or ancestor symlinks
-and does not prove root identity. The `inspect-json` command explicitly opens
-the provided path and makes no project-containment claim.
+`tilesets`, `map`, `events`, `system`, and `validate` may resolve root or
+ancestor symlinks and does not prove root identity. The `inspect-json` command
+explicitly opens the provided path and makes no project-containment claim.
 
 ## Responsibilities
 

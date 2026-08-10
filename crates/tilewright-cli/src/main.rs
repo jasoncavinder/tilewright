@@ -31,6 +31,9 @@ use tilewright::rpg_maker_mz::snapshot::{
     DocumentDiagnostic, ProjectSnapshot, SnapshotCompleteness, SnapshotLimits, load_snapshot,
 };
 use tilewright::rpg_maker_mz::system_summary::{SystemSummary, SystemSummaryError, system_summary};
+use tilewright::rpg_maker_mz::tileset_catalog::{
+    TilesetCatalog, TilesetCatalogError, TilesetField, tileset_catalog,
+};
 
 const OUTPUT_SCHEMA_VERSION: u8 = 1;
 
@@ -128,6 +131,16 @@ enum Command {
     },
     /// List the experimental typed RPG Maker MZ map catalog.
     Maps {
+        /// RPG Maker MZ project directory to inspect.
+        path: PathBuf,
+        /// Output intended for a person or a script.
+        #[arg(long, value_enum, default_value_t = OutputFormat::Human)]
+        format: OutputFormat,
+        #[command(flatten)]
+        limits: SnapshotLimitArgs,
+    },
+    /// List the experimental typed RPG Maker MZ tileset catalog.
+    Tilesets {
         /// RPG Maker MZ project directory to inspect.
         path: PathBuf,
         /// Output intended for a person or a script.
@@ -470,6 +483,66 @@ struct MapsErrorReport {
     limits: SnapshotLimitsReport,
     snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
     error: MapCatalogErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct TilesetsReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    tileset_count: usize,
+    snapshot_diagnostic_count: usize,
+    tilesets: Vec<TilesetReport>,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+}
+
+#[derive(Debug, Serialize)]
+struct TilesetReport {
+    id: u32,
+    name: String,
+}
+
+#[derive(Debug, Serialize)]
+struct TilesetsErrorReport {
+    schema_version: u8,
+    root: PathReport,
+    snapshot_completeness: SnapshotCompletenessReport,
+    limits: SnapshotLimitsReport,
+    snapshot_diagnostics: Vec<SnapshotDiagnosticReport>,
+    error: TilesetCatalogErrorDetail,
+}
+
+#[derive(Debug, Serialize)]
+struct TilesetCatalogErrorDetail {
+    category: TilesetCatalogErrorCategory,
+    message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    index: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    field: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    actual_kind: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    decoded_id: Option<u32>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum TilesetCatalogErrorCategory {
+    MissingDocument,
+    UnavailableDocument,
+    UnexpectedRootKind,
+    UnexpectedEntryKind,
+    MissingField,
+    DuplicateField,
+    UnexpectedFieldKind,
+    UnsupportedInteger,
+    InvalidString,
+    IndexOutOfRange,
+    ReservedIndex,
+    IdIndexMismatch,
+    Unrecognized,
 }
 
 #[derive(Debug, Serialize)]
@@ -1057,6 +1130,37 @@ impl MapsReport {
             maps,
             findings,
             snapshot_diagnostics,
+        }
+    }
+}
+
+impl TilesetsReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        catalog: &TilesetCatalog,
+        limits: SnapshotLimits,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            tileset_count: catalog.records().len(),
+            snapshot_diagnostic_count: snapshot.diagnostics().len(),
+            tilesets: catalog
+                .records()
+                .values()
+                .map(|record| TilesetReport {
+                    id: record.id().get(),
+                    name: record.name().to_owned(),
+                })
+                .collect(),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
         }
     }
 }
@@ -1881,6 +1985,142 @@ impl MapsErrorReport {
     }
 }
 
+impl TilesetsErrorReport {
+    fn new(
+        root: &Path,
+        snapshot: &ProjectSnapshot,
+        limits: SnapshotLimits,
+        error: &TilesetCatalogError,
+    ) -> Self {
+        Self {
+            schema_version: OUTPUT_SCHEMA_VERSION,
+            root: PathReport::new(root),
+            snapshot_completeness: SnapshotCompletenessReport::new(snapshot.completeness()),
+            limits: SnapshotLimitsReport::new(limits),
+            snapshot_diagnostics: snapshot
+                .diagnostics()
+                .iter()
+                .map(|(path, diagnostic)| SnapshotDiagnosticReport::new(path, diagnostic))
+                .collect(),
+            error: TilesetCatalogErrorDetail::new(error),
+        }
+    }
+}
+
+impl TilesetCatalogErrorDetail {
+    fn new(error: &TilesetCatalogError) -> Self {
+        let (category, index, field, actual_kind, decoded_id) = match error {
+            TilesetCatalogError::MissingDocument => (
+                TilesetCatalogErrorCategory::MissingDocument,
+                None,
+                None,
+                None,
+                None,
+            ),
+            TilesetCatalogError::UnavailableDocument => (
+                TilesetCatalogErrorCategory::UnavailableDocument,
+                None,
+                None,
+                None,
+                None,
+            ),
+            TilesetCatalogError::UnexpectedRootKind { actual, .. } => (
+                TilesetCatalogErrorCategory::UnexpectedRootKind,
+                None,
+                None,
+                Some(json_value_kind_name(*actual)),
+                None,
+            ),
+            TilesetCatalogError::UnexpectedEntryKind { index, actual, .. } => (
+                TilesetCatalogErrorCategory::UnexpectedEntryKind,
+                Some(*index),
+                None,
+                Some(json_value_kind_name(*actual)),
+                None,
+            ),
+            TilesetCatalogError::MissingField { index, field, .. } => (
+                TilesetCatalogErrorCategory::MissingField,
+                Some(*index),
+                Some(field.to_string()),
+                None,
+                None,
+            ),
+            TilesetCatalogError::DuplicateField { index, field, .. } => (
+                TilesetCatalogErrorCategory::DuplicateField,
+                Some(*index),
+                Some(field.to_string()),
+                None,
+                None,
+            ),
+            TilesetCatalogError::UnexpectedFieldKind {
+                index,
+                field,
+                actual,
+                ..
+            } => (
+                TilesetCatalogErrorCategory::UnexpectedFieldKind,
+                Some(*index),
+                Some(field.to_string()),
+                Some(json_value_kind_name(*actual)),
+                None,
+            ),
+            TilesetCatalogError::UnsupportedInteger { index, field, .. } => (
+                TilesetCatalogErrorCategory::UnsupportedInteger,
+                Some(*index),
+                Some(field.to_string()),
+                None,
+                None,
+            ),
+            TilesetCatalogError::InvalidString { index, field, .. } => (
+                TilesetCatalogErrorCategory::InvalidString,
+                Some(*index),
+                Some(field.to_string()),
+                None,
+                None,
+            ),
+            TilesetCatalogError::IndexOutOfRange { index, .. } => (
+                TilesetCatalogErrorCategory::IndexOutOfRange,
+                Some(*index),
+                None,
+                None,
+                None,
+            ),
+            TilesetCatalogError::ReservedIndex => (
+                TilesetCatalogErrorCategory::ReservedIndex,
+                Some(0),
+                None,
+                None,
+                None,
+            ),
+            TilesetCatalogError::IdIndexMismatch {
+                index, decoded_id, ..
+            } => (
+                TilesetCatalogErrorCategory::IdIndexMismatch,
+                Some(*index),
+                Some(TilesetField::Id.to_string()),
+                None,
+                Some(decoded_id.get()),
+            ),
+            _ => (
+                TilesetCatalogErrorCategory::Unrecognized,
+                None,
+                None,
+                None,
+                None,
+            ),
+        };
+
+        Self {
+            category,
+            message: error.to_string(),
+            index,
+            field,
+            actual_kind,
+            decoded_id,
+        }
+    }
+}
+
 impl MapCatalogErrorDetail {
     fn new(error: &MapCatalogError) -> Self {
         let (category, index, field, actual_kind, decoded_id) = match error {
@@ -2012,6 +2252,11 @@ fn main() -> ExitCode {
             format,
             limits,
         } => run_maps(&path, format, limits.limits()),
+        Command::Tilesets {
+            path,
+            format,
+            limits,
+        } => run_tilesets(&path, format, limits.limits()),
         Command::Map {
             path,
             id,
@@ -2124,6 +2369,53 @@ fn run_maps(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> ExitCo
         Err(error) => {
             let report = MapsErrorReport::new(path, &snapshot, limits, &error);
             write_maps_error_report(&report, format)
+        }
+    }
+}
+
+fn run_tilesets(path: &Path, format: OutputFormat, limits: SnapshotLimits) -> ExitCode {
+    let root_dir = match cap_std::fs::Dir::open_ambient_dir(path, cap_std::ambient_authority()) {
+        Ok(dir) => dir,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: format!("failed to open project root '{}'", path.display()),
+                    cause: Some(error.to_string()),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    let snapshot = match load_snapshot(&root_dir, limits) {
+        Ok(snapshot) => snapshot,
+        Err(error) => {
+            let report = ErrorReport {
+                schema_version: OUTPUT_SCHEMA_VERSION,
+                root: PathReport::new(path),
+                error: ErrorDetail {
+                    message: error.to_string(),
+                    cause: error.source().map(ToString::to_string),
+                },
+            };
+            return write_error_report(&report, format);
+        }
+    };
+
+    match tileset_catalog(&snapshot) {
+        Ok(catalog) => {
+            let report = TilesetsReport::new(path, &snapshot, &catalog, limits);
+            let write_result = match format {
+                OutputFormat::Human => write_human_tilesets_report(io::stdout().lock(), &report),
+                OutputFormat::Json => write_json(io::stdout().lock(), &report),
+            };
+            finish_write(write_result)
+        }
+        Err(error) => {
+            let report = TilesetsErrorReport::new(path, &snapshot, limits, &error);
+            write_tilesets_error_report(&report, format)
         }
     }
 }
@@ -2552,6 +2844,18 @@ fn write_maps_error_report(report: &MapsErrorReport, format: OutputFormat) -> Ex
     }
 }
 
+fn write_tilesets_error_report(report: &TilesetsErrorReport, format: OutputFormat) -> ExitCode {
+    let write_result = match format {
+        OutputFormat::Human => write_human_tilesets_error(io::stderr().lock(), report),
+        OutputFormat::Json => write_json(io::stdout().lock(), report),
+    };
+
+    match write_result {
+        Ok(()) => ExitCode::from(1),
+        Err(write_error) => report_write_error(write_error),
+    }
+}
+
 fn write_selected_map_error_report(
     report: &SelectedMapErrorReport,
     format: OutputFormat,
@@ -2805,6 +3109,52 @@ fn write_human_maps_report(mut writer: impl Write, report: &MapsReport) -> io::R
         writeln!(writer, "Map catalog findings:")?;
         for finding in &report.findings {
             write_human_map_finding(&mut writer, finding)?;
+        }
+    }
+
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_tilesets_report(mut writer: impl Write, report: &TilesetsReport) -> io::Result<()> {
+    writeln!(
+        writer,
+        "Tilesets for {}:",
+        escape_controls(&report.root.display)
+    )?;
+    writeln!(writer, "  Tilesets: {}", report.tileset_count)?;
+    writeln!(
+        writer,
+        "  Snapshot completeness: {}",
+        report.snapshot_completeness.name()
+    )?;
+    writeln!(
+        writer,
+        "  Snapshot diagnostics: {}",
+        report.snapshot_diagnostic_count
+    )?;
+    writeln!(
+        writer,
+        "  Limits: {} documents, {} bytes/document, {} aggregate bytes",
+        report.limits.max_documents,
+        report.limits.max_bytes_per_document,
+        report.limits.max_aggregate_bytes
+    )?;
+
+    if report.tilesets.is_empty() {
+        writeln!(writer, "  (no tilesets)")?;
+    } else {
+        writeln!(writer, "Tileset catalog:")?;
+        for tileset in &report.tilesets {
+            writeln!(
+                writer,
+                "  - {}: {}",
+                tileset.id,
+                escape_controls(&tileset.name)
+            )?;
         }
     }
 
@@ -3185,6 +3535,23 @@ fn write_human_snapshot_diagnostics(
 }
 
 fn write_human_maps_error(mut writer: impl Write, report: &MapsErrorReport) -> io::Result<()> {
+    writeln!(
+        writer,
+        "error: {} for {}",
+        escape_controls(&report.error.message),
+        escape_controls(&report.root.display)
+    )?;
+    write_human_snapshot_diagnostics(
+        &mut writer,
+        "Snapshot diagnostics:",
+        &report.snapshot_diagnostics,
+    )
+}
+
+fn write_human_tilesets_error(
+    mut writer: impl Write,
+    report: &TilesetsErrorReport,
+) -> io::Result<()> {
     writeln!(
         writer,
         "error: {} for {}",

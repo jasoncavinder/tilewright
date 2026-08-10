@@ -186,6 +186,14 @@ integer fields, retains raw bytes and unknown settings in the snapshot, and
 does not validate map references or coordinate bounds. Neither acceptance nor
 implementation makes the capability Supported.
 
+A bounded tileset identity/name catalog is implemented experimentally under
+accepted [ADR 0012](decisions/0012-experimental-tileset-catalog.md). It leaves
+modes, image slots, tile flags, notes, and unknown fields in the raw snapshot.
+Its evidence covers 24 records and 196 resolving map references across four MZ
+1.10.0 projects, and an independent differential audit matched all 72 bounded
+comparisons. Neither acceptance nor implementation makes the capability
+Supported.
+
 An independent differential audit matched all seven projected fields and the
 bounded CLI envelope across the four-project MZ 1.10.0 corpus. This closes the
 initial implementation-verification step without generalizing to later
@@ -301,9 +309,11 @@ Explicit-root candidate discovery, capability-relative project inventory, an
 immutable single-document lossless syntax representation, and a read-only raw
 project snapshot loader are implemented experimentally. The first typed
 map-catalog projection and its `maps` CLI adapter are also implemented
-experimentally. The selected-map summary and its `map` CLI adapter are also
-implemented experimentally without interpreting tile contents. The selected-map
-event catalog and its `events` CLI adapter expose only bounded event identity,
+experimentally. A tileset identity/name projection and its `tilesets` CLI
+adapter begin the database-table stage without interpreting tile behavior or
+assets. The selected-map summary and its `map` CLI adapter are implemented
+experimentally without interpreting tile contents. The selected-map event
+catalog and its `events` CLI adapter expose only bounded event identity,
 placement, and opaque page counts. The system summary and its `system` CLI
 adapter are implemented experimentally without interpreting other system
 settings. A first player-start validation slice and its `validate` CLI adapter
@@ -314,7 +324,8 @@ selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
 system summary. Controlled MZ 1.10.0 experiments also establish same-map start
 relocation and editor recognition/preservation of the exact zero triplet as
-`None`. The next evidence steps are differential verification of the event
-catalog and controlled editor experiments for event creation, movement,
-renaming, page lifecycle, and deletion. Page bodies and commands remain a later
-separate slice.
+`None`. Independent differential verification also matched the bounded tileset
+and event projections against the four-project corpus. The next evidence steps
+are controlled tileset name, mode, and map-assignment experiments plus event
+creation, movement, renaming, page lifecycle, and deletion. Tile behavior,
+event page bodies, and commands remain later separate slices.

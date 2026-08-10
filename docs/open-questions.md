@@ -57,9 +57,10 @@ unknown and plugin-defined content. The following details remain open:
 - How should stale-document or stale-node detection be handled?
 - What constitutes a stable project or resource identifier? ADR 0007
   introduces an experimental positive `MapId` scoped to map-catalog records,
-  not a stable project-wide identity scheme. ADR 0011 similarly
-  introduces a `MapEventId` scoped to one selected map. ADR 0009 deliberately
-  retains system map fields as unvalidated `u32` scalars.
+  not a stable project-wide identity scheme. ADR 0011 similarly introduces a
+  `MapEventId` scoped to one selected map, while ADR 0012 introduces a
+  `TilesetId` scoped to one catalog. ADR 0009 deliberately retains system map
+  fields as unvalidated `u32` scalars.
 - How should event-command parameter arrays be typed incrementally?
 - How should validation findings, severities, source locations, and related
   diagnostics be represented?

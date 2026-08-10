@@ -36,6 +36,9 @@ the version actually documented or observed.
 - [Player-start validation contract](player-start-validation.md) records
   controlled relocation and unset-state observations and bounds the first
   contextual cross-file validation slice.
+- [Tileset catalog contract](tileset-catalog.md) records the aggregate
+  `Tilesets.json` identity/name audit while leaving modes, image slots, flags,
+  and notes opaque.
 - [Research ledger](research-ledger.md) contains the claim-level evidence,
   source records, conflicts, and next controlled experiments.
 
