@@ -17,8 +17,10 @@ records and compatibility scope.
 | [`mz-project-layout-001`](#mz-project-layout-001-what-high-level-project-layout-and-file-roles-are-established) | What high-level project layout and file roles are established? | Active | Documented and observed for four MZ 1.10.0 templates | 2026-08-03 |
 | [`mz-map-catalog-001`](#mz-map-catalog-001-what-is-the-smallest-evidenced-typed-map-catalog) | What is the smallest evidenced typed map catalog? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
 | [`mz-map-summary-001`](#mz-map-summary-001-what-is-the-smallest-useful-selected-map-summary) | What is the smallest useful selected-map summary? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-06 |
+| [`mz-tileset-catalog-001`](#mz-tileset-catalog-001-what-is-the-smallest-useful-tileset-catalog) | What is the smallest useful tileset catalog? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-09 |
 | [`mz-system-summary-001`](#mz-system-summary-001-what-is-the-smallest-useful-system-summary) | What is the smallest useful system summary? | Active | Documented and observed for MZ 1.10.0 | 2026-08-07 |
 | [`mz-player-start-validation-001`](#mz-player-start-validation-001-what-player-start-relationships-can-be-validated) | What player-start relationships can be validated? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-09 |
+| [`mz-map-tileset-validation-001`](#mz-map-tileset-validation-001-which-map-to-tileset-references-can-be-validated) | Which map-to-tileset references can be validated? | Active | Documented, observed, and inferred for MZ 1.10.0 | 2026-08-09 |
 
 The current synthesis and proposed read-only contract are in
 [`project-layout.md`](project-layout.md); breadth and remaining gaps are in the
@@ -1717,14 +1719,15 @@ The experimental core projection can expose positive catalog-scoped
 `TilesetId` values and decoded names while retaining every other field in the
 raw snapshot. It must accept null holes, refuse ambiguous required structure,
 and avoid interpreting mode, image slots, flags, notes, or map-reference
-validity. The proposed architecture is recorded in
+validity. The accepted architecture is recorded in
 [ADR 0012](../../decisions/0012-experimental-tileset-catalog.md).
 
 ### Evidence record: `MZ-1.10.0-TILESET-DIFFERENTIAL-2026-08-09`
 
 - **Kind:** Read-only differential projection and CLI-envelope audit.
 - **Version/environment:** The same four authorized MZ 1.10.0 projects; the
-  local proposed tileset-catalog implementation on 2026-08-09; Rust 1.97.1 and
+  local experimental tileset-catalog implementation on 2026-08-09; Rust 1.97.1
+  and
   `jq` 1.8.2 on arm64 macOS 26.6 build 25G72.
 - **Procedure:** Ran `tilesets --format json` once per project and independently
   decoded exact `Tilesets.json` with `jq`. Compared every record ID and decoded
@@ -2004,6 +2007,62 @@ Complete the editor Delete and mixed-zero experiments, then test exact map
 coordinate boundaries and a dangling positive start-map ID in separate owned
 copies. Repeat the bounded observations on another named version at or above
 1.10.0 before broadening compatibility scope.
+
+## `mz-map-tileset-validation-001`: Which map-to-tileset references can be validated?
+
+- **Status:** Active
+- **Behavior depending on this:** Read-only contextual validation of positive
+  map tileset references against the coherent tileset catalog.
+- **Scope:** Cataloged `MapNNN.json` documents and exact `Tilesets.json` in RPG
+  Maker MZ 1.10.0. General project validity, editor enforcement, assets, tile
+  behavior, later versions, mutation, and persistence remain outside scope.
+- **Last updated:** 2026-08-09
+
+### Evidence ledger
+
+The claim-level ledger, bounded contract, fixture implications, official
+sources, and remaining experiments are maintained in
+[`map-tileset-validation.md`](map-tileset-validation.md#evidence-ledger). The
+cross-file observation is recorded by
+`MZ-1.10.0-TILESET-SHAPE-AUDIT-2026-08-09`. Implementation corroboration is
+recorded by `MZ-1.10.0-MAP-TILESET-DIFFERENTIAL-2026-08-09`.
+
+### Evidence record: `MZ-1.10.0-MAP-TILESET-DIFFERENTIAL-2026-08-09`
+
+- **Kind:** Read-only differential reference-validation audit.
+- **Version/environment:** The four authorized, user-owned MZ 1.10.0 projects;
+  Tilewright implementation on arm64 macOS 26.6 build 25G72; `jq` 1.8.2.
+- **Procedure:** Ran Tilewright's versioned JSON `validate-tilesets` output on
+  each source project. Independently decoded every cataloged map's `tilesetId`
+  with `jq`, checked the containing tileset array slot and record ID, and
+  compared reference results plus six bounded envelope values per project.
+  The procedure emitted aggregate case numbers, counts, and booleans only.
+- **Observed:** All four projects, all 196 map references, and all 220
+  comparisons matched. Every snapshot was complete with zero diagnostics and
+  zero unresolved references.
+- **Limits:** This verifies one implementation on MZ-generated 1.10.0 states.
+  It does not establish editor behavior for missing references, general
+  validity, assets, tile behavior, mutation, persistence, or later versions.
+- **Redistribution:** No project path, map or tileset name, raw document,
+  excerpt, field value, report, digest, or per-project manifest is retained.
+  Only aggregate derived observations and the non-content-revealing procedure
+  are recorded.
+
+### Implementation implications
+
+The experimental operation composes the map catalog, every selected-map
+summary, and the tileset catalog. It reports a deterministic finding for a
+positive reference that has no catalog record. Structural prerequisite
+failures remain errors. Findings do not claim general editor rejection,
+validity, compatibility, asset existence, tile behavior, or write safety. The
+accepted architecture is recorded in
+[ADR 0013](../../decisions/0013-experimental-map-tileset-validation.md).
+
+### Next experiment
+
+Change one map's selected tileset and confirm the persisted relationship after
+save and reopen. Test a missing reference separately before making any claim
+about editor enforcement.
 
 ## Investigation template
 

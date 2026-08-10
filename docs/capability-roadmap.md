@@ -224,11 +224,19 @@ Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.
 
-An independent differential audit matched all nine bounded output and
-relationship comparisons across each of four authorized MZ 1.10.0 projects:
-36 of 36 comparisons matched, all snapshots were complete, and all observed
-states were finding-free. Negative categories remain synthetic implementation
-coverage rather than editor-acceptance evidence.
+A separate independent differential audit matched all nine player-start output
+and relationship comparisons across each of four authorized MZ 1.10.0
+projects: 36 of 36 comparisons matched, all snapshots were complete, and all
+observed states were finding-free. Negative categories remain synthetic
+implementation coverage rather than editor-acceptance evidence.
+
+A second bounded slice is implemented under accepted
+[ADR 0013](decisions/0013-experimental-map-tileset-validation.md). It composes
+the map and tileset catalogs with every selected-map summary and reports only
+positive tileset references with no catalog record. Structural prerequisites
+remain errors, and finding-free output is not a general validity claim. An
+independent differential audit matched all 196 references and all 24 bounded
+CLI-envelope comparisons in the four-project MZ 1.10.0 corpus.
 
 ### 7. In-memory domain mutation and semantic diffs
 
@@ -317,15 +325,17 @@ catalog and its `events` CLI adapter expose only bounded event identity,
 placement, and opaque page counts. The system summary and its `system` CLI
 adapter are implemented experimentally without interpreting other system
 settings. A first player-start validation slice and its `validate` CLI adapter
-compose those projections experimentally; they do not establish general project
-validity or editor compatibility.
+compose those projections experimentally. A separate `validate-tilesets` slice
+checks map-to-tileset references. Neither establishes general project validity
+or editor compatibility.
 Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
 system summary. Controlled MZ 1.10.0 experiments also establish same-map start
 relocation and editor recognition/preservation of the exact zero triplet as
 `None`. Independent differential verification also matched the bounded tileset
-and event projections against the four-project corpus. The next evidence steps
-are controlled tileset name, mode, and map-assignment experiments plus event
-creation, movement, renaming, page lifecycle, and deletion. Tile behavior,
-event page bodies, and commands remain later separate slices.
+and event projections and the map-to-tileset validation relationship against
+the four-project corpus. The next evidence steps are controlled tileset name,
+mode, and map-assignment experiments plus event creation, movement, renaming,
+page lifecycle, and deletion. Tile behavior, event page bodies, and commands
+remain later separate slices.

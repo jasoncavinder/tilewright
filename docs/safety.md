@@ -27,10 +27,10 @@ mutation surface. The experimental map, tileset, and selected-map event
 catalogs plus the selected-map and system summaries copy bounded typed values
 from retained CSTs without changing raw bytes. Tileset modes, image slots,
 flags, notes, event pages, commands, and unknown fields remain in the raw
-snapshot. The experimental player-start validator reads those projections and
-also leaves every raw document unchanged. Production typed-view ownership and
-operation-specific preservation or refusal contracts remain unresolved or
-unimplemented.
+snapshot. The experimental player-start and map-to-tileset validators read
+those projections and also leave every raw document unchanged. Production
+typed-view ownership and operation-specific preservation or refusal contracts
+remain unresolved or unimplemented.
 
 ## Evidence limits writes
 

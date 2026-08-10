@@ -19,10 +19,10 @@ not a current support claim.
 > order, and parent relationships into a typed catalog. It can also summarize
 > one catalog-selected map's basic metadata and opaque event count, selected
 > project-level system settings, tileset IDs and editor-facing names, and
-> map-scoped event IDs, names, coordinates, and opaque page counts. Its first
-> contextual validator checks only the stored player start. It does not yet
-> provide broader semantic understanding, project validity, or modification.
-> Do not rely on it for valuable workflows.
+> map-scoped event IDs, names, coordinates, and opaque page counts. Its bounded
+> contextual validators check only the stored player start and map-to-tileset
+> references. It does not yet provide broader semantic understanding, project
+> validity, or modification. Do not rely on it for valuable workflows.
 
 ## What Tilewright aims to provide
 
@@ -58,8 +58,8 @@ for the distinction between planned and supported behavior.
 
 | Package | Role | Current state |
 | --- | --- | --- |
-| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, typed map, tileset, and event catalogs, selected-map and system summaries, and player-start validation |
-| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, typed map/tileset/event projections, player-start validation, and JSON inspection adapter |
+| [`tilewright`](crates/tilewright/README.md) | Format-aware domain library and primary public API | Experimental discovery, inventory, strict lossless JSON syntax, raw snapshot loading, typed map, tileset, and event catalogs, selected-map and system summaries, and bounded player-start and map-to-tileset validation |
+| [`tilewright-cli`](crates/tilewright-cli/README.md) | Human- and script-facing adapter; installs the `tilewright` executable | Experimental discovery, inventory, raw snapshot, typed map/tileset/event projections, bounded player-start and map-to-tileset validation, and JSON inspection adapter |
 | [`tilewright-mcp`](crates/tilewright-mcp/README.md) | Thin MCP adapter over the library | Scaffold |
 
 The dependency direction is inward:
@@ -120,6 +120,7 @@ cargo run -p tilewright-cli -- map path/to/project 1
 cargo run -p tilewright-cli -- events path/to/project 1
 cargo run -p tilewright-cli -- system path/to/project
 cargo run -p tilewright-cli -- validate path/to/project
+cargo run -p tilewright-cli -- validate-tilesets path/to/project
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
 ```
 
@@ -139,6 +140,7 @@ tilewright map path/to/project 1
 tilewright events path/to/project 1
 tilewright system path/to/project
 tilewright validate path/to/project
+tilewright validate-tilesets path/to/project
 tilewright inspect-json path/to/file.json
 ```
 
@@ -148,12 +150,13 @@ for update and uninstall details.
 
 The CLI currently exposes experimental candidate discovery, project inventory,
 bounded raw snapshot loading, typed map-catalog inspection, selected-map
+summaries, tileset identity/name catalogs, selected system-setting summaries,
 summaries, tileset identity/name catalogs, selected-map event catalogs,
-selected system-setting summaries, bounded player-start validation, and strict
-lossless JSON syntax inspection. The tileset command leaves modes, images,
-flags, and notes opaque; the event command leaves page bodies and commands
-opaque. The validation
-command covers only the stored player start; it does not establish general
+selected system-setting summaries, bounded player-start and map-to-tileset
+validation, and strict lossless JSON syntax inspection. The tileset command
+leaves modes, images, flags, and notes opaque; the event command leaves page
+bodies and commands opaque. The validation commands cover only the stored
+player start and map-to-tileset references; they do not establish general
 project validity or editor compatibility. No command establishes MZ-version
 compatibility, round-trip behavior, or write support. Contributors should use
 the full verification process described in

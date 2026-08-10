@@ -68,6 +68,22 @@ fn write_validation_project(
     root
 }
 
+fn write_map_tileset_validation_project(
+    temp: &TempDir,
+    map_infos: &[u8],
+    maps: &[(u32, &[u8])],
+    tilesets: &[u8],
+) -> PathBuf {
+    let root = temp.path().join("root");
+    fs::create_dir_all(root.join("data")).unwrap();
+    fs::write(root.join("data/MapInfos.json"), map_infos).unwrap();
+    fs::write(root.join("data/Tilesets.json"), tilesets).unwrap();
+    for (id, document) in maps {
+        fs::write(root.join(format!("data/Map{id:03}.json")), document).unwrap();
+    }
+    root
+}
+
 #[test]
 fn help_and_version_are_available() {
     let help = tilewright(&["--help"]);
@@ -1824,6 +1840,151 @@ fn validate_forwards_limits_and_reports_unavailable_system_document() {
     assert_eq!(report["error"]["category"], "system_error");
     assert_eq!(
         report["error"]["system_error"]["category"],
+        "unavailable_document"
+    );
+    assert_eq!(
+        report["snapshot_diagnostics"][0]["category"],
+        "exceeds_document_byte_limit"
+    );
+}
+
+#[test]
+fn validate_tilesets_help_lists_scope_format_and_resource_limits() {
+    let help = tilewright(&["validate-tilesets", "--help"]);
+    assert!(help.status.success());
+    let output = stdout(&help);
+    assert!(output.contains("map-to-tileset references"));
+    assert!(output.contains("--format"));
+    assert!(output.contains("--max-documents"));
+    assert!(output.contains("--max-bytes-per-document"));
+    assert!(output.contains("--max-aggregate-bytes"));
+}
+
+#[test]
+fn validate_tilesets_reports_a_finding_free_project_for_people() {
+    let temp = TempDir::new().unwrap();
+    let root = write_map_tileset_validation_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        &[(
+            1,
+            br#"{"displayName":"One","width":10,"height":8,"tilesetId":1,"events":[]}"#,
+        )],
+        br#"[null,{"id":1,"name":"Field"}]"#,
+    );
+
+    let output = tilewright(&["validate-tilesets", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output = stdout(&output);
+    assert!(output.contains("Map-to-tileset validation for"));
+    assert!(output.contains("Maps checked: 1"));
+    assert!(output.contains("Findings: 0"));
+    assert!(output.contains("No map-to-tileset findings."));
+}
+
+#[test]
+fn validate_tilesets_emits_deterministic_versioned_json_findings() {
+    let temp = TempDir::new().unwrap();
+    let root = write_map_tileset_validation_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":2,"parentId":0},{"id":2,"name":"Two","order":1,"parentId":0}]"#,
+        &[
+            (1, br#"{"displayName":"One","width":1,"height":1,"tilesetId":3,"events":[]}"#),
+            (2, br#"{"displayName":"Two","width":1,"height":1,"tilesetId":2,"events":[]}"#),
+        ],
+        br#"[null,{"id":1,"name":"Only"}]"#,
+    );
+
+    let first = tilewright(&[
+        "validate-tilesets",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+    let second = tilewright(&[
+        "validate-tilesets",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+
+    assert!(first.status.success());
+    assert!(stderr(&first).is_empty());
+    assert_eq!(first.stdout, second.stdout);
+    let report: Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["validation"]["scope"], "map_tileset_references");
+    assert_eq!(report["validation"]["finding_free"], false);
+    assert_eq!(report["validation"]["map_count"], 2);
+    assert_eq!(report["validation"]["finding_count"], 2);
+    assert_eq!(report["validation"]["findings"][0]["map_id"], 1);
+    assert_eq!(report["validation"]["findings"][0]["tileset_id"], 3);
+    assert_eq!(report["validation"]["findings"][1]["map_id"], 2);
+    assert_eq!(report["validation"]["findings"][1]["tileset_id"], 2);
+}
+
+#[test]
+fn validate_tilesets_structural_errors_are_nested_and_stream_safe() {
+    let temp = TempDir::new().unwrap();
+    let root = write_map_tileset_validation_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        &[(1, br#"{"displayName":"One"}"#)],
+        br#"[null,{"id":1,"name":"Field"}]"#,
+    );
+
+    let json = tilewright(&[
+        "validate-tilesets",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+    assert_eq!(json.status.code(), Some(1));
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["error"]["category"], "map_error");
+    assert_eq!(report["error"]["map_id"], 1);
+    assert_eq!(report["error"]["map_error"]["category"], "missing_field");
+
+    let missing = temp.path().join("missing\n\u{1b}[31mdir");
+    let human = tilewright(&["validate-tilesets", missing.to_str().unwrap()]);
+    assert_eq!(human.status.code(), Some(1));
+    assert!(stdout(&human).is_empty());
+    assert!(!stderr(&human).contains('\u{1b}'));
+    assert!(stderr(&human).contains("missing\\n\\u{1b}[31mdir"));
+}
+
+#[test]
+fn validate_tilesets_forwards_limits_and_reports_unavailable_catalog() {
+    let temp = TempDir::new().unwrap();
+    let root = write_map_tileset_validation_project(
+        &temp,
+        br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#,
+        &[(
+            1,
+            br#"{"displayName":"One","width":1,"height":1,"tilesetId":1,"events":[]}"#,
+        )],
+        br#"[null,{"id":1,"name":"a deliberately long tileset name that exceeds the limit"}]"#,
+    );
+
+    let output = tilewright(&[
+        "validate-tilesets",
+        root.to_str().unwrap(),
+        "--format",
+        "json",
+        "--max-bytes-per-document",
+        "70",
+    ]);
+
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).is_empty());
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["limits"]["max_bytes_per_document"], 70);
+    assert_eq!(report["error"]["category"], "tileset_catalog_error");
+    assert_eq!(
+        report["error"]["tileset_catalog_error"]["category"],
         "unavailable_document"
     );
     assert_eq!(

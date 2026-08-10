@@ -8,12 +8,13 @@
 
 This crate is experimental. It provides help and version output plus read-only
 `discover`, `inventory`, `snapshot`, `maps`, `tilesets`, `map`, `events`,
-`system`, `validate`, and `inspect-json` commands over the core library's
+`system`, `validate`, `validate-tilesets`, and `inspect-json` commands over the
+core library's
 experimental RPG Maker MZ candidate-discovery, capability-relative project
 inventory, raw snapshot loader, typed map, tileset, and selected-map event
-catalogs, selected-map and system summaries, player-start validation, and
-strict lossless JSON syntax APIs. It does not provide general project
-understanding, project validity, editor compatibility, or modification.
+catalogs, selected-map and system summaries, player-start and map-to-tileset
+validation, and strict lossless JSON syntax APIs. It does not provide general
+project understanding, project validity, editor compatibility, or modification.
 
 ## Install from a checkout
 
@@ -84,6 +85,10 @@ cargo run -p tilewright-cli -- system path/to/project --format json
 # Validate the stored player start against its catalog and map dimensions.
 cargo run -p tilewright-cli -- validate path/to/project
 cargo run -p tilewright-cli -- validate path/to/project --format json
+
+# Validate every cataloged map's tileset reference.
+cargo run -p tilewright-cli -- validate-tilesets path/to/project
+cargo run -p tilewright-cli -- validate-tilesets path/to/project --format json
 
 # Inspect a file for strict lossless JSON syntax.
 cargo run -p tilewright-cli -- inspect-json path/to/file.json
@@ -195,15 +200,30 @@ passability, event placement, or runtime success. The command does not emit raw
 documents or unprojected fields, and the snapshot resource-limit options are
 available on `validate`.
 
+The `validate-tilesets` command loads the same bounded snapshot and delegates a
+project-wide map-to-tileset reference check to the core library. It reports a
+finding when a cataloged map's positive tileset ID has no matching tileset
+record. Findings are completed validation results and exit with code 0.
+Acquisition, loading, and structural map-catalog, tileset-catalog, or selected
+map failures exit with code 1.
+
+A finding-free result means only that this relationship check found no missing
+catalog record. It does not establish project validity, editor acceptance,
+asset existence, tile behavior, runtime success, compatibility, mutation
+safety, or write support. The command does not emit raw documents or
+unprojected fields, and the snapshot resource-limit options are available on
+`validate-tilesets`.
+
 JSON paths include an exact `utf8` value when one exists and a lossy `display`
 value for presentation. Callers must not treat `display` as an exact encoding of
 a non-UTF-8 path.
 
 Note: While descendant symlink entries are reported without traversal, the
 initial `open_ambient_dir` acquisition used by `inventory`, `snapshot`, `maps`,
-`tilesets`, `map`, `events`, `system`, and `validate` may resolve root or
-ancestor symlinks and does not prove root identity. The `inspect-json` command
-explicitly opens the provided path and makes no project-containment claim.
+`tilesets`, `map`, `events`, `system`, `validate`, and `validate-tilesets` may
+resolve root or ancestor symlinks and does not prove root identity. The
+`inspect-json` command explicitly opens the provided path and makes no
+project-containment claim.
 
 ## Responsibilities
 
