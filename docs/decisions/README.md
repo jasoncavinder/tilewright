@@ -5,9 +5,7 @@ implementation context has changed.
 
 ## Proposed decisions
 
-| ADR | Status | Summary |
-| --- | --- | --- |
-| [0014: Signed player-start coordinates](0014-signed-player-start-coordinates.md) | Proposed | Correct the experimental system and player-start projections to retain observed signed coordinates and report their map relationship contextually. |
+No decisions are currently proposed.
 
 ## Accepted decisions
 
@@ -26,6 +24,7 @@ implementation context has changed.
 | [0011: Experimental selected-map event catalog](0011-experimental-map-event-catalog.md) | Accepted | Add a read-only owned projection of map-scoped event IDs, names, positions, and opaque page counts for one catalog-selected map. |
 | [0012: Experimental tileset catalog](0012-experimental-tileset-catalog.md) | Accepted | Add a read-only owned projection of catalog-scoped tileset IDs and editor-facing names while leaving modes, images, flags, and notes opaque. |
 | [0013: Experimental map-tileset reference validation](0013-experimental-map-tileset-validation.md) | Accepted | Compose map summaries and the tileset catalog into deterministic missing-reference findings without implying general validity. |
+| [0014: Signed player-start coordinates](0014-signed-player-start-coordinates.md) | Accepted | Correct the experimental system and player-start projections to retain observed signed coordinates and report their map relationship contextually. |
 
 ## Adding or changing a decision
 

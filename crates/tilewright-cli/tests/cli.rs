@@ -130,7 +130,7 @@ fn discover_emits_versioned_json_for_scripts() {
     assert!(output.status.success());
     assert!(stderr(&output).is_empty());
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["result"], "candidate");
     assert_eq!(report["markers"][0]["kind"], "regular_file");
     assert_eq!(
@@ -228,7 +228,7 @@ fn operational_errors_have_human_and_json_forms() {
     assert_eq!(json.status.code(), Some(1));
     assert!(stderr(&json).is_empty());
     let report: Value = serde_json::from_slice(&json.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert!(
         report["error"]["message"]
             .as_str()
@@ -287,7 +287,7 @@ fn inventory_emits_versioned_json_for_scripts() {
     assert!(output.status.success());
     assert!(stderr(&output).is_empty());
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
 
     let entries = report["entries"].as_array().unwrap();
     assert_eq!(entries.len(), 2);
@@ -333,7 +333,7 @@ fn inventory_refuses_non_utf8_paths_in_json() {
 
     assert_eq!(output.status.code(), Some(1));
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert!(
         report["error"]["message"].as_str().unwrap().contains(
             "JSON output cannot safely represent non-UTF-8 paths without lossy conversion"
@@ -426,7 +426,7 @@ fn inventory_operational_errors_have_human_and_json_forms() {
     assert_eq!(json.status.code(), Some(1));
     assert!(stderr(&json).is_empty());
     let report: Value = serde_json::from_slice(&json.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert!(
         report["error"]["message"]
             .as_str()
@@ -540,7 +540,7 @@ fn snapshot_emits_deterministic_versioned_json_without_source_contents() {
     assert!(output.status.success());
     assert!(stderr(&output).is_empty());
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["completeness"], "complete");
     assert_eq!(report["loaded_document_count"], 3);
     assert_eq!(report["diagnostic_count"], 0);
@@ -716,7 +716,7 @@ fn snapshot_operational_errors_have_human_and_json_forms() {
     assert_eq!(json.status.code(), Some(1));
     assert!(stderr(&json).is_empty());
     let report: Value = serde_json::from_slice(&json.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert!(
         report["error"]["message"]
             .as_str()
@@ -863,7 +863,7 @@ fn maps_emits_deterministic_versioned_json_without_unprojected_contents() {
     assert!(output.status.success());
     assert!(stderr(&output).is_empty());
     let report: Value = serde_json::from_slice(&output.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["snapshot_completeness"], "complete");
     assert_eq!(report["map_count"], 2);
     assert_eq!(report["finding_count"], 0);
@@ -964,7 +964,7 @@ fn maps_projection_errors_have_human_and_json_forms() {
     assert_eq!(json.status.code(), Some(1));
     assert!(stderr(&json).is_empty());
     let report: Value = serde_json::from_slice(&json.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["error"]["category"], "missing_document");
     assert_eq!(report["snapshot_completeness"], "complete");
 
@@ -1030,7 +1030,7 @@ fn maps_operational_errors_preserve_stream_separation() {
     assert_eq!(json.status.code(), Some(1));
     assert!(stderr(&json).is_empty());
     let report: Value = serde_json::from_slice(&json.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert!(
         report["error"]["message"]
             .as_str()
@@ -1100,7 +1100,7 @@ fn tilesets_emits_deterministic_versioned_json_without_opaque_contents() {
     assert!(stderr(&first).is_empty());
     assert_eq!(first.stdout, second.stdout);
     let report: Value = serde_json::from_slice(&first.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["snapshot_completeness"], "complete");
     assert_eq!(report["tileset_count"], 2);
     assert_eq!(report["tilesets"][0]["id"], 1);
@@ -1211,7 +1211,7 @@ fn map_emits_versioned_json_without_unprojected_contents() {
     assert!(stderr(&first).is_empty());
     assert_eq!(first.stdout, second.stdout);
     let report: Value = serde_json::from_slice(&first.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["snapshot_completeness"], "complete");
     assert_eq!(report["map"]["id"], 1);
     assert_eq!(report["map"]["catalog_name"], "First");
@@ -1427,7 +1427,7 @@ fn events_emits_deterministic_versioned_json_without_opaque_contents() {
     assert!(stderr(&first).is_empty());
     assert_eq!(first.stdout, second.stdout);
     let report: Value = serde_json::from_slice(&first.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["snapshot_completeness"], "complete");
     assert_eq!(report["map"]["id"], 1);
     assert_eq!(report["map"]["catalog_name"], "Town");
@@ -1528,7 +1528,7 @@ fn system_emits_versioned_json_without_unprojected_contents() {
     assert!(!output_text.contains("secret"));
     assert!(!output_text.contains("not emitted"));
     let report: Value = serde_json::from_str(&output_text).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["snapshot_completeness"], "complete");
     assert_eq!(report["snapshot_diagnostic_count"], 0);
     assert_eq!(report["system"]["game_title"], "Game");
@@ -1543,6 +1543,28 @@ fn system_emits_versioned_json_without_unprojected_contents() {
         "data/System.json"
     );
     assert_eq!(report["snapshot_diagnostics"], Value::Array(Vec::new()));
+}
+
+#[test]
+fn system_reports_signed_coordinates_in_human_and_json_output() {
+    let temp = TempDir::new().unwrap();
+    let root = write_system_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":-1,"startY":-2}"#,
+    );
+
+    let human = tilewright(&["system", root.to_str().unwrap()]);
+    assert!(human.status.success());
+    assert!(stderr(&human).is_empty());
+    assert!(stdout(&human).contains("Player start: map 1 at (-1, -2)"));
+
+    let json = tilewright(&["system", root.to_str().unwrap(), "--format", "json"]);
+    assert!(json.status.success());
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["schema_version"], 2);
+    assert_eq!(report["system"]["start_x"], -1);
+    assert_eq!(report["system"]["start_y"], -2);
 }
 
 #[test]
@@ -1679,6 +1701,57 @@ fn validate_reports_a_clear_player_start_for_people() {
 }
 
 #[test]
+fn validate_reports_negative_coordinates_as_out_of_bounds() {
+    let temp = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":1,"startX":-1,"startY":-2}"#,
+        Some(br#"[null,{"id":1,"name":"One","order":1,"parentId":0}]"#),
+        Some(
+            br#"{"displayName":"One","width":10,"height":8,"tilesetId":1,"events":[]}"#,
+        ),
+    );
+
+    let human = tilewright(&["validate", root.to_str().unwrap()]);
+    assert!(human.status.success());
+    assert!(stderr(&human).is_empty());
+    assert!(stdout(&human).contains("(-1, -2) is outside map 1 dimensions 10 x 8"));
+
+    let json = tilewright(&["validate", root.to_str().unwrap(), "--format", "json"]);
+    assert!(json.status.success());
+    assert!(stderr(&json).is_empty());
+    let report: Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(report["schema_version"], 2);
+    assert_eq!(report["validation"]["start_x"], -1);
+    assert_eq!(report["validation"]["start_y"], -2);
+    assert_eq!(
+        report["validation"]["findings"][0]["category"],
+        "out_of_bounds"
+    );
+    assert_eq!(report["validation"]["findings"][0]["start_x"], -1);
+    assert_eq!(report["validation"]["findings"][0]["start_y"], -2);
+}
+
+#[test]
+fn validate_describes_zero_map_signed_coordinates_as_ambiguous() {
+    let temp = TempDir::new().unwrap();
+    let root = write_validation_project(
+        &temp,
+        br#"{"gameTitle":"Game","currencyUnit":"G","locale":"en_US","editMapId":1,"startMapId":0,"startX":-1,"startY":2}"#,
+        None,
+        None,
+    );
+
+    let output = tilewright(&["validate", root.to_str().unwrap()]);
+
+    assert!(output.status.success());
+    assert!(stderr(&output).is_empty());
+    let output = stdout(&output);
+    assert!(output.contains("map ID 0 has ambiguous stored coordinates (-1, 2)"));
+    assert!(!output.contains("unevidenced"));
+}
+
+#[test]
 fn validate_keeps_unrelated_snapshot_diagnostics_separate() {
     let temp = TempDir::new().unwrap();
     let root = write_validation_project(
@@ -1750,7 +1823,7 @@ fn validate_emits_versioned_json_for_each_contextual_finding() {
         );
         assert!(stderr(&output).is_empty());
         let report: Value = serde_json::from_slice(&output.stdout).unwrap();
-        assert_eq!(report["schema_version"], 1);
+        assert_eq!(report["schema_version"], 2);
         assert_eq!(report["validation"]["scope"], "player_start");
         assert_eq!(report["validation"]["finding_free"], false);
         assert_eq!(report["validation"]["finding_count"], 1);
@@ -1914,7 +1987,7 @@ fn validate_tilesets_emits_deterministic_versioned_json_findings() {
     assert!(stderr(&first).is_empty());
     assert_eq!(first.stdout, second.stdout);
     let report: Value = serde_json::from_slice(&first.stdout).unwrap();
-    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["schema_version"], 2);
     assert_eq!(report["validation"]["scope"], "map_tileset_references");
     assert_eq!(report["validation"]["finding_free"], false);
     assert_eq!(report["validation"]["map_count"], 2);

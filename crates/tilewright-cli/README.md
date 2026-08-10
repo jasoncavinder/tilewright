@@ -181,18 +181,22 @@ document exits with code 1. Unrelated snapshot diagnostics remain separate and
 can accompany a successful summary.
 
 The command does not emit raw documents or unprojected system fields. Its map
-and coordinate values are stored nonnegative scalars, not validated map
-references or positions. It does not interpret party members or `versionId`,
-compare titles across files, validate editor compatibility, or establish
-mutation, round-trip, and write support. The snapshot resource-limit options
-are available on `system`.
+IDs are stored nonnegative scalars and its player-start coordinates are signed
+scalars; neither is a validated map reference or position. It does not
+interpret party members or `versionId`, compare titles across files, validate
+editor compatibility, or establish mutation, round-trip, and write support.
+The snapshot resource-limit options are available on `system`.
 
 The `validate` command loads the same bounded snapshot and delegates the
 player-start check to the core library. It reports the observed exact unset
-triplet, a zero map ID with unevidenced nonzero coordinates, a missing positive
-catalog record, and coordinates outside the selected map dimensions. Findings
-are completed validation results and exit with code 0. Acquisition, loading,
-and structural system, catalog, or selected-map failures exit with code 1.
+triplet, an editor-preserved ambiguous zero map ID with nonzero coordinates, a
+missing positive catalog record, and signed coordinates outside the selected
+map dimensions. Findings are completed validation results and exit with code
+0. Acquisition, loading, and structural system, catalog, or selected-map
+failures exit with code 1.
+
+All JSON commands currently emit schema version 2. This executable-wide version
+advanced when signed player-start coordinate values were introduced.
 
 A finding-free result means only that this bounded player-start check found no
 issue. It does not establish project validity, MZ-version compatibility,
