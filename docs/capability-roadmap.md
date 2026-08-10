@@ -183,8 +183,12 @@ The bounded `System.json` orientation summary is accepted in
 [ADR 0009](decisions/0009-experimental-system-summary.md) and implemented
 experimentally. It projects only the seven accepted string and nonnegative
 integer fields, retains raw bytes and unknown settings in the snapshot, and
-does not validate map references or coordinate bounds. Neither acceptance nor
-implementation makes the capability Supported.
+does not validate map references or coordinate bounds. A controlled MZ 1.10.0
+save preserved negative player-start coordinates, exposing a known gap in that
+unsigned contract. Proposed
+[ADR 0014](decisions/0014-signed-player-start-coordinates.md) defines the
+correction. Neither acceptance nor implementation makes the capability
+Supported.
 
 A bounded tileset identity/name catalog is implemented experimentally under
 accepted [ADR 0012](decisions/0012-experimental-tileset-catalog.md). It leaves
@@ -218,8 +222,9 @@ decision.
 **Current status: Experimental first slice.** The player-start contract accepted
 in [ADR 0010](decisions/0010-experimental-player-start-validation.md) composes
 the system summary, coherent map catalog, and selected-map dimensions. It
-reports only the evidenced zero triplet, an unevidenced mixed-zero state, a
-missing positive catalog record, and coordinates outside the map rectangle.
+reports only the evidenced zero triplet, a distinct zero-map/mixed-coordinate
+state, a missing positive catalog record, and coordinates outside the map
+rectangle.
 Structural projection failures remain errors. A finding-free result is not a
 general project-validity or compatibility claim, and the general severity and
 diagnostic model remains open.
@@ -332,10 +337,13 @@ Differential verification matched all 196 catalog records and all 196
 selected-map summaries in the local four-project MZ 1.10.0 evidence corpus. It
 also matched all 28 field comparisons and all four output envelopes for the
 system summary. Controlled MZ 1.10.0 experiments also establish same-map start
-relocation and editor recognition/preservation of the exact zero triplet as
-`None`. Independent differential verification also matched the bounded tileset
-and event projections and the map-to-tileset validation relationship against
-the four-project corpus. The next evidence steps are controlled tileset name,
-mode, and map-assignment experiments plus event creation, movement, renaming,
-page lifecycle, and deletion. Tile behavior, event page bodies, and commands
-remain later separate slices.
+relocation, Delete-generated zero-triplet serialization, and preservation of
+mixed-zero, exact-boundary, dangling-map, negative-coordinate, and upper
+out-of-bounds states. The negative case returns the system and player-start
+contracts to the contract stage under proposed ADR 0014. Independent
+differential verification also matched the bounded tileset and event
+projections and the map-to-tileset validation relationship against the
+four-project corpus. A controlled tileset rename changed only the name field;
+the next editor evidence steps are tileset mode and map assignment plus event
+creation, movement, renaming, page lifecycle, and deletion. Tile behavior,
+event page bodies, and commands remain later separate slices.

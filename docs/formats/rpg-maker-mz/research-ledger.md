@@ -1744,10 +1744,27 @@ validity. The accepted architecture is recorded in
   retained. Only aggregate derived observations and the non-content-revealing
   procedure are recorded.
 
+### Evidence record: `MZ-1.10.0-TILESET-NAME-2026-08-09`
+
+- **Kind:** Controlled editor rename.
+- **Version/environment:** RPG Maker MZ 1.10.0 on arm64 macOS 26.6 build
+  25G72; unique disposable copy of the authorized Basic project.
+- **Procedure:** Renamed exactly one existing record through Database →
+  Tilesets, saved, closed, and compared only changed decoded property names,
+  identity/structure equality, and string lengths with the baseline.
+- **Observed:** Only record 1's `name` changed within `Tilesets.json`. Its ID,
+  mode, note, image-name array, flag array, surrounding records, and array
+  length remained equal. The save changed only unrelated `versionId` in
+  `System.json`.
+- **Limits:** One rename does not establish allowed text, normalization,
+  uniqueness, record lifecycle, mutation safety, or later-version behavior.
+- **Redistribution:** No name, asset string, note, flag, path, raw excerpt,
+  digest, screenshot, or project-specific value is retained.
+
 ### Next experiment
 
-Change one tileset name, toggle one mode, and reassign one map in separate
-disposable MZ 1.10.0 copies, saving and reopening after each action.
+Toggle one tileset mode and reassign one map in separate disposable MZ 1.10.0
+copies, saving and reopening after each action.
 
 ## `mz-map-events-001`: What is the smallest useful map-event catalog?
 
@@ -1865,7 +1882,9 @@ experiments are maintained in
 roles are documented by `MZ-HELP-SYSTEM1-2026-08-07` and the existing
 `MZ-SCRIPTREF-DB-1.0.0` record. Direct shape evidence is recorded as
 `MZ-1.10.0-SYSTEM-SUMMARY-SHAPE-AUDIT-2026-08-07`; implementation parity is
-recorded as `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07`.
+recorded as `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07`. Controlled
+edge-state evidence is recorded by `MZ-1.10.0-PLAYER-START-DELETE-2026-08-09`
+and `MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09`.
 
 ### Evidence record: `MZ-HELP-SYSTEM1-2026-08-07`
 
@@ -1930,6 +1949,41 @@ recorded as `MZ-1.10.0-SYSTEM-SUMMARY-DIFFERENTIAL-2026-08-07`.
   `4/4` and `28/28` counts were emitted and retained. No project path, title,
   currency text, locale value, raw document, excerpt, or digest is retained.
 
+### Evidence record: `MZ-1.10.0-PLAYER-START-DELETE-2026-08-09`
+
+- **Kind:** Controlled editor action.
+- **Version/environment:** RPG Maker MZ 1.10.0 on arm64 macOS 26.6 build
+  25G72; unique disposable copy of the authorized Basic project.
+- **Procedure:** Deleted the player-start marker through the editor, saved,
+  closed, and compared only derived property-level results with the immutable
+  baseline.
+- **Observed:** Delete generated exact `startMapId = 0`, `startX = 0`, and
+  `startY = 0`. Those properties and unrelated `versionId` were the only
+  decoded values that differed from the baseline.
+- **Limits:** This does not establish runtime behavior, every deletion context,
+  or later-version serialization.
+- **Redistribution:** Only controlled values, changed property names, and
+  equality results are retained.
+
+### Evidence record: `MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09`
+
+- **Kind:** Controlled malformed/tolerance matrix.
+- **Version/environment:** The same editor and platform; five isolated copies
+  with a `17 x 13` selected map.
+- **Procedure:** Prepared mixed-zero `(0, 8, 6)`, exact upper in-bounds
+  `(1, 16, 12)`, dangling positive map `(999, 8, 6)`, negative coordinates
+  `(1, -1, -1)`, and exact upper out-of-bounds `(1, 17, 13)` in separate
+  closed-editor copies. Opened and saved each project, then compared only the
+  selected scalars, decoded changed-property names, and root key equality.
+- **Observed:** Every save retained its prepared triplet exactly. Only the
+  prepared scalar or scalars and unrelated `versionId` differed from baseline;
+  the root key set remained fixed. MZ therefore saved signed negative start
+  coordinates in the observed scope.
+- **Limits:** Persistence tolerance is not evidence of editor validity, UI
+  meaning, runtime success, passability, clamping, or broader numeric limits.
+- **Redistribution:** Only controlled triplets, map dimensions, changed
+  property names, and equality results are retained.
+
 ### Implementation implications
 
 The implemented experimental projection decodes only the three selected strings
@@ -1938,14 +1992,17 @@ raw lossless document. It refuses ambiguous required structure, avoids
 normalizing strings or treating map scalars as stable identifiers, and makes no
 validation, mutation, or editor-compatibility claim. The accepted architecture
 is recorded in
-[ADR 0009](../../decisions/0009-experimental-system-summary.md).
+[ADR 0009](../../decisions/0009-experimental-system-summary.md). The negative
+coordinate observation contradicts the implemented unsigned-coordinate bound;
+proposed [ADR 0014](../../decisions/0014-signed-player-start-coordinates.md)
+defines the correction.
 
 ### Next experiment
 
-Use the editor's Delete gesture on the player-start icon and compare the
-generated state with the exact zero triplet that MZ 1.10.0 has now been observed
-to recognize and preserve as `None`. Complete the prepared mixed-zero state
-experiment before interpreting zero map IDs with nonzero coordinates.
+Establish UI presentation and runtime consequences for the preserved
+mixed-zero, dangling, negative, and upper-out-of-bounds states before assigning
+validity semantics. Observe another named version at or above 1.10.0 before
+broadening the coordinate contract.
 
 ## `mz-player-start-validation-001`: What player-start relationships can be validated?
 
@@ -1966,7 +2023,9 @@ implications, and remaining experiments are maintained in
 Official behavior is recorded by `MZ-HELP-SYSTEM1-2026-08-07`. Controlled
 editor results are recorded by
 `MZ-1.10.0-PLAYER-START-RELOCATION-2026-08-09` and
-`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`. Implementation parity is
+`MZ-1.10.0-PLAYER-START-ZERO-TRIPLET-2026-08-09`, with deletion and edge-state
+tolerance recorded by `MZ-1.10.0-PLAYER-START-DELETE-2026-08-09` and
+`MZ-1.10.0-PLAYER-START-TOLERANCE-MATRIX-2026-08-09`. Implementation parity is
 recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`.
 
 ### Evidence record: `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`
@@ -1994,19 +2053,22 @@ recorded by `MZ-1.10.0-PLAYER-START-DIFFERENTIAL-2026-08-09`.
 ### Implementation implications
 
 The implemented experimental operation composes existing owned projections. It
-can report the observed zero triplet, an unevidenced zero-map/mixed-coordinate
-state, a missing positive catalog record, and coordinates outside positive map
-dimensions. Structural projection failures remain errors. Findings do not
-claim general editor rejection, validity, compatibility, or write safety. The
-accepted architecture is recorded in
-[ADR 0010](../../decisions/0010-experimental-player-start-validation.md).
+can report the observed zero triplet, a zero-map/mixed-coordinate state, a
+missing positive catalog record, and nonnegative coordinates outside positive
+map dimensions. Structural projection failures remain errors. It currently
+cannot report the observed negative-coordinate state because the system summary
+rejects it first. Findings do not claim general editor rejection, validity,
+compatibility, or write safety. Accepted
+[ADR 0010](../../decisions/0010-experimental-player-start-validation.md) defines
+the original operation; proposed
+[ADR 0014](../../decisions/0014-signed-player-start-coordinates.md) defines the
+evidence-driven correction.
 
 ### Next experiment
 
-Complete the editor Delete and mixed-zero experiments, then test exact map
-coordinate boundaries and a dangling positive start-map ID in separate owned
-copies. Repeat the bounded observations on another named version at or above
-1.10.0 before broadening compatibility scope.
+Establish UI presentation and runtime consequences for mixed-zero, dangling,
+negative, and upper-out-of-bounds states. Repeat the bounded observations on
+another named version at or above 1.10.0 before broadening compatibility scope.
 
 ## `mz-map-tileset-validation-001`: Which map-to-tileset references can be validated?
 

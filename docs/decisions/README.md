@@ -5,7 +5,9 @@ implementation context has changed.
 
 ## Proposed decisions
 
-No decisions are currently proposed.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [0014: Signed player-start coordinates](0014-signed-player-start-coordinates.md) | Proposed | Correct the experimental system and player-start projections to retain observed signed coordinates and report their map relationship contextually. |
 
 ## Accepted decisions
 
